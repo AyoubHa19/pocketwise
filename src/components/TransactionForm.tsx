@@ -2,7 +2,12 @@
 
 import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { todayISODate } from "@/lib/dates";
-import { CURRENCIES, currencyDecimals, parseAmount } from "@/lib/money";
+import {
+  amountToInputText,
+  CURRENCIES,
+  currencyDecimals,
+  parseAmount,
+} from "@/lib/money";
 import {
   CATEGORIES,
   newTransactionId,
@@ -15,7 +20,11 @@ const fieldClass =
   "mt-1 block w-full rounded-md border border-zinc-300 bg-background px-3 py-2 text-base dark:border-zinc-700";
 
 type Props = {
-  onAdd: (transaction: Transaction) => void;
+  /** The transaction to edit. Leave it out to add a new one. */
+  transaction?: Transaction;
+  onSave: (transaction: Transaction) => void;
+  /** Shown as a Cancel button while editing. */
+  onCancel?: () => void;
 };
 
 // Today's date, read only in the browser. The server can't know the user's
@@ -28,14 +37,28 @@ function subscribeToNothing() {
   return () => {};
 }
 
-export function AddTransactionForm({ onAdd }: Props) {
-  const [type, setType] = useState<TransactionType>("expense");
-  const [category, setCategory] = useState<string>("Food");
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState<string>("USD");
+// `transaction` only fills the fields when the form first appears. To load a
+// different transaction, give the form a new `key` so React starts it afresh.
+export function TransactionForm({ transaction, onSave, onCancel }: Props) {
+  const isEditing = transaction !== undefined;
+
+  const [type, setType] = useState<TransactionType>(
+    transaction?.type ?? "expense",
+  );
+  const [category, setCategory] = useState<string>(
+    transaction?.category ?? "Food",
+  );
+  const [amount, setAmount] = useState(
+    transaction ? amountToInputText(transaction.amount) : "",
+  );
+  const [currency, setCurrency] = useState<string>(
+    transaction?.amount.currency ?? "USD",
+  );
   // null until the user picks a date themselves; until then, use today.
-  const [pickedDate, setPickedDate] = useState<string | null>(null);
-  const [note, setNote] = useState("");
+  const [pickedDate, setPickedDate] = useState<string | null>(
+    transaction?.date ?? null,
+  );
+  const [note, setNote] = useState(transaction?.note ?? "");
   const [error, setError] = useState<string | null>(null);
 
   const today = useToday();
@@ -59,8 +82,9 @@ export function AddTransactionForm({ onAdd }: Props) {
       return;
     }
 
-    onAdd({
-      id: newTransactionId(),
+    onSave({
+      // Editing keeps the same id, so the saved one is replaced, not copied.
+      id: transaction?.id ?? newTransactionId(),
       type,
       amount: { amountMinor, currency },
       category,
@@ -81,7 +105,9 @@ export function AddTransactionForm({ onAdd }: Props) {
       noValidate
       className="rounded-lg border border-zinc-200 p-4 sm:p-6 dark:border-zinc-800"
     >
-      <h2 className="text-lg font-semibold">Add a transaction</h2>
+      <h2 className="text-lg font-semibold">
+        {isEditing ? "Edit transaction" : "Add a transaction"}
+      </h2>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-medium">
@@ -168,12 +194,23 @@ export function AddTransactionForm({ onAdd }: Props) {
         </p>
       )}
 
-      <button
-        type="submit"
-        className="mt-6 w-full rounded-md bg-foreground px-4 py-2.5 font-medium text-background hover:opacity-90 sm:w-auto"
-      >
-        Add transaction
-      </button>
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <button
+          type="submit"
+          className="w-full rounded-md bg-foreground px-4 py-2.5 font-medium text-background hover:opacity-90 sm:w-auto"
+        >
+          {isEditing ? "Save changes" : "Add transaction"}
+        </button>
+        {isEditing && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-full rounded-md border border-zinc-300 px-4 py-2.5 font-medium hover:bg-zinc-100 sm:w-auto dark:border-zinc-700 dark:hover:bg-zinc-900"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   );
 }

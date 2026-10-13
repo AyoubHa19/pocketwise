@@ -35,6 +35,18 @@ export function formatMoney(money: Money, locale = "en-US"): string {
 }
 
 /**
+ * The amount as plain text for a form field: { 1999, "USD" } becomes "19.99".
+ * The opposite of parseAmount, and like it, it works on digits, not decimals.
+ */
+export function amountToInputText(money: Money): string {
+  const decimals = currencyDecimals(money.currency);
+  const digits = String(money.amountMinor);
+  if (decimals === 0) return digits;
+  const padded = digits.padStart(decimals + 1, "0");
+  return `${padded.slice(0, -decimals)}.${padded.slice(-decimals)}`;
+}
+
+/**
  * Turns what the user typed, like "19.99" or "19,99", into minor units (1999).
  * It works on the text itself rather than multiplying decimals, so no
  * rounding error can creep in. Returns null unless the text is a plain amount

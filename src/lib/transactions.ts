@@ -63,6 +63,28 @@ export function newTransactionId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+/**
+ * Adds the transaction to the start of the list, or, if one with the same id
+ * is already there, replaces it in place. Returns a new list.
+ */
+export function upsertTransaction(
+  transactions: Transaction[],
+  transaction: Transaction,
+): Transaction[] {
+  const exists = transactions.some((t) => t.id === transaction.id);
+  return exists
+    ? transactions.map((t) => (t.id === transaction.id ? transaction : t))
+    : [transaction, ...transactions];
+}
+
+/** Returns a new list without the transaction that has this id. */
+export function removeTransaction(
+  transactions: Transaction[],
+  id: string,
+): Transaction[] {
+  return transactions.filter((t) => t.id !== id);
+}
+
 /** The amount with a minus sign for expenses, for display and totals. */
 export function signedAmount(transaction: Transaction): Money {
   const { amountMinor, currency } = transaction.amount;
