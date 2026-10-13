@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Pocketwise: a gold coin dropping into a white pocket, on the app's green. -->
+  <rect width="32" height="32" rx="7" fill="#059669"/>
+  <circle cx="16" cy="11.5" r="5" fill="#fbbf24"/>
+  <path d="M7 15h18v4a9 9 0 0 1-18 0z" fill="#ffffff"/>
+</svg>
