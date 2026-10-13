@@ -3,6 +3,8 @@ import { signedAmount, type Transaction } from "@/lib/transactions";
 
 type Props = {
   transactions: Transaction[];
+  /** What to say when there are no transactions to show. */
+  emptyMessage: string;
   /** The transaction open in the form, highlighted in the list. */
   editingId: string | null;
   onEdit: (transaction: Transaction) => void;
@@ -14,6 +16,7 @@ const actionClass =
 
 export function TransactionList({
   transactions,
+  emptyMessage,
   editingId,
   onEdit,
   onDelete,
@@ -21,7 +24,7 @@ export function TransactionList({
   if (transactions.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-        No transactions yet. Add your first one with the form above.
+        {emptyMessage}
       </p>
     );
   }

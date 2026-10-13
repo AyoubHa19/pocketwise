@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useSyncExternalStore, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   fieldClass,
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/formStyles";
-import { todayISODate } from "@/lib/dates";
 import { amountToInputText, currencyDecimals, parseAmount } from "@/lib/money";
 import {
   CATEGORIES,
@@ -14,6 +13,7 @@ import {
   type Transaction,
   type TransactionType,
 } from "@/lib/transactions";
+import { useToday } from "@/lib/useToday";
 
 type Props = {
   /** The transaction to edit. Leave it out to add a new one. */
@@ -24,16 +24,6 @@ type Props = {
   /** Shown as a Cancel button while editing. */
   onCancel?: () => void;
 };
-
-// Today's date, read only in the browser. The server can't know the user's
-// time zone, so it renders an empty date and React fills it in right after.
-function useToday(): string {
-  return useSyncExternalStore(subscribeToNothing, todayISODate, () => "");
-}
-
-function subscribeToNothing() {
-  return () => {};
-}
 
 // `transaction` only fills the fields when the form first appears. To load a
 // different transaction, give the form a new `key` so React starts it afresh.

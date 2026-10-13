@@ -2,10 +2,14 @@
 
 import { useRef, useState } from "react";
 import { CurrencySetup } from "@/components/CurrencySetup";
+import { MonthPicker } from "@/components/MonthPicker";
+import { MonthSummary } from "@/components/MonthSummary";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
+import { formatMonth, monthOf } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { useSettings } from "@/lib/settingsStore";
+import { totalsByCurrency, transactionsInMonth } from "@/lib/summary";
 import { updateTransactions, useTransactions } from "@/lib/transactionStore";
 import {
   removeTransaction,
@@ -13,13 +17,20 @@ import {
   upsertTransaction,
   type Transaction,
 } from "@/lib/transactions";
+import { useToday } from "@/lib/useToday";
 
 export function TransactionTracker() {
   const settings = useSettings();
   const transactions = useTransactions();
+  const today = useToday();
+  // null until the user moves to another month; until then, this month.
+  const [pickedMonth, setPickedMonth] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+
+  const currentMonth = monthOf(today);
+  const month = pickedMonth ?? currentMonth;
 
   // Looked up by id, so if the transaction disappears (say, deleted in
   // another tab), the form simply goes back to adding.
@@ -31,6 +42,9 @@ export function TransactionTracker() {
     );
     setSaveFailed(!saved);
     setEditingId(null);
+    // Show the month the transaction is in, or it would seem to vanish when
+    // its date is in a different month from the one on screen.
+    setPickedMonth(monthOf(transaction.date));
   }
 
   function startEditing(transaction: Transaction) {
@@ -62,8 +76,22 @@ export function TransactionTracker() {
     return <CurrencySetup />;
   }
 
+  const monthTransactions = transactionsInMonth(transactions, month);
+  const monthName = formatMonth(month);
+
   return (
     <div className="mt-10 space-y-10">
+      <section aria-label={`Summary for ${monthName}`} className="space-y-4">
+        <MonthPicker
+          month={month}
+          currentMonth={currentMonth}
+          onChange={setPickedMonth}
+        />
+        <MonthSummary
+          totals={totalsByCurrency(monthTransactions, settings.currency)}
+        />
+      </section>
+
       <div ref={formRef} className="scroll-mt-4">
         {/* A new key makes React start a fresh form with the new values. */}
         <TransactionForm
@@ -76,7 +104,7 @@ export function TransactionTracker() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold">Transactions</h2>
+        <h2 className="text-lg font-semibold">Transactions in {monthName}</h2>
         <p className="mt-1 text-sm text-zinc-500">
           Saved in this browser on this device only. Clearing your browser
           data deletes them.
@@ -95,7 +123,12 @@ export function TransactionTracker() {
 
         <div className="mt-4">
           <TransactionList
-            transactions={transactions}
+            transactions={monthTransactions}
+            emptyMessage={
+              transactions.length === 0
+                ? "No transactions yet. Add your first one with the form above."
+                : `No transactions in ${monthName}.`
+            }
             editingId={editingId}
             onEdit={startEditing}
             onDelete={remove}
