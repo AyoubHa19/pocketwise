@@ -21,10 +21,11 @@ import { MonthSummary } from "@/components/MonthSummary";
 import { Sheet } from "@/components/Sheet";
 import { SpendingByCategory } from "@/components/SpendingByCategory";
 import { TransactionForm } from "@/components/TransactionForm";
+import { Toast, type Notice } from "@/components/Toast";
 import { TransactionList } from "@/components/TransactionList";
 import { formatMonth, monthOf } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
-import { fadeRise } from "@/lib/motion";
+import { fadeRise, monthSlide } from "@/lib/motion";
 import { useSettings } from "@/lib/settingsStore";
 import {
   monthlyTotals,
@@ -62,12 +63,22 @@ export function TransactionTracker() {
   const today = useToday();
   // null until the user moves to another month; until then, this month.
   const [pickedMonth, setPickedMonth] = useState<string | null>(null);
+  // Which way the last month change went: 1 later, -1 earlier, 0 not yet.
+  // The new month's content slides in from that side.
+  const [monthDirection, setMonthDirection] = useState(0);
   const [sheet, setSheet] = useState<SheetState>({
     kind: "add",
     open: false,
     session: 0,
   });
   const [saveFailed, setSaveFailed] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  // A confirmation stays for 4 seconds; a newer one restarts the clock.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
   // Where focus goes after deleting, when the row that opened the sheet is
   // gone: the list's heading, right where the row was.
   const listHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -79,6 +90,12 @@ export function TransactionTracker() {
 
   const currentMonth = monthOf(today);
   const month = pickedMonth ?? currentMonth;
+
+  function changeMonth(next: string) {
+    // "YYYY-MM" months compare correctly as text.
+    if (next !== month) setMonthDirection(next > month ? 1 : -1);
+    setPickedMonth(next);
+  }
 
   // Looked up by id, so if the transaction disappears while its sheet is
   // open (say, deleted in another tab), the sheet simply closes.
@@ -110,15 +127,22 @@ export function TransactionTracker() {
     setSheet((previous) => ({ ...previous, open: false }));
   }
 
+  // Only when the browser really saved: otherwise the warning says so.
+  function report(saved: boolean, text: string) {
+    setSaveFailed(!saved);
+    setNotice(saved ? { id: Date.now(), text } : null);
+  }
+
   function save(transaction: Transaction) {
+    const isNew = !transactions?.some((t) => t.id === transaction.id);
     const saved = updateTransactions((previous) =>
       upsertTransaction(previous, transaction),
     );
-    setSaveFailed(!saved);
+    report(saved, isNew ? "Transaction added" : "Changes saved");
     closeSheet();
     // Show the month the transaction is in, or it would seem to vanish when
     // its date is in a different month from the one on screen.
-    setPickedMonth(monthOf(transaction.date));
+    changeMonth(monthOf(transaction.date));
   }
 
   function remove(transaction: Transaction) {
@@ -131,7 +155,7 @@ export function TransactionTracker() {
     const saved = updateTransactions((previous) =>
       removeTransaction(previous, transaction.id),
     );
-    setSaveFailed(!saved);
+    report(saved, "Transaction deleted");
     closeSheet();
   }
 
@@ -177,7 +201,8 @@ export function TransactionTracker() {
             <MonthPicker
               month={month}
               currentMonth={currentMonth}
-              onChange={setPickedMonth}
+              direction={monthDirection}
+              onChange={changeMonth}
             />
           </m.div>
           <m.div {...appear(2)}>
@@ -230,7 +255,17 @@ export function TransactionTracker() {
             </p>
           )}
 
-          <div className="mt-4">
+          {/* A new key per month starts a fresh list, which slides in from
+              the side you moved to. Within a month the key stays the same,
+              so only rows that are added or removed move. */}
+          <m.div
+            key={month}
+            custom={monthDirection}
+            variants={monthSlide}
+            initial={monthDirection === 0 ? false : "enter"}
+            animate="center"
+            className="mt-4"
+          >
             <TransactionList
               transactions={monthTransactions}
               emptyMessage={
@@ -242,7 +277,7 @@ export function TransactionTracker() {
               editingId={sheetOpen && editing ? editing.id : null}
               onEdit={openEdit}
             />
-          </div>
+          </m.div>
 
           <p className="mt-3 text-sm text-muted">
             Saved in this browser on this device only. Clearing your browser
@@ -285,6 +320,8 @@ export function TransactionTracker() {
         </span>
         Add
       </button>
+
+      <Toast notice={notice} />
 
       <Sheet
         open={sheetOpen}

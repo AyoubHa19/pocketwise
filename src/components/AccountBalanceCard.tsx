@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { fitOneLine } from "@/components/fitOneLine";
 import { cardClass, colorTransition } from "@/components/formStyles";
 import { formatDayLabel } from "@/lib/dates";
@@ -76,7 +77,7 @@ function BalanceAmount({
         }`}
         style={fitOneLine(balance, "1.125rem", "1.5rem")}
       >
-        {balance}
+        <AnimatedNumber text={balance} value={balanceMinor} />
       </p>
       <p className="mt-1 truncate text-sm text-muted">
         Started with {start} · {formatDayLabel(openingBalance.date, today)}

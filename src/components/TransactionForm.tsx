@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
+import { useId, useState, type FormEvent } from "react";
 import {
   amountFieldClass,
   dangerButtonClass,
@@ -9,6 +11,7 @@ import {
   secondaryButtonClass,
 } from "@/components/formStyles";
 import { amountToInputText, currencyDecimals, parseAmount } from "@/lib/money";
+import { fadeRise } from "@/lib/motion";
 import {
   CATEGORIES,
   newTransactionId,
@@ -58,7 +61,12 @@ export function TransactionForm({
     transaction?.date ?? null,
   );
   const [note, setNote] = useState(transaction?.note ?? "");
-  const [error, setError] = useState<string | null>(null);
+  // Which field the error is about, so that field can be marked invalid.
+  const [error, setError] = useState<{
+    field: "amount" | "date";
+    message: string;
+  } | null>(null);
+  const errorId = useId();
 
   const today = useToday();
   const date = pickedDate ?? today;
@@ -68,15 +76,17 @@ export function TransactionForm({
 
     const amountMinor = parseAmount(amount, currency);
     if (amountMinor === null) {
-      setError(
-        decimals === 0
-          ? `Enter a whole amount greater than zero, like 1500. ${currency} has no decimals.`
-          : `Enter an amount greater than zero, like 12.50, with up to ${decimals} decimals.`,
-      );
+      setError({
+        field: "amount",
+        message:
+          decimals === 0
+            ? `Enter a whole amount greater than zero, like 1500. ${currency} has no decimals.`
+            : `Enter an amount greater than zero, like 12.50, with up to ${decimals} decimals.`,
+      });
       return;
     }
     if (!date) {
-      setError("Pick a date.");
+      setError({ field: "date", message: "Pick a date." });
       return;
     }
 
@@ -107,7 +117,8 @@ export function TransactionForm({
             placeholder={decimals === 0 ? "0" : `0.${"0".repeat(decimals)}`}
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
-            aria-invalid={error !== null && amount !== "" ? true : undefined}
+            aria-invalid={error?.field === "amount" ? true : undefined}
+            aria-describedby={error?.field === "amount" ? errorId : undefined}
             className={amountFieldClass}
           />
         </label>
@@ -145,6 +156,8 @@ export function TransactionForm({
             type="date"
             value={date}
             onChange={(event) => setPickedDate(event.target.value)}
+            aria-invalid={error?.field === "date" ? true : undefined}
+            aria-describedby={error?.field === "date" ? errorId : undefined}
             className={fieldClass}
           />
         </label>
@@ -161,11 +174,24 @@ export function TransactionForm({
         </label>
       </div>
 
-      {error && (
-        <p role="alert" className="mt-4 text-sm text-danger">
-          {error}
-        </p>
-      )}
+      {/* The message fades in. It's announced the moment it's added
+          (role="alert"), so screen readers don't wait for the animation. */}
+      <AnimatePresence initial={false}>
+        {error && (
+          <m.p
+            key={error.message}
+            id={errorId}
+            role="alert"
+            variants={fadeRise}
+            initial="hidden"
+            animate="shown"
+            exit="hidden"
+            className="mt-4 text-sm text-danger"
+          >
+            {error.message}
+          </m.p>
+        )}
+      </AnimatePresence>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <button type="submit" className={primaryButtonClass}>

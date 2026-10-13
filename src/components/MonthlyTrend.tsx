@@ -1,10 +1,16 @@
+"use client";
+
+import { useInView, useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
+import { useRef } from "react";
 import { cardClass } from "@/components/formStyles";
 import { formatMonth, formatMonthShort } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { barTransition } from "@/lib/motion";
 import type { MonthTotals } from "@/lib/summary";
 
 type Props = {
-  /** From monthlyTotals: oldest first. */
+  /** From monthlyTotals: oldest first, ending with the selected month. */
   months: MonthTotals[];
   /** The month on screen, highlighted. */
   selectedMonth: string;
@@ -27,18 +33,36 @@ const STROKE = 1.5; // The spending bars' outline
  * light as each other (1.33:1), so to someone who can't see green they'd
  * look the same. Solid against hollow works for everyone, and income is
  * always the left bar of each pair. The legend shows both shapes.
+ *
+ * Motion: the bars rise from the baseline the first time the chart is on
+ * screen, and adjust when a month's totals change. Moving to another month
+ * shows a different set of months, so those bars simply appear: sliding
+ * one month's bar into another's would suggest a change that didn't happen.
  */
 export function MonthlyTrend({ months, selectedMonth, currency }: Props) {
-  const largest = Math.max(1, ...months.flatMap((m) => [m.incomeMinor, m.spendingMinor]));
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.3 });
+  const reduced = useReducedMotion() ?? false;
+
+  const largest = Math.max(
+    1,
+    ...months.flatMap((month) => [month.incomeMinor, month.spendingMinor]),
+  );
   const columnWidth = WIDTH / months.length;
   const barWidth = columnWidth * 0.28;
   const money = (amountMinor: number) => formatMoney({ amountMinor, currency });
   // Bars start at the bottom; SVG's y grows downwards, so a bar of height h
-  // starts at HEIGHT - h.
-  const height = (amountMinor: number) => (amountMinor / largest) * HEIGHT;
+  // starts at HEIGHT - h. Until the chart has been seen, they're drawn flat.
+  const realHeight = (amountMinor: number) => (amountMinor / largest) * HEIGHT;
+  const shownHeight = (amountMinor: number) => (inView ? realHeight(amountMinor) : 0);
+  const flat = { y: HEIGHT, height: 0 };
 
   return (
-    <section aria-labelledby="trend-heading" className={`${cardClass} p-5 sm:p-6`}>
+    <section
+      ref={ref}
+      aria-labelledby="trend-heading"
+      className={`${cardClass} p-5 sm:p-6`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h2 id="trend-heading" className="font-semibold">
           Last {months.length} months
@@ -56,45 +80,58 @@ export function MonthlyTrend({ months, selectedMonth, currency }: Props) {
 
       <div aria-hidden="true" className="mt-4">
         <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="block h-auto w-full">
-          {months.map((m, index) => {
-            const x = index * columnWidth;
-            const barsStart = x + (columnWidth - (2 * barWidth + BAR_GAP)) / 2;
-            return (
-              <g key={m.month}>
-                {m.month === selectedMonth && (
-                  <rect
-                    x={x + 2}
-                    y={0}
-                    width={columnWidth - 4}
-                    height={HEIGHT}
-                    rx={6}
-                    className="fill-surface-muted"
-                  />
-                )}
-                <rect
-                  x={barsStart}
-                  y={HEIGHT - height(m.incomeMinor)}
-                  width={barWidth}
-                  height={height(m.incomeMinor)}
-                  rx={2}
-                  className="fill-positive"
-                />
-                {/* Hollow: the outline sits just inside the bar's area, so
-                    both bars of a pair are the same size. */}
-                {height(m.spendingMinor) >= STROKE && (
-                  <rect
-                    x={barsStart + barWidth + BAR_GAP + STROKE / 2}
-                    y={HEIGHT - height(m.spendingMinor) + STROKE / 2}
-                    width={barWidth - STROKE}
-                    height={height(m.spendingMinor) - STROKE}
+          {/* One group per set of months: a new set (another month chosen)
+              starts afresh, at its values once the chart has been seen. */}
+          <g key={selectedMonth}>
+            {months.map((month, index) => {
+              const x = index * columnWidth;
+              const barsStart = x + (columnWidth - (2 * barWidth + BAR_GAP)) / 2;
+              const incomeHeight = shownHeight(month.incomeMinor);
+              const spendingHeight = shownHeight(month.spendingMinor);
+              return (
+                <g key={month.month}>
+                  {month.month === selectedMonth && (
+                    <rect
+                      x={x + 2}
+                      y={0}
+                      width={columnWidth - 4}
+                      height={HEIGHT}
+                      rx={6}
+                      className="fill-surface-muted"
+                    />
+                  )}
+                  <m.rect
+                    x={barsStart}
+                    width={barWidth}
                     rx={2}
-                    strokeWidth={STROKE}
-                    className="fill-transparent stroke-muted"
+                    initial={inView ? false : flat}
+                    animate={{ y: HEIGHT - incomeHeight, height: incomeHeight }}
+                    transition={barTransition(reduced)}
+                    className="fill-positive"
                   />
-                )}
-              </g>
-            );
-          })}
+                  {/* Hollow: the outline sits just inside the bar's area, so
+                      both bars of a pair are the same size. Whether to draw
+                      it depends on its real height, not its height while
+                      still flat, or it would appear without rising. */}
+                  {realHeight(month.spendingMinor) >= STROKE && (
+                    <m.rect
+                      x={barsStart + barWidth + BAR_GAP + STROKE / 2}
+                      width={barWidth - STROKE}
+                      rx={2}
+                      strokeWidth={STROKE}
+                      initial={inView ? false : flat}
+                      animate={{
+                        y: HEIGHT - Math.max(spendingHeight, STROKE) + STROKE / 2,
+                        height: Math.max(spendingHeight - STROKE, 0),
+                      }}
+                      transition={barTransition(reduced)}
+                      className="fill-transparent stroke-muted"
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </g>
           {/* The baseline, so empty months still show where zero is. */}
           <line
             x1={0}
@@ -109,14 +146,16 @@ export function MonthlyTrend({ months, selectedMonth, currency }: Props) {
           className="mt-2 grid text-center text-xs"
           style={{ gridTemplateColumns: `repeat(${months.length}, minmax(0, 1fr))` }}
         >
-          {months.map((m) => (
+          {months.map((month) => (
             <span
-              key={m.month}
+              key={month.month}
               className={
-                m.month === selectedMonth ? "font-semibold text-foreground" : "text-muted"
+                month.month === selectedMonth
+                  ? "font-semibold text-foreground"
+                  : "text-muted"
               }
             >
-              {formatMonthShort(m.month)}
+              {formatMonthShort(month.month)}
             </span>
           ))}
         </div>
@@ -132,11 +171,11 @@ export function MonthlyTrend({ months, selectedMonth, currency }: Props) {
           </tr>
         </thead>
         <tbody>
-          {months.map((m) => (
-            <tr key={m.month}>
-              <th scope="row">{formatMonth(m.month)}</th>
-              <td>{money(m.incomeMinor)}</td>
-              <td>{money(m.spendingMinor)}</td>
+          {months.map((month) => (
+            <tr key={month.month}>
+              <th scope="row">{formatMonth(month.month)}</th>
+              <td>{money(month.incomeMinor)}</td>
+              <td>{money(month.spendingMinor)}</td>
             </tr>
           ))}
         </tbody>

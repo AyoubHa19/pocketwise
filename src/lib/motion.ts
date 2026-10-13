@@ -35,3 +35,62 @@ export const fadeRise: Variants = {
     transition: { ...baseTransition, delay: order * stagger },
   }),
 };
+
+// Stage 7: motion that follows the data. Each one moves only what changed.
+
+/**
+ * A number changing: the old value slides out and the new one in, up when
+ * the value grew (`custom` 1) and down when it shrank (-1). Nothing is shown
+ * in between, so every figure on screen is a real one.
+ */
+export const numberSwap: Variants = {
+  enter: (direction: number) => ({ opacity: 0, y: direction < 0 ? -6 : 6 }),
+  center: { opacity: 1, y: 0, transition: baseTransition },
+  exit: (direction: number) => ({
+    opacity: 0,
+    y: direction < 0 ? 6 : -6,
+    transition: { duration: duration.fast, ease },
+  }),
+};
+
+/**
+ * A new month's content arriving from the side you moved to: from the
+ * right for a later month (`custom` 1), from the left for an earlier one.
+ */
+export const monthSlide: Variants = {
+  enter: (direction: number) => ({ opacity: 0, x: direction * 16 }),
+  center: { opacity: 1, x: 0, transition: baseTransition },
+};
+
+/**
+ * A list row or day appearing or going away: it grows from or shrinks to
+ * nothing, so the rows around it make room smoothly instead of jumping.
+ * Height isn't a transform, so MotionProvider's reduced motion doesn't stop
+ * it; pass `reduced` to make it instant then.
+ */
+export function collapse(reduced: boolean): Variants {
+  const time = (seconds: number) => (reduced ? 0 : seconds);
+  return {
+    collapsed: {
+      opacity: 0,
+      height: 0,
+      transition: {
+        height: { duration: time(duration.base), ease },
+        opacity: { duration: time(duration.fast), ease },
+      },
+    },
+    open: {
+      opacity: 1,
+      height: "auto",
+      transition: {
+        height: { duration: time(duration.base), ease },
+        opacity: { duration: time(duration.base), ease, delay: time(0.05) },
+      },
+    },
+  };
+}
+
+/** Chart bars and progress bars moving to their value. */
+export function barTransition(reduced: boolean): Transition {
+  return reduced ? { duration: 0 } : { duration: duration.slow, ease };
+}

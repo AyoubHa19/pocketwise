@@ -40,11 +40,15 @@ export const colorTransition =
 export const pressable =
   "transition-[color,background-color,border-color,opacity,scale] duration-150 ease-pocket active:scale-[0.98] motion-reduce:active:scale-100";
 
+// A field marked aria-invalid (its value was rejected) gets a red border,
+// even on hover, as well as the written error message.
+const invalid = "aria-invalid:border-danger aria-invalid:hover:border-danger";
+
 // text-base (16px) stops phones from zooming in when a field is tapped.
-export const fieldClass = `mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-base text-foreground hover:border-muted ${colorTransition}`;
+export const fieldClass = `mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-base text-foreground hover:border-muted ${invalid} ${colorTransition}`;
 
 /** The big amount field at the top of the transaction form. */
-export const amountFieldClass = `mt-1 block min-h-14 w-full rounded-control border border-line-strong bg-surface px-4 py-2 text-2xl font-semibold tabular-nums text-foreground hover:border-muted ${colorTransition}`;
+export const amountFieldClass = `mt-1 block min-h-14 w-full rounded-control border border-line-strong bg-surface px-4 py-2 text-2xl font-semibold tabular-nums text-foreground hover:border-muted ${invalid} ${colorTransition}`;
 
 export const primaryButtonClass = `inline-flex min-h-11 w-full items-center justify-center rounded-control bg-accent px-5 font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50 sm:w-auto ${pressable}`;
 

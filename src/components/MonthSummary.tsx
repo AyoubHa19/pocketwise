@@ -1,13 +1,18 @@
+"use client";
+
+import { useReducedMotion } from "motion/react";
+import * as m from "motion/react-m";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { fitOneLine } from "@/components/fitOneLine";
 import { cardClass } from "@/components/formStyles";
 import { formatMoney } from "@/lib/money";
+import { barTransition } from "@/lib/motion";
 import { percentOfIncomeSpent, type CurrencyTotals } from "@/lib/summary";
 
 type Props = {
   /** From totalsByCurrency: the main currency first, then any others. */
   totals: CurrencyTotals[];
 };
-
 
 /**
  * The month at a glance: the balance large, since it's what people look
@@ -22,6 +27,7 @@ export function MonthSummary({ totals }: Props) {
   const balance = money(main.balanceMinor);
   const income = money(main.incomeMinor);
   const spending = money(main.spendingMinor);
+  const reduced = useReducedMotion() ?? false;
 
   return (
     <div className={`${cardClass} p-5 sm:p-6`}>
@@ -41,7 +47,7 @@ export function MonthSummary({ totals }: Props) {
             }`}
             style={fitOneLine(balance, "1.25rem", "var(--balance-max)")}
           >
-            {balance}
+            <AnimatedNumber text={balance} value={main.balanceMinor} />
           </dd>
         </div>
 
@@ -55,7 +61,7 @@ export function MonthSummary({ totals }: Props) {
               className="mt-0.5 leading-7 font-semibold tabular-nums text-positive [overflow-wrap:anywhere]"
               style={fitOneLine(income, "0.875rem", "1.125rem")}
             >
-              {income}
+              <AnimatedNumber text={income} value={main.incomeMinor} />
             </dd>
           </div>
           <div className="min-w-0 @container">
@@ -64,7 +70,7 @@ export function MonthSummary({ totals }: Props) {
               className="mt-0.5 leading-7 font-semibold tabular-nums [overflow-wrap:anywhere]"
               style={fitOneLine(spending, "0.875rem", "1.125rem")}
             >
-              {spending}
+              <AnimatedNumber text={spending} value={main.spendingMinor} />
             </dd>
           </div>
         </div>
@@ -88,11 +94,16 @@ export function MonthSummary({ totals }: Props) {
             aria-hidden="true"
             className="h-2 overflow-hidden rounded-full bg-surface-muted"
           >
-            <div
-              className={`h-full rounded-full ${
+            {/* Full width, scaled from the left to the share spent: a
+                transform, so moving to a new share is cheap and smooth. */}
+            <m.div
+              initial={false}
+              animate={{ scaleX: Math.min(spentPercent, 100) / 100 }}
+              transition={barTransition(reduced)}
+              style={{ originX: 0 }}
+              className={`h-full w-full rounded-full ${
                 spentPercent > 100 ? "bg-danger" : "bg-accent"
               }`}
-              style={{ width: `${Math.min(spentPercent, 100)}%` }}
             />
           </div>
           <p className="mt-2 text-sm text-muted">
