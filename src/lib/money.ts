@@ -11,6 +11,9 @@ export type Money = {
   currency: string;
 };
 
+/** Currencies offered in the form for now. Any ISO 4217 code works. */
+export const CURRENCIES = ["USD", "EUR", "GBP", "MAD", "JPY"] as const;
+
 /** How many decimal places a currency uses: 2 for USD, 0 for JPY, 3 for KWD. */
 export function currencyDecimals(currency: string): number {
   return new Intl.NumberFormat("en", { style: "currency", currency })
@@ -29,4 +32,22 @@ export function formatMoney(money: Money, locale = "en-US"): string {
     style: "currency",
     currency: money.currency,
   }).format(money.amountMinor / 10 ** decimals);
+}
+
+/**
+ * Turns what the user typed, like "19.99" or "19,99", into minor units (1999).
+ * It works on the text itself rather than multiplying decimals, so no
+ * rounding error can creep in. Returns null unless the text is a plain amount
+ * greater than zero with at most the currency's number of decimals.
+ */
+export function parseAmount(input: string, currency: string): number | null {
+  const match = /^(\d+)(?:[.,](\d*))?$/.exec(input.trim());
+  if (!match) return null;
+  const [, whole, fraction = ""] = match;
+  const decimals = currencyDecimals(currency);
+  if (fraction.length > decimals) return null;
+  const amountMinor = Number(whole + fraction.padEnd(decimals, "0"));
+  return Number.isSafeInteger(amountMinor) && amountMinor > 0
+    ? amountMinor
+    : null;
 }
