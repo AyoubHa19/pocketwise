@@ -56,6 +56,11 @@ export function MonthlyTrend({ months, selectedMonth, currency }: Props) {
   const realHeight = (amountMinor: number) => (amountMinor / largest) * HEIGHT;
   const shownHeight = (amountMinor: number) => (inView ? realHeight(amountMinor) : 0);
   const flat = { y: HEIGHT, height: 0 };
+  // With nothing in any of the months, there are no bars to draw: a bare
+  // baseline would look broken, so a sentence explains what will be here.
+  const empty = months.every(
+    (month) => month.incomeMinor === 0 && month.spendingMinor === 0,
+  );
 
   return (
     <section
@@ -67,126 +72,137 @@ export function MonthlyTrend({ months, selectedMonth, currency }: Props) {
         <h2 id="trend-heading" className="font-semibold">
           Last {months.length} months
         </h2>
-        <ul aria-hidden="true" className="flex gap-4 text-sm text-muted">
-          <li className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-positive" /> Income
-          </li>
-          <li className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm border-[1.5px] border-muted" />{" "}
-            Spending
-          </li>
-        </ul>
+        {!empty && (
+          <ul aria-hidden="true" className="flex gap-4 text-sm text-muted">
+            <li className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm bg-positive" /> Income
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm border-[1.5px] border-muted" />{" "}
+              Spending
+            </li>
+          </ul>
+        )}
       </div>
 
-      <div aria-hidden="true" className="mt-4">
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="block h-auto w-full">
-          {/* One group per set of months: a new set (another month chosen)
-              starts afresh, at its values once the chart has been seen. */}
-          <g key={selectedMonth}>
-            {months.map((month, index) => {
-              const x = index * columnWidth;
-              const barsStart = x + (columnWidth - (2 * barWidth + BAR_GAP)) / 2;
-              const incomeHeight = shownHeight(month.incomeMinor);
-              const spendingHeight = shownHeight(month.spendingMinor);
-              return (
-                <g key={month.month}>
-                  {month.month === selectedMonth && (
-                    <rect
-                      x={x + 2}
-                      y={0}
-                      width={columnWidth - 4}
-                      height={HEIGHT}
-                      rx={6}
-                      className="fill-surface-muted"
-                    />
-                  )}
-                  <m.rect
-                    x={barsStart}
-                    width={barWidth}
-                    rx={2}
-                    initial={inView ? false : flat}
-                    animate={{ y: HEIGHT - incomeHeight, height: incomeHeight }}
-                    transition={barTransition(reduced)}
-                    className="fill-positive"
-                  />
-                  {/* Hollow: the outline sits just inside the bar's area, so
-                      both bars of a pair are the same size. Whether to draw
-                      it depends on its real height, not its height while
-                      still flat, or it would appear without rising. */}
-                  {realHeight(month.spendingMinor) >= STROKE && (
-                    <m.rect
-                      x={barsStart + barWidth + BAR_GAP + STROKE / 2}
-                      width={barWidth - STROKE}
-                      rx={2}
-                      strokeWidth={STROKE}
-                      initial={inView ? false : flat}
-                      animate={{
-                        y: HEIGHT - Math.max(spendingHeight, STROKE) + STROKE / 2,
-                        height: Math.max(spendingHeight - STROKE, 0),
-                      }}
-                      transition={barTransition(reduced)}
-                      className="fill-transparent stroke-muted"
-                    />
-                  )}
-                </g>
-              );
-            })}
-          </g>
-          {/* The baseline, so empty months still show where zero is. */}
-          <line
-            x1={0}
-            y1={HEIGHT - 0.5}
-            x2={WIDTH}
-            y2={HEIGHT - 0.5}
-            className="stroke-line-strong"
-            strokeWidth={1}
-          />
-        </svg>
-        <div
-          className="mt-2 grid text-center text-xs"
-          style={{ gridTemplateColumns: `repeat(${months.length}, minmax(0, 1fr))` }}
-        >
-          {months.map((month) => (
-            <span
-              key={month.month}
-              className={
-                month.month === selectedMonth
-                  ? "font-semibold text-foreground"
-                  : "text-muted"
-              }
+      {empty ? (
+        <p className="mt-2 text-sm text-muted">
+          Your income and spending for the last {months.length} months will
+          appear here as you add transactions.
+        </p>
+      ) : (
+        <>
+          <div aria-hidden="true" className="mt-4">
+            <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="block h-auto w-full">
+              {/* One group per set of months: a new set (another month chosen)
+                  starts afresh, at its values once the chart has been seen. */}
+              <g key={selectedMonth}>
+                {months.map((month, index) => {
+                  const x = index * columnWidth;
+                  const barsStart = x + (columnWidth - (2 * barWidth + BAR_GAP)) / 2;
+                  const incomeHeight = shownHeight(month.incomeMinor);
+                  const spendingHeight = shownHeight(month.spendingMinor);
+                  return (
+                    <g key={month.month}>
+                      {month.month === selectedMonth && (
+                        <rect
+                          x={x + 2}
+                          y={0}
+                          width={columnWidth - 4}
+                          height={HEIGHT}
+                          rx={6}
+                          className="fill-surface-muted"
+                        />
+                      )}
+                      <m.rect
+                        x={barsStart}
+                        width={barWidth}
+                        rx={2}
+                        initial={inView ? false : flat}
+                        animate={{ y: HEIGHT - incomeHeight, height: incomeHeight }}
+                        transition={barTransition(reduced)}
+                        className="fill-positive"
+                      />
+                      {/* Hollow: the outline sits just inside the bar's area, so
+                          both bars of a pair are the same size. Whether to draw
+                          it depends on its real height, not its height while
+                          still flat, or it would appear without rising. */}
+                      {realHeight(month.spendingMinor) >= STROKE && (
+                        <m.rect
+                          x={barsStart + barWidth + BAR_GAP + STROKE / 2}
+                          width={barWidth - STROKE}
+                          rx={2}
+                          strokeWidth={STROKE}
+                          initial={inView ? false : flat}
+                          animate={{
+                            y: HEIGHT - Math.max(spendingHeight, STROKE) + STROKE / 2,
+                            height: Math.max(spendingHeight - STROKE, 0),
+                          }}
+                          transition={barTransition(reduced)}
+                          className="fill-transparent stroke-muted"
+                        />
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+              {/* The baseline, so empty months still show where zero is. */}
+              <line
+                x1={0}
+                y1={HEIGHT - 0.5}
+                x2={WIDTH}
+                y2={HEIGHT - 0.5}
+                className="stroke-line-strong"
+                strokeWidth={1}
+              />
+            </svg>
+            <div
+              className="mt-2 grid text-center text-xs"
+              style={{ gridTemplateColumns: `repeat(${months.length}, minmax(0, 1fr))` }}
             >
-              {formatMonthShort(month.month)}
-            </span>
-          ))}
-        </div>
-      </div>
+              {months.map((month) => (
+                <span
+                  key={month.month}
+                  className={
+                    month.month === selectedMonth
+                      ? "font-semibold text-foreground"
+                      : "text-muted"
+                  }
+                >
+                  {formatMonthShort(month.month)}
+                </span>
+              ))}
+            </div>
+          </div>
 
-      {/* sr-only goes on a wrapper, not the table: a table ignores the 1px
-          width sr-only gives it and stays full size, which stuck out past
-          the edge of a phone screen and let the page scroll sideways. */}
-      <div className="sr-only">
-        <table>
-          <caption>
-            Income and spending for the last {months.length} months
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Month</th>
-              <th scope="col">Income</th>
-              <th scope="col">Spending</th>
-            </tr>
-          </thead>
-          <tbody>
-            {months.map((month) => (
-              <tr key={month.month}>
-                <th scope="row">{formatMonth(month.month)}</th>
-                <td>{money(month.incomeMinor)}</td>
-                <td>{money(month.spendingMinor)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          {/* sr-only goes on a wrapper, not the table: a table ignores the 1px
+              width sr-only gives it and stays full size, which stuck out past
+              the edge of a phone screen and let the page scroll sideways. */}
+          <div className="sr-only">
+            <table>
+              <caption>
+                Income and spending for the last {months.length} months
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Month</th>
+                  <th scope="col">Income</th>
+                  <th scope="col">Spending</th>
+                </tr>
+              </thead>
+              <tbody>
+                {months.map((month) => (
+                  <tr key={month.month}>
+                    <th scope="row">{formatMonth(month.month)}</th>
+                    <td>{money(month.incomeMinor)}</td>
+                    <td>{money(month.spendingMinor)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </section>
   );
 }

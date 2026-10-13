@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   cardClass,
   dangerButtonClass,
@@ -20,7 +20,12 @@ export function OpeningBalanceForm() {
   // null until the user types or picks something; until then, show what's saved.
   const [amountText, setAmountText] = useState<string | null>(null);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Which field the error is about, so only that field is marked invalid.
+  const [error, setError] = useState<{
+    field: "amount" | "date";
+    message: string;
+  } | null>(null);
+  const errorId = useId();
   const [status, setStatus] = useState<Status>("idle");
   const formRef = useRef<HTMLFormElement>(null);
   const ready = settings !== null && settings.currency !== null;
@@ -34,7 +39,8 @@ export function OpeningBalanceForm() {
     }
   }, [ready]);
 
-  // The currency form above shows "Loading…" and the first-run choice.
+  // The currency form (above, or beside on large screens) shows "Loading…"
+  // and the first-run choice.
   if (settings === null || settings.currency === null) return null;
 
   const saved = settings.openingBalance;
@@ -47,13 +53,14 @@ export function OpeningBalanceForm() {
     const amountMinor = parseBalance(amount, currency);
     if (amountMinor === null) {
       const decimals = currencyDecimals(currency);
-      setError(
-        `Enter an amount like ${decimals === 0 ? "3000" : "3000.00"}, or with a minus for an overdraft, like -250.`,
-      );
+      setError({
+        field: "amount",
+        message: `Enter an amount like ${decimals === 0 ? "3000" : "3000.00"}, or with a minus for an overdraft, like -250.`,
+      });
       return;
     }
     if (!date) {
-      setError("Pick a date.");
+      setError({ field: "date", message: "Pick a date." });
       return;
     }
     setError(null);
@@ -78,7 +85,7 @@ export function OpeningBalanceForm() {
       ref={formRef}
       onSubmit={handleSubmit}
       noValidate
-      className={`${cardClass} mt-6 max-w-lg scroll-mt-6 p-4 sm:p-6`}
+      className={`${cardClass} max-w-lg scroll-mt-6 p-4 sm:p-6 lg:max-w-none`}
     >
       <h2 className="text-lg font-semibold">Starting balance</h2>
       <p className="mt-1 text-sm text-muted">
@@ -106,7 +113,8 @@ export function OpeningBalanceForm() {
               setAmountText(event.target.value);
               changed();
             }}
-            aria-invalid={error !== null ? true : undefined}
+            aria-invalid={error?.field === "amount" ? true : undefined}
+            aria-describedby={error?.field === "amount" ? errorId : undefined}
             className={fieldClass}
           />
         </label>
@@ -119,14 +127,16 @@ export function OpeningBalanceForm() {
               setPickedDate(event.target.value);
               changed();
             }}
+            aria-invalid={error?.field === "date" ? true : undefined}
+            aria-describedby={error?.field === "date" ? errorId : undefined}
             className={fieldClass}
           />
         </label>
       </div>
 
       {error && (
-        <p role="alert" className="mt-4 text-sm text-danger">
-          {error}
+        <p id={errorId} role="alert" className="mt-4 text-sm text-danger">
+          {error.message}
         </p>
       )}
 
@@ -143,7 +153,7 @@ export function OpeningBalanceForm() {
 
       {status === "saved" && (
         <p role="status" className="mt-4 text-sm text-positive">
-          Saved. Your account balance is on the Transactions page.
+          Saved. Your account balance is on the Dashboard.
         </p>
       )}
       {status === "removed" && (

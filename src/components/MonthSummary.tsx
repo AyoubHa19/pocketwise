@@ -42,7 +42,7 @@ export function MonthSummary({ totals }: Props) {
               shrinking never moves anything below. overflow-wrap is only a
               last resort for amounts too long even at the minimum size. */}
           <dd
-            className={`mt-1 leading-9 font-semibold tracking-tight tabular-nums [--balance-max:1.875rem] [overflow-wrap:anywhere] sm:leading-12 sm:[--balance-max:3rem] lg:leading-10 lg:[--balance-max:2.25rem] ${
+            className={`mt-1 leading-9 font-semibold tracking-tight tabular-nums [--balance-max:1.875rem] [overflow-wrap:anywhere] sm:leading-12 sm:[--balance-max:3rem] ${
               overspent ? "text-danger" : ""
             }`}
             style={fitOneLine(balance, "1.25rem", "var(--balance-max)")}

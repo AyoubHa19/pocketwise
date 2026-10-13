@@ -46,7 +46,7 @@ export function DashboardSkeleton() {
           <div className="flex h-5 items-center">
             <div className={`${bone} h-3.5 w-16`} />
           </div>
-          <div className={`${bone} mt-1 h-9 w-48 sm:h-12 lg:h-10`} />
+          <div className={`${bone} mt-1 h-9 w-48 sm:h-12`} />
           {/* Income and spending: a label line and an amount line */}
           <div className="mt-5 grid gap-4 border-t border-line pt-4 @2xs:grid-cols-2">
             <div className={`${bone} h-[3.125rem]`} />

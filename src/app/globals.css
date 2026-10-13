@@ -78,7 +78,6 @@
   --ease-pocket: cubic-bezier(0.22, 1, 0.36, 1);
 
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 /* Always keep room for the scrollbar, so the page doesn't shift sideways

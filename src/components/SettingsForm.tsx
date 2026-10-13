@@ -16,7 +16,7 @@ export function SettingsForm() {
 
   // Settings come from the browser's storage, so wait until they're read.
   if (settings === null) {
-    return <p className="mt-10 text-sm text-muted">Loading…</p>;
+    return <p className="text-sm text-muted">Loading…</p>;
   }
 
   const currency = selected ?? settings.currency ?? "";
@@ -32,7 +32,7 @@ export function SettingsForm() {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className={`${cardClass} mt-10 max-w-lg p-4 sm:p-6`}
+      className={`${cardClass} max-w-lg p-4 sm:p-6 lg:max-w-none`}
     >
       <h2 className="text-lg font-semibold">Currency</h2>
       <p className="mt-1 text-sm text-muted">

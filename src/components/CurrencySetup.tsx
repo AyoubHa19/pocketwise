@@ -21,38 +21,49 @@ export function CurrencySetup() {
     setCurrency(selected);
   }
 
+  // Centred with a short welcome: it's the first thing a new user sees, so
+  // it says what Pocketwise is before asking for anything.
   return (
-    <form
-      onSubmit={handleSubmit}
-      noValidate
-      className={`${cardClass} max-w-lg p-4 sm:p-6`}
-    >
-      <h2 className="text-lg font-semibold">Choose your currency</h2>
-      <p className="mt-1 text-sm text-muted">
-        Pocketwise uses it for the transactions you add. You can change it
-        later in Settings.
+    <div className="mx-auto max-w-lg sm:py-8">
+      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+        Welcome to Pocketwise
+      </h2>
+      <p className="mt-2 text-muted">
+        Track your income and spending, month by month.
       </p>
 
-      <label className="mt-4 block text-sm font-medium">
-        Currency
-        <CurrencySelect
-          value={selected}
-          onChange={(code) => {
-            setSelected(code);
-            setError(null);
-          }}
-        />
-      </label>
-
-      {error && (
-        <p role="alert" className="mt-4 text-sm text-danger">
-          {error}
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className={`${cardClass} mt-6 p-4 sm:p-6`}
+      >
+        <h3 className="text-lg font-semibold">Choose your currency</h3>
+        <p className="mt-1 text-sm text-muted">
+          Pocketwise uses it for the transactions you add. You can change it
+          later in Settings.
         </p>
-      )}
 
-      <button type="submit" className={`mt-6 ${primaryButtonClass}`}>
-        Continue
-      </button>
-    </form>
+        <label className="mt-4 block text-sm font-medium">
+          Currency
+          <CurrencySelect
+            value={selected}
+            onChange={(code) => {
+              setSelected(code);
+              setError(null);
+            }}
+          />
+        </label>
+
+        {error && (
+          <p role="alert" className="mt-4 text-sm text-danger">
+            {error}
+          </p>
+        )}
+
+        <button type="submit" className={`mt-6 ${primaryButtonClass}`}>
+          Continue
+        </button>
+      </form>
+    </div>
   );
 }

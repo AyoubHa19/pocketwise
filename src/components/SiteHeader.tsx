@@ -12,7 +12,7 @@ export function SiteHeader() {
           Pocketwise
         </Link>
         <nav aria-label="Main" className="flex gap-1">
-          <NavLink href="/">Transactions</NavLink>
+          <NavLink href="/">Dashboard</NavLink>
           <NavLink href="/settings">Settings</NavLink>
         </nav>
       </div>
