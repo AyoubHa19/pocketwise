@@ -1,3 +1,4 @@
+import { cardClass, textButtonClass } from "@/components/formStyles";
 import { formatMoney } from "@/lib/money";
 import { signedAmount, type Transaction } from "@/lib/transactions";
 
@@ -11,10 +12,6 @@ type Props = {
   onDelete: (transaction: Transaction) => void;
 };
 
-// 44px tall and wide at least, so a finger can't easily hit the wrong one.
-const actionClass =
-  "inline-flex min-h-11 min-w-11 items-center justify-center rounded px-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800";
-
 export function TransactionList({
   transactions,
   emptyMessage,
@@ -24,7 +21,7 @@ export function TransactionList({
 }: Props) {
   if (transactions.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
+      <p className="rounded-card border border-dashed border-line-strong px-4 py-8 text-center text-sm text-muted">
         {emptyMessage}
       </p>
     );
@@ -35,7 +32,8 @@ export function TransactionList({
   const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+    // overflow-hidden keeps the highlighted row inside the rounded corners.
+    <ul className={`${cardClass} divide-y divide-line overflow-hidden`}>
       {sorted.map((transaction) => {
         // Every row has the same two buttons, so screen readers need to hear
         // which transaction each one is for.
@@ -44,12 +42,12 @@ export function TransactionList({
           <li
             key={transaction.id}
             className={`flex items-start justify-between gap-4 px-4 py-3 ${
-              transaction.id === editingId ? "bg-zinc-100 dark:bg-zinc-900" : ""
+              transaction.id === editingId ? "bg-surface-muted" : ""
             }`}
           >
             <div className="min-w-0">
               <p className="font-medium">{transaction.category}</p>
-              <p className="truncate text-sm text-zinc-500">
+              <p className="truncate text-sm text-muted">
                 {transaction.date}
                 {transaction.note && ` · ${transaction.note}`}
               </p>
@@ -57,9 +55,7 @@ export function TransactionList({
             <div className="flex shrink-0 flex-col items-end">
               <p
                 className={`font-medium tabular-nums ${
-                  transaction.type === "income"
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-zinc-900 dark:text-zinc-100"
+                  transaction.type === "income" ? "text-positive" : ""
                 }`}
               >
                 {formatMoney(signedAmount(transaction))}
@@ -69,7 +65,7 @@ export function TransactionList({
                   type="button"
                   onClick={() => onEdit(transaction)}
                   aria-label={`Edit ${label}`}
-                  className={`${actionClass} hover:text-zinc-900 dark:hover:text-zinc-100`}
+                  className={`${textButtonClass} hover:text-foreground`}
                 >
                   Edit
                 </button>
@@ -77,7 +73,7 @@ export function TransactionList({
                   type="button"
                   onClick={() => onDelete(transaction)}
                   aria-label={`Delete ${label}`}
-                  className={`${actionClass} hover:text-red-700 dark:hover:text-red-400`}
+                  className={`${textButtonClass} hover:text-danger`}
                 >
                   Delete
                 </button>

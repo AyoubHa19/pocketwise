@@ -1,25 +1,95 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens: every colour in the app has a name here, so components say
+ * what a colour is for ("muted text", "card") rather than which colour it is.
+ * Each one switches between light and dark mode on its own.
+ *
+ * All text pairs meet WCAG AA contrast (4.5:1, or 3:1 for field borders and
+ * the focus ring) in both modes. Check new colours before adding them.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  color-scheme: light;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --canvas: #f6f7f9; /* The page behind everything */
+  --surface: #ffffff; /* Cards, fields, the header */
+  --surface-muted: #eef0f3; /* Hover, the current link, the row being edited */
+  --foreground: #0f1419; /* Main text */
+  --muted: #5b6472; /* Secondary text: labels, dates, notes */
+  --line: #e3e6ea; /* Card edges and dividers (decoration only) */
+  --line-strong: #868f9c; /* Field and button edges, which must be seen */
+  --accent: #047857; /* Brand green: main buttons, focus ring */
+  --accent-foreground: #ffffff; /* Text on accent */
+  --positive: #047857; /* Income amounts */
+  --danger: #b42318; /* Errors and Delete */
+  --danger-surface: #fef3f2; /* Background of error boxes */
+  --danger-line: #fecdca;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: dark;
+
+    --canvas: #0b0d10;
+    --surface: #14171c;
+    --surface-muted: #1d2128;
+    --foreground: #eceef1;
+    --muted: #9aa3af;
+    --line: #262b33;
+    --line-strong: #6b7482;
+    --accent: #34d399;
+    --accent-foreground: #05291c;
+    --positive: #34d399;
+    --danger: #f97066;
+    --danger-surface: #2a1215;
+    --danger-line: #5c1d22;
+
+    /* Shadows barely show on dark backgrounds; the card edge does the work. */
+    --shadow-card: none;
   }
 }
 
+/* Turns the variables above into Tailwind classes: bg-surface, text-muted,
+   border-line, shadow-card, rounded-card, and so on. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-positive: var(--positive);
+  --color-danger: var(--danger);
+  --color-danger-surface: var(--danger-surface);
+  --color-danger-line: var(--danger-line);
+
+  --shadow-card: var(--shadow-card);
+
+  --radius-card: 1rem; /* 16px, for cards and panels */
+  --radius-control: 0.75rem; /* 12px, for fields and buttons */
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 body {
-  background: var(--background);
+  background: var(--canvas);
   color: var(--foreground);
+}
+
+/* A clear outline for whatever the keyboard has reached. :focus-visible
+   leaves it off for mouse clicks, which don't need it. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: var(--muted);
+  opacity: 1; /* Firefox fades placeholders by default */
 }

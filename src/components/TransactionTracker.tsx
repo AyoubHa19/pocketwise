@@ -70,7 +70,7 @@ export function TransactionTracker() {
   // Both come from the browser's storage, so they're null while the server
   // renders the page and for a moment after it opens.
   if (settings === null || transactions === null) {
-    return <p className="text-sm text-zinc-500">Loading…</p>;
+    return <p className="text-sm text-muted">Loading…</p>;
   }
   if (settings.currency === null) {
     return <CurrencySetup />;
@@ -105,7 +105,7 @@ export function TransactionTracker() {
 
       <div>
         <h2 className="text-lg font-semibold">Transactions in {monthName}</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted">
           Saved in this browser on this device only. Clearing your browser
           data deletes them.
         </p>
@@ -113,7 +113,7 @@ export function TransactionTracker() {
         {saveFailed && (
           <p
             role="alert"
-            className="mt-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+            className="mt-4 rounded-control border border-danger-line bg-danger-surface px-4 py-3 text-sm text-danger"
           >
             Your browser didn&apos;t let Pocketwise save. Your latest changes
             will be lost when you close this page. Storage may be full, or

@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { CurrencySelect } from "@/components/CurrencySelect";
-import { primaryButtonClass } from "@/components/formStyles";
+import { cardClass, primaryButtonClass } from "@/components/formStyles";
 import { setCurrency } from "@/lib/settingsStore";
 
 /** Shown the first time, before the user has picked a currency. */
@@ -25,10 +25,10 @@ export function CurrencySetup() {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="max-w-lg rounded-lg border border-zinc-200 p-4 sm:p-6 dark:border-zinc-800"
+      className={`${cardClass} max-w-lg p-4 sm:p-6`}
     >
       <h2 className="text-lg font-semibold">Choose your currency</h2>
-      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="mt-1 text-sm text-muted">
         Pocketwise uses it for the transactions you add. You can change it
         later in Settings.
       </p>
@@ -45,7 +45,7 @@ export function CurrencySetup() {
       </label>
 
       {error && (
-        <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-4 text-sm text-danger">
           {error}
         </p>
       )}

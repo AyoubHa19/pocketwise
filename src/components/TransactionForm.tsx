@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import {
+  cardClass,
   fieldClass,
   primaryButtonClass,
   secondaryButtonClass,
@@ -96,7 +97,7 @@ export function TransactionForm({
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="rounded-lg border border-zinc-200 p-4 sm:p-6 dark:border-zinc-800"
+      className={`${cardClass} p-4 sm:p-6`}
     >
       <h2 className="text-lg font-semibold">
         {isEditing ? "Edit transaction" : "Add a transaction"}
@@ -155,7 +156,7 @@ export function TransactionForm({
         </label>
 
         <label className="block text-sm font-medium sm:col-span-2">
-          Note <span className="font-normal text-zinc-500">(optional)</span>
+          Note <span className="font-normal text-muted">(optional)</span>
           <input
             type="text"
             maxLength={100}
@@ -167,7 +168,7 @@ export function TransactionForm({
       </div>
 
       {error && (
-        <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-4 text-sm text-danger">
           {error}
         </p>
       )}
