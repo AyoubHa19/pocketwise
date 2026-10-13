@@ -10,18 +10,34 @@ export const cardClass =
 /**
  * The home page layout, shared with its loading skeleton. On phones it's one
  * column in reading order: summary, transactions, charts. From lg (1024px)
- * the summary and the charts stack on the left and the transactions run
- * down the right, without changing that order for screen readers.
+ * it's two rows, in that same order: the summary across the full width,
+ * then the transactions (the wider side) next to the charts.
  *
- * The second row is 1fr so the long transaction list, which spans both rows,
- * pushes its extra height there rather than opening a gap under the summary.
+ * The summary spans the width so no column becomes a tall tower of cards
+ * next to a short one, which left big empty areas when a month had only a
+ * few transactions.
  */
 export const dashboardGridClass =
-  "grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10";
+  "grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-10";
 
-export const dashboardSummaryArea = "lg:col-start-1 lg:row-start-1";
-export const dashboardListArea = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
-export const dashboardChartsArea = "lg:col-start-1 lg:row-start-2";
+export const dashboardSummaryArea = "lg:col-span-2";
+export const dashboardListArea = "lg:col-start-1 lg:row-start-2";
+export const dashboardChartsArea = "lg:col-start-2 lg:row-start-2";
+
+/**
+ * Inside the summary, from lg: the account balance with the month picker
+ * under it on the left, and the month's summary on the right, which is
+ * about as tall as the two together. On phones it's a simple stack.
+ *
+ * The second row is 1fr so, if the month summary is the taller side, the
+ * extra height goes under the month picker rather than between the cards.
+ */
+export const summaryGridClass =
+  "space-y-4 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10 lg:gap-y-4 lg:space-y-0";
+
+export const summaryBalanceArea = "lg:col-start-1 lg:row-start-1";
+export const summaryPickerArea = "lg:col-start-1 lg:row-start-2";
+export const summaryMonthArea = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
 
 // Simple interaction feedback is CSS, not Motion: it needs no JavaScript.
 // Timing matches src/lib/motion.ts (fast = 150ms, ease-pocket).

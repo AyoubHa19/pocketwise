@@ -14,6 +14,10 @@ import {
   dashboardSummaryArea,
   pressable,
   primaryButtonClass,
+  summaryBalanceArea,
+  summaryGridClass,
+  summaryMonthArea,
+  summaryPickerArea,
 } from "@/components/formStyles";
 import { MonthlyTrend } from "@/components/MonthlyTrend";
 import { MonthPicker } from "@/components/MonthPicker";
@@ -188,16 +192,16 @@ export function TransactionTracker() {
       <div className={`${dashboardGridClass} pb-24 sm:pb-0`}>
         <section
           aria-label={`Summary for ${monthName}`}
-          className={`space-y-4 ${dashboardSummaryArea}`}
+          className={`${summaryGridClass} ${dashboardSummaryArea}`}
         >
-          <m.div {...appear(0)}>
+          <m.div {...appear(0)} className={summaryBalanceArea}>
             <AccountBalanceCard
               transactions={transactions}
               openingBalance={settings.openingBalance}
               today={today}
             />
           </m.div>
-          <m.div {...appear(1)}>
+          <m.div {...appear(1)} className={summaryPickerArea}>
             <MonthPicker
               month={month}
               currentMonth={currentMonth}
@@ -205,7 +209,7 @@ export function TransactionTracker() {
               onChange={changeMonth}
             />
           </m.div>
-          <m.div {...appear(2)}>
+          <m.div {...appear(2)} className={summaryMonthArea}>
             <MonthSummary
               totals={totalsByCurrency(monthTransactions, settings.currency)}
             />
@@ -285,9 +289,9 @@ export function TransactionTracker() {
           </p>
         </m.section>
 
-        {/* After the list on phones; under the summary on large screens.
-            On phones they're below the fold, so they appear as they're
-            scrolled to, once; on large screens they're already in view. */}
+        {/* After the list on phones; beside it on large screens. They can
+            start below the fold, so they appear as they're scrolled to,
+            once. */}
         <m.div
           variants={fadeRise}
           initial={playEntrance ? "hidden" : false}

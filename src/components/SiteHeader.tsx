@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 export function SiteHeader() {
   return (
     <header className="border-b border-line bg-surface">
-      <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link
           href="/"
           className="flex min-h-11 items-center text-lg font-semibold tracking-tight"

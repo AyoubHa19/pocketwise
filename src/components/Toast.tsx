@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
+import type { Ref } from "react";
 import { fadeRise } from "@/lib/motion";
 
 export type Notice = {
@@ -34,12 +35,20 @@ export function Toast({ notice }: { notice: Notice | null }) {
   );
 }
 
-function Message({ text }: { text: string }) {
+type MessageProps = {
+  text: string;
+  /** From AnimatePresence, so popLayout can lift a leaving message out of
+      the way (see AnimatedNumber). */
+  ref?: Ref<HTMLParagraphElement>;
+};
+
+function Message({ text, ref }: MessageProps) {
   // A message on its way out is hidden from screen readers, so the status
   // region only ever holds the current one and nothing is read twice.
   const isPresent = useIsPresent();
   return (
     <m.p
+      ref={ref}
       variants={fadeRise}
       initial="hidden"
       animate="shown"

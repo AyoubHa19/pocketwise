@@ -2,7 +2,7 @@
 
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
-import { useState } from "react";
+import { useState, type Ref } from "react";
 import { numberSwap } from "@/lib/motion";
 
 type Props = {
@@ -37,12 +37,22 @@ export function AnimatedNumber({ text, value }: Props) {
   );
 }
 
-function Face({ text, direction }: { text: string; direction: number }) {
+type FaceProps = {
+  text: string;
+  direction: number;
+  /** From AnimatePresence. popLayout measures the leaving number through
+      it to lift it out of the line; without it, the old and new numbers
+      would sit side by side while the old one fades. */
+  ref?: Ref<HTMLSpanElement>;
+};
+
+function Face({ text, direction, ref }: FaceProps) {
   // The number on its way out is hidden from screen readers, so they only
   // ever hear the current one.
   const isPresent = useIsPresent();
   return (
     <m.span
+      ref={ref}
       custom={direction}
       variants={numberSwap}
       initial="enter"

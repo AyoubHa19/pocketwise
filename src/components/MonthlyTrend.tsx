@@ -161,25 +161,32 @@ export function MonthlyTrend({ months, selectedMonth, currency }: Props) {
         </div>
       </div>
 
-      <table className="sr-only">
-        <caption>Income and spending for the last {months.length} months</caption>
-        <thead>
-          <tr>
-            <th scope="col">Month</th>
-            <th scope="col">Income</th>
-            <th scope="col">Spending</th>
-          </tr>
-        </thead>
-        <tbody>
-          {months.map((month) => (
-            <tr key={month.month}>
-              <th scope="row">{formatMonth(month.month)}</th>
-              <td>{money(month.incomeMinor)}</td>
-              <td>{money(month.spendingMinor)}</td>
+      {/* sr-only goes on a wrapper, not the table: a table ignores the 1px
+          width sr-only gives it and stays full size, which stuck out past
+          the edge of a phone screen and let the page scroll sideways. */}
+      <div className="sr-only">
+        <table>
+          <caption>
+            Income and spending for the last {months.length} months
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Month</th>
+              <th scope="col">Income</th>
+              <th scope="col">Spending</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {months.map((month) => (
+              <tr key={month.month}>
+                <th scope="row">{formatMonth(month.month)}</th>
+                <td>{money(month.incomeMinor)}</td>
+                <td>{money(month.spendingMinor)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
