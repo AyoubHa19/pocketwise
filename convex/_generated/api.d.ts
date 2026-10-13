@@ -8,6 +8,10 @@
  * @module
  */
 
+import type * as ownership from "../ownership.js";
+import type * as settings from "../settings.js";
+import type * as transactions from "../transactions.js";
+import type * as validation from "../validation.js";
 import type * as viewer from "../viewer.js";
 
 import type {
@@ -17,6 +21,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  ownership: typeof ownership;
+  settings: typeof settings;
+  transactions: typeof transactions;
+  validation: typeof validation;
   viewer: typeof viewer;
 }>;
 
