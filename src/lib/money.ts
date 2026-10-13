@@ -1,0 +1,32 @@
+/**
+ * An amount of money in one currency.
+ *
+ * `amountMinor` is a whole number in the currency's smallest unit
+ * (cents for USD, yen for JPY, fils for KWD), so 19.99 USD is 1999.
+ * Whole numbers avoid the rounding errors of decimals (0.1 + 0.2 !== 0.3).
+ */
+export type Money = {
+  amountMinor: number;
+  /** ISO 4217 currency code, e.g. "USD", "EUR", "MAD", "JPY". */
+  currency: string;
+};
+
+/** How many decimal places a currency uses: 2 for USD, 0 for JPY, 3 for KWD. */
+export function currencyDecimals(currency: string): number {
+  return new Intl.NumberFormat("en", { style: "currency", currency })
+    .resolvedOptions().maximumFractionDigits ?? 2;
+}
+
+/** Formats money for display, e.g. { 1999, "USD" } becomes "$19.99". */
+export function formatMoney(money: Money, locale = "en-US"): string {
+  if (!Number.isSafeInteger(money.amountMinor)) {
+    throw new Error(
+      `amountMinor must be a whole number, got ${money.amountMinor}`,
+    );
+  }
+  const decimals = currencyDecimals(money.currency);
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: money.currency,
+  }).format(money.amountMinor / 10 ** decimals);
+}
