@@ -1,4 +1,4 @@
-import type { Transaction } from "@/lib/transactions";
+import { signedAmount, type Transaction } from "@/lib/transactions";
 
 /** Totals for one currency, all in minor units (e.g. cents). */
 export type CurrencyTotals = {
@@ -66,4 +66,46 @@ export function totalsByCurrency(
   }
   others.sort((a, b) => a.currency.localeCompare(b.currency));
   return [main, ...others];
+}
+
+/** One day in the transaction list. */
+export type DayGroup = {
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** In the order they were given, which is newest added first. */
+  transactions: Transaction[];
+  /**
+   * Income minus spending that day, per currency, in minor units. Usually
+   * one entry; more only when the day mixes currencies, which aren't added.
+   */
+  netByCurrency: { currency: string; netMinor: number }[];
+};
+
+/** Groups transactions by day, newest day first, with each day's net. */
+export function groupByDay(transactions: Transaction[]): DayGroup[] {
+  const byDate = new Map<string, Transaction[]>();
+  for (const transaction of transactions) {
+    const day = byDate.get(transaction.date);
+    if (day) day.push(transaction);
+    else byDate.set(transaction.date, [transaction]);
+  }
+
+  return [...byDate.entries()]
+    // "YYYY-MM-DD" dates sort correctly as plain text.
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, dayTransactions]) => {
+      const net = new Map<string, number>();
+      for (const transaction of dayTransactions) {
+        const { amountMinor, currency } = signedAmount(transaction);
+        net.set(currency, (net.get(currency) ?? 0) + amountMinor);
+      }
+      return {
+        date,
+        transactions: dayTransactions,
+        netByCurrency: [...net].map(([currency, netMinor]) => ({
+          currency,
+          netMinor,
+        })),
+      };
+    });
 }

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import {
   amountFieldClass,
+  dangerButtonClass,
   fieldClass,
   primaryButtonClass,
   secondaryButtonClass,
@@ -24,6 +25,8 @@ type Props = {
   onSave: (transaction: Transaction) => void;
   /** Shown as a Cancel button next to Save. */
   onCancel?: () => void;
+  /** Shown as a Delete button when editing. */
+  onDelete?: () => void;
 };
 
 // `transaction` only fills the fields when the form first appears. To load a
@@ -33,6 +36,7 @@ export function TransactionForm({
   defaultCurrency,
   onSave,
   onCancel,
+  onDelete,
 }: Props) {
   const isEditing = transaction !== undefined;
   // An edited transaction keeps its own currency, even if the setting has
@@ -174,6 +178,15 @@ export function TransactionForm({
             className={secondaryButtonClass}
           >
             Cancel
+          </button>
+        )}
+        {isEditing && onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            className={dangerButtonClass}
+          >
+            Delete
           </button>
         )}
       </div>

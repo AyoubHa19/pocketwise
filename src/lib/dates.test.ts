@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { addMonths, formatMonth, monthOf, todayISODate } from "@/lib/dates";
+import {
+  addDays,
+  addMonths,
+  formatDayLabel,
+  formatMonth,
+  monthOf,
+  todayISODate,
+} from "@/lib/dates";
 
 const originalTimeZone = process.env.TZ;
 
@@ -65,4 +72,50 @@ describe("formatMonth", () => {
       expect(formatMonth("2026-10")).toBe("October 2026");
     },
   );
+});
+
+describe("addDays", () => {
+  it.each([
+    ["2026-10-13", 1, "2026-10-14"],
+    ["2026-10-13", -1, "2026-10-12"],
+    ["2026-10-31", 1, "2026-11-01"],
+    ["2026-01-01", -1, "2025-12-31"],
+    ["2028-02-28", 1, "2028-02-29"], // a leap year
+    ["2027-02-28", 1, "2027-03-01"], // not a leap year
+    ["2026-10-13", 0, "2026-10-13"],
+  ])("%s plus %i days is %s", (date, count, expected) => {
+    expect(addDays(date, count)).toBe(expected);
+  });
+
+  it("isn't thrown off by daylight saving changes", () => {
+    process.env.TZ = "Europe/Paris"; // clocks go back on 25 October 2026
+    expect(addDays("2026-10-25", 1)).toBe("2026-10-26");
+    expect(addDays("2026-10-26", -1)).toBe("2026-10-25");
+  });
+});
+
+describe("formatDayLabel", () => {
+  const today = "2026-10-13";
+
+  it.each([
+    ["2026-10-13", "Today"],
+    ["2026-10-12", "Yesterday"],
+    ["2026-10-11", "Sun, Oct 11"],
+    ["2026-10-01", "Thu, Oct 1"],
+    ["2025-12-31", "Wed, Dec 31, 2025"],
+  ])("labels %s as %j", (date, expected) => {
+    expect(formatDayLabel(date, today)).toBe(expected);
+  });
+
+  it("knows yesterday across a month and a year", () => {
+    expect(formatDayLabel("2026-09-30", "2026-10-01")).toBe("Yesterday");
+    expect(formatDayLabel("2025-12-31", "2026-01-01")).toBe("Yesterday");
+  });
+
+  it("shows the same day in every time zone", () => {
+    for (const timeZone of ["Pacific/Honolulu", "Asia/Tokyo"]) {
+      process.env.TZ = timeZone;
+      expect(formatDayLabel("2026-10-11", today)).toBe("Sun, Oct 11");
+    }
+  });
 });

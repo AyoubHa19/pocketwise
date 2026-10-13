@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CurrencySetup } from "@/components/CurrencySetup";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import {
@@ -39,6 +39,9 @@ export function TransactionTracker() {
   const [pickedMonth, setPickedMonth] = useState<string | null>(null);
   const [sheet, setSheet] = useState<SheetState>({ kind: "closed" });
   const [saveFailed, setSaveFailed] = useState(false);
+  // Where focus goes after deleting, when the row that opened the sheet is
+  // gone: the list's heading, right where the row was.
+  const listHeadingRef = useRef<HTMLHeadingElement>(null);
 
   const currentMonth = monthOf(today);
   const month = pickedMonth ?? currentMonth;
@@ -81,6 +84,7 @@ export function TransactionTracker() {
       removeTransaction(previous, transaction.id),
     );
     setSaveFailed(!saved);
+    closeSheet();
   }
 
   // Both come from the browser's storage, so they're null while the server
@@ -118,7 +122,13 @@ export function TransactionTracker() {
 
         <section aria-labelledby="transactions-heading">
           <div className="flex min-h-11 items-center justify-between gap-4">
-            <h2 id="transactions-heading" className="text-lg font-semibold">
+            {/* tabIndex -1: focusable from code, but not a Tab stop. */}
+            <h2
+              id="transactions-heading"
+              ref={listHeadingRef}
+              tabIndex={-1}
+              className="text-lg font-semibold"
+            >
               Transactions in {monthName}
             </h2>
             {/* From sm up, Add sits beside the list it adds to. The wrapper
@@ -157,11 +167,11 @@ export function TransactionTracker() {
                   ? "No transactions yet. Use the Add button to record your first one."
                   : `No transactions in ${monthName}.`
               }
+              today={today}
               editingId={editing?.id ?? null}
               onEdit={(transaction) =>
                 setSheet({ kind: "edit", id: transaction.id })
               }
-              onDelete={remove}
             />
           </div>
 
@@ -189,6 +199,7 @@ export function TransactionTracker() {
         open={sheetOpen}
         title={editing ? "Edit transaction" : "Add a transaction"}
         onClose={closeSheet}
+        fallbackFocusRef={listHeadingRef}
       >
         {/* A new key makes React start a fresh form with the new values. */}
         <TransactionForm
@@ -197,6 +208,7 @@ export function TransactionTracker() {
           defaultCurrency={settings.currency}
           onSave={save}
           onCancel={closeSheet}
+          onDelete={editing ? () => remove(editing) : undefined}
         />
       </Sheet>
     </>

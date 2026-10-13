@@ -30,6 +30,37 @@ export function addMonths(month: string, count: number): string {
   return `${newYear}-${String(newMonth).padStart(2, "0")}`;
 }
 
+/** The day `count` days after a "YYYY-MM-DD" date; negative goes back. */
+export function addDays(date: string, count: number): string {
+  const [year, month, day] = date.split("-").map(Number);
+  // Date.UTC handles month and year ends (Oct 31 + 1 is Nov 1), and working
+  // in UTC means no time zone or clock change can skip or repeat a day.
+  return new Date(Date.UTC(year, month - 1, day + count))
+    .toISOString()
+    .slice(0, 10);
+}
+
+/**
+ * A day heading for lists: "Today", "Yesterday", or "Mon, Oct 12", with
+ * the year added for days in another year than `today`.
+ */
+export function formatDayLabel(
+  date: string,
+  today: string,
+  locale = "en-US",
+): string {
+  if (date === today) return "Today";
+  if (date === addDays(today, -1)) return "Yesterday";
+  const [year, month, day] = date.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: date.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
 /** A month for display, e.g. "2026-10" → "October 2026". */
 export function formatMonth(month: string, locale = "en-US"): string {
   const [year, monthNumber] = month.split("-").map(Number);

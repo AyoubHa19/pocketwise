@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  groupByDay,
   percentOfIncomeSpent,
   totalsByCurrency,
   transactionsInMonth,
@@ -104,5 +105,50 @@ describe("percentOfIncomeSpent", () => {
   it("has nothing to compare with when there was no income", () => {
     expect(percentOfIncomeSpent(totals(0, 5000))).toBeNull();
     expect(percentOfIncomeSpent(totals(0, 0))).toBeNull();
+  });
+});
+
+describe("groupByDay", () => {
+  const october = transactionsInMonth(transactions, "2026-10");
+
+  it("makes one group per day, newest day first", () => {
+    expect(groupByDay(october).map((day) => day.date)).toEqual([
+      "2026-10-31",
+      "2026-10-20",
+      "2026-10-15",
+      "2026-10-03",
+      "2026-10-01",
+    ]);
+  });
+
+  it("keeps a day's transactions in the order they were given", () => {
+    const lastDay = groupByDay(october)[0];
+    expect(lastDay.transactions.map((t) => t.id)).toEqual(["oct-31a", "oct-31b"]);
+  });
+
+  it("adds up each day: income minus spending, exactly", () => {
+    const days = groupByDay([
+      transaction("a", "income", 250000, "EUR", "2026-10-01"),
+      transaction("b", "expense", 6345, "EUR", "2026-10-01"),
+      transaction("c", "expense", 10, "EUR", "2026-10-01"),
+      transaction("d", "expense", 20, "EUR", "2026-10-01"),
+    ]);
+    expect(days[0].netByCurrency).toEqual([{ currency: "EUR", netMinor: 243625 }]);
+  });
+
+  it("keeps currencies apart within a day", () => {
+    const days = groupByDay([
+      transaction("a", "expense", 1999, "USD", "2026-10-15"),
+      transaction("b", "expense", 1500, "JPY", "2026-10-15"),
+      transaction("c", "expense", 1, "USD", "2026-10-15"),
+    ]);
+    expect(days[0].netByCurrency).toEqual([
+      { currency: "USD", netMinor: -2000 },
+      { currency: "JPY", netMinor: -1500 },
+    ]);
+  });
+
+  it("has no groups when there are no transactions", () => {
+    expect(groupByDay([])).toEqual([]);
   });
 });

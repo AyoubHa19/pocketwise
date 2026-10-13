@@ -28,6 +28,7 @@ export const primaryButtonClass =
 export const secondaryButtonClass =
   "inline-flex min-h-11 w-full items-center justify-center rounded-control border border-line-strong bg-surface px-5 font-medium text-foreground hover:bg-surface-muted sm:w-auto";
 
-/** Small buttons inside a list row, like Edit and Delete. */
-export const textButtonClass =
-  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-control px-3 text-sm font-medium text-muted hover:bg-surface-muted";
+/** For actions that destroy something, like Delete. Pushed to the far end
+    on larger screens, away from Save. */
+export const dangerButtonClass =
+  "inline-flex min-h-11 w-full items-center justify-center rounded-control px-5 font-medium text-danger hover:bg-danger-surface sm:ml-auto sm:w-auto";

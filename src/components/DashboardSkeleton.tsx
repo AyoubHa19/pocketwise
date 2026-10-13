@@ -43,16 +43,18 @@ export function DashboardSkeleton() {
         <div className="flex min-h-11 items-center">
           <div className={`${bone} h-7 w-56`} />
         </div>
-        <div className={`${cardClass} mt-4 divide-y divide-line`}>
+        {/* The first day: its heading line ("Today", the day's total)... */}
+        <div className="mt-4 mb-2 flex h-5 items-center justify-between px-1">
+          <div className={`${bone} h-3.5 w-14`} />
+          <div className={`${bone} h-3.5 w-12`} />
+        </div>
+        {/* ...then rows of an icon circle, a name, and an amount. */}
+        <div className={`${cardClass} divide-y divide-line`}>
           {[0, 1, 2].map((row) => (
-            // A real row: two lines of text on the left; the amount and the
-            // 44px Edit and Delete buttons on the right.
-            <div key={row} className="flex h-[5.75rem] justify-between gap-4 px-4 py-3">
-              <div className="space-y-2 pt-1">
-                <div className={`${bone} h-4 w-24`} />
-                <div className={`${bone} h-3 w-32`} />
-              </div>
-              <div className={`${bone} mt-1 h-4 w-16`} />
+            <div key={row} className="flex h-16 items-center gap-3 px-4">
+              <div className="h-10 w-10 shrink-0 rounded-full bg-surface-muted motion-safe:animate-pulse" />
+              <div className={`${bone} h-4 w-24 flex-none`} />
+              <div className={`${bone} ml-auto h-4 w-16`} />
             </div>
           ))}
         </div>

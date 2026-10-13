@@ -1,11 +1,22 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 type Props = {
   open: boolean;
   title: string;
   onClose: () => void;
+  /**
+   * Where to put keyboard focus on closing if the button that opened the
+   * sheet is gone by then, say because its transaction was just deleted.
+   */
+  fallbackFocusRef?: RefObject<HTMLElement | null>;
   children: ReactNode;
 };
 
@@ -19,8 +30,15 @@ type Props = {
  *
  * Put data-autofocus on the field that should be focused when it opens.
  */
-export function Sheet({ open, title, onClose, children }: Props) {
+export function Sheet({
+  open,
+  title,
+  onClose,
+  fallbackFocusRef,
+  children,
+}: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const openerRef = useRef<Element | null>(null);
   const titleId = useId();
 
   // React decides whether the sheet is open; this tells the browser's
@@ -30,12 +48,17 @@ export function Sheet({ open, title, onClose, children }: Props) {
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (open && !dialog.open) {
+      openerRef.current = document.activeElement;
       dialog.showModal();
       dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
     } else if (!open && dialog.open) {
       dialog.close();
+      // close() puts focus back on the opener, but if the opener has left
+      // the page, focus would fall to nothing and keyboard and screen
+      // reader users would lose their place.
+      if (!openerRef.current?.isConnected) fallbackFocusRef?.current?.focus();
     }
-  }, [open]);
+  }, [open, fallbackFocusRef]);
 
   return (
     <dialog
