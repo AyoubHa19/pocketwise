@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { CurrencySetup } from "@/components/CurrencySetup";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
 import { formatMoney } from "@/lib/money";
+import { useSettings } from "@/lib/settingsStore";
 import { updateTransactions, useTransactions } from "@/lib/transactionStore";
 import {
   removeTransaction,
@@ -13,6 +15,7 @@ import {
 } from "@/lib/transactions";
 
 export function TransactionTracker() {
+  const settings = useSettings();
   const transactions = useTransactions();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
@@ -50,6 +53,15 @@ export function TransactionTracker() {
     if (transaction.id === editingId) setEditingId(null);
   }
 
+  // Both come from the browser's storage, so they're null while the server
+  // renders the page and for a moment after it opens.
+  if (settings === null || transactions === null) {
+    return <p className="mt-10 text-sm text-zinc-500">Loading…</p>;
+  }
+  if (settings.currency === null) {
+    return <CurrencySetup />;
+  }
+
   return (
     <div className="mt-10 space-y-10">
       <div ref={formRef} className="scroll-mt-4">
@@ -57,6 +69,7 @@ export function TransactionTracker() {
         <TransactionForm
           key={editing?.id ?? "new"}
           transaction={editing}
+          defaultCurrency={settings.currency}
           onSave={save}
           onCancel={() => setEditingId(null)}
         />
@@ -81,16 +94,12 @@ export function TransactionTracker() {
         )}
 
         <div className="mt-4">
-          {transactions === null ? (
-            <p className="text-sm text-zinc-500">Loading…</p>
-          ) : (
-            <TransactionList
-              transactions={transactions}
-              editingId={editingId}
-              onEdit={startEditing}
-              onDelete={remove}
-            />
-          )}
+          <TransactionList
+            transactions={transactions}
+            editingId={editingId}
+            onEdit={startEditing}
+            onDelete={remove}
+          />
         </div>
       </div>
     </div>

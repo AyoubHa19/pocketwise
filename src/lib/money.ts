@@ -11,8 +11,33 @@ export type Money = {
   currency: string;
 };
 
-/** Currencies offered in the form for now. Any ISO 4217 code works. */
-export const CURRENCIES = ["USD", "EUR", "GBP", "MAD", "JPY"] as const;
+export type CurrencyOption = {
+  code: string;
+  /** The currency's English name, e.g. "Moroccan Dirham". */
+  name: string;
+};
+
+let currencyOptionsCache: CurrencyOption[] | undefined;
+
+/**
+ * Every currency in use today, as the browser knows them, sorted by name.
+ * The list comes from the browser and can differ slightly between browsers,
+ * so only build it in the browser, not while the server renders the page.
+ */
+export function currencyOptions(): CurrencyOption[] {
+  if (currencyOptionsCache === undefined) {
+    const names = new Intl.DisplayNames(["en"], { type: "currency" });
+    currencyOptionsCache = Intl.supportedValuesOf("currency")
+      .map((code) => ({ code, name: names.of(code) ?? code }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return currencyOptionsCache;
+}
+
+/** Whether this is a currency code the browser knows, like "MAD". */
+export function isSupportedCurrency(code: string): boolean {
+  return currencyOptions().some((option) => option.code === code);
+}
 
 /** How many decimal places a currency uses: 2 for USD, 0 for JPY, 3 for KWD. */
 export function currencyDecimals(currency: string): number {

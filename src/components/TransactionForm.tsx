@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useSyncExternalStore, type FormEvent } from "react";
-import { todayISODate } from "@/lib/dates";
 import {
-  amountToInputText,
-  CURRENCIES,
-  currencyDecimals,
-  parseAmount,
-} from "@/lib/money";
+  fieldClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from "@/components/formStyles";
+import { todayISODate } from "@/lib/dates";
+import { amountToInputText, currencyDecimals, parseAmount } from "@/lib/money";
 import {
   CATEGORIES,
   newTransactionId,
@@ -15,13 +15,11 @@ import {
   type TransactionType,
 } from "@/lib/transactions";
 
-// text-base (16px) stops phones from zooming in when a field is tapped.
-const fieldClass =
-  "mt-1 block w-full rounded-md border border-zinc-300 bg-background px-3 py-2 text-base dark:border-zinc-700";
-
 type Props = {
   /** The transaction to edit. Leave it out to add a new one. */
   transaction?: Transaction;
+  /** The currency for new transactions, from the settings. */
+  defaultCurrency: string;
   onSave: (transaction: Transaction) => void;
   /** Shown as a Cancel button while editing. */
   onCancel?: () => void;
@@ -39,8 +37,17 @@ function subscribeToNothing() {
 
 // `transaction` only fills the fields when the form first appears. To load a
 // different transaction, give the form a new `key` so React starts it afresh.
-export function TransactionForm({ transaction, onSave, onCancel }: Props) {
+export function TransactionForm({
+  transaction,
+  defaultCurrency,
+  onSave,
+  onCancel,
+}: Props) {
   const isEditing = transaction !== undefined;
+  // An edited transaction keeps its own currency, even if the setting has
+  // changed since, because there's no exchange rate to convert it with.
+  const currency = transaction?.amount.currency ?? defaultCurrency;
+  const decimals = currencyDecimals(currency);
 
   const [type, setType] = useState<TransactionType>(
     transaction?.type ?? "expense",
@@ -50,9 +57,6 @@ export function TransactionForm({ transaction, onSave, onCancel }: Props) {
   );
   const [amount, setAmount] = useState(
     transaction ? amountToInputText(transaction.amount) : "",
-  );
-  const [currency, setCurrency] = useState<string>(
-    transaction?.amount.currency ?? "USD",
   );
   // null until the user picks a date themselves; until then, use today.
   const [pickedDate, setPickedDate] = useState<string | null>(
@@ -69,7 +73,6 @@ export function TransactionForm({ transaction, onSave, onCancel }: Props) {
 
     const amountMinor = parseAmount(amount, currency);
     if (amountMinor === null) {
-      const decimals = currencyDecimals(currency);
       setError(
         decimals === 0
           ? `Enter a whole amount greater than zero, like 1500. ${currency} has no decimals.`
@@ -92,7 +95,7 @@ export function TransactionForm({ transaction, onSave, onCancel }: Props) {
       note: note.trim() || undefined,
     });
 
-    // Keep type, category, currency and date: people often add several
+    // Keep type, category and date: people often add several
     // similar transactions in a row.
     setAmount("");
     setNote("");
@@ -138,32 +141,17 @@ export function TransactionForm({ transaction, onSave, onCancel }: Props) {
         </label>
 
         <label className="block text-sm font-medium">
-          Amount
+          Amount ({currency})
           <input
             type="text"
             inputMode="decimal"
             autoComplete="off"
-            placeholder="0.00"
+            placeholder={decimals === 0 ? "0" : `0.${"0".repeat(decimals)}`}
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
             aria-invalid={error !== null && amount !== "" ? true : undefined}
             className={fieldClass}
           />
-        </label>
-
-        <label className="block text-sm font-medium">
-          Currency
-          <select
-            value={currency}
-            onChange={(event) => setCurrency(event.target.value)}
-            className={fieldClass}
-          >
-            {CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </select>
         </label>
 
         <label className="block text-sm font-medium">
@@ -176,7 +164,7 @@ export function TransactionForm({ transaction, onSave, onCancel }: Props) {
           />
         </label>
 
-        <label className="block text-sm font-medium">
+        <label className="block text-sm font-medium sm:col-span-2">
           Note <span className="font-normal text-zinc-500">(optional)</span>
           <input
             type="text"
@@ -195,17 +183,14 @@ export function TransactionForm({ transaction, onSave, onCancel }: Props) {
       )}
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <button
-          type="submit"
-          className="w-full rounded-md bg-foreground px-4 py-2.5 font-medium text-background hover:opacity-90 sm:w-auto"
-        >
+        <button type="submit" className={primaryButtonClass}>
           {isEditing ? "Save changes" : "Add transaction"}
         </button>
         {isEditing && onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="w-full rounded-md border border-zinc-300 px-4 py-2.5 font-medium hover:bg-zinc-100 sm:w-auto dark:border-zinc-700 dark:hover:bg-zinc-900"
+            className={secondaryButtonClass}
           >
             Cancel
           </button>

@@ -14,7 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pocketwise",
+  // Pages that set their own title, like "Settings", become
+  // "Settings · Pocketwise". Pages that don't just show "Pocketwise".
+  title: { default: "Pocketwise", template: "%s · Pocketwise" },
   description: "Track your income, spending, and budgets in one simple place.",
 };
 
