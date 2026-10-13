@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { MotionProvider } from "@/components/MotionProvider";
+import { PreviewBanner } from "@/components/PreviewBanner";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ClerkProvider>
           <ConvexClientProvider>
             <MotionProvider>
+              <PreviewBanner />
               <SiteHeader />
               <main className="flex-1">{children}</main>
             </MotionProvider>
