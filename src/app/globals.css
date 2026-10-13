@@ -77,6 +77,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Always keep room for the scrollbar, so the page doesn't shift sideways
+   when it gets long enough to need one, as when the loading skeleton gives
+   way to a long list. Phones overlay their scrollbars, so it changes nothing
+   there. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--canvas);
   color: var(--foreground);

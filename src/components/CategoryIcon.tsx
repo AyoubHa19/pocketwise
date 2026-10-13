@@ -29,15 +29,24 @@ const icons: Record<(typeof CATEGORIES)[number], LucideIcon> = {
  * The category's icon in a soft circle. It's decoration: the category's
  * name is always written next to it, so screen readers skip the icon.
  */
-export function CategoryIcon({ category }: { category: string }) {
+export function CategoryIcon({
+  category,
+  small = false,
+}: {
+  category: string;
+  /** 32px instead of 40px, for the charts. */
+  small?: boolean;
+}) {
   // Saved data could hold a category this version doesn't know.
   const Icon = icons[category as keyof typeof icons] ?? Tag;
   return (
     <span
       aria-hidden="true"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-foreground"
+      className={`flex shrink-0 items-center justify-center rounded-full bg-surface-muted text-foreground ${
+        small ? "h-8 w-8" : "h-10 w-10"
+      }`}
     >
-      <Icon size={20} strokeWidth={1.75} />
+      <Icon size={small ? 16 : 20} strokeWidth={1.75} />
     </span>
   );
 }

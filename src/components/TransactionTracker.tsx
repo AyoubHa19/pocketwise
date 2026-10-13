@@ -5,18 +5,28 @@ import { AccountBalanceCard } from "@/components/AccountBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import {
+  dashboardChartsArea,
   dashboardGridClass,
+  dashboardListArea,
+  dashboardSummaryArea,
   primaryButtonClass,
 } from "@/components/formStyles";
+import { MonthlyTrend } from "@/components/MonthlyTrend";
 import { MonthPicker } from "@/components/MonthPicker";
 import { MonthSummary } from "@/components/MonthSummary";
 import { Sheet } from "@/components/Sheet";
+import { SpendingByCategory } from "@/components/SpendingByCategory";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
 import { formatMonth, monthOf } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { useSettings } from "@/lib/settingsStore";
-import { totalsByCurrency, transactionsInMonth } from "@/lib/summary";
+import {
+  monthlyTotals,
+  spendingByCategory,
+  totalsByCurrency,
+  transactionsInMonth,
+} from "@/lib/summary";
 import { updateTransactions, useTransactions } from "@/lib/transactionStore";
 import {
   removeTransaction,
@@ -105,11 +115,9 @@ export function TransactionTracker() {
       {/* Room at the bottom on phones, so the floating Add button never
           covers the last transaction. */}
       <div className={`${dashboardGridClass} pb-24 sm:pb-0`}>
-        {/* On large screens this column stays in view while the list
-            scrolls past it. */}
         <section
           aria-label={`Summary for ${monthName}`}
-          className="space-y-4 lg:sticky lg:top-8"
+          className={`space-y-4 ${dashboardSummaryArea}`}
         >
           <AccountBalanceCard
             transactions={transactions}
@@ -126,7 +134,10 @@ export function TransactionTracker() {
           />
         </section>
 
-        <section aria-labelledby="transactions-heading">
+        <section
+          aria-labelledby="transactions-heading"
+          className={dashboardListArea}
+        >
           <div className="flex min-h-11 items-center justify-between gap-4">
             {/* tabIndex -1: focusable from code, but not a Tab stop. */}
             <h2
@@ -186,6 +197,20 @@ export function TransactionTracker() {
             data deletes them.
           </p>
         </section>
+
+        {/* After the list on phones; under the summary on large screens. */}
+        <div className={`space-y-4 ${dashboardChartsArea}`}>
+          <SpendingByCategory
+            categories={spendingByCategory(monthTransactions, settings.currency)}
+            currency={settings.currency}
+            monthName={monthName}
+          />
+          <MonthlyTrend
+            months={monthlyTotals(transactions, month, 6, settings.currency)}
+            selectedMonth={month}
+            currency={settings.currency}
+          />
+        </div>
       </div>
 
       {/* On phones, Add floats in the bottom corner, within thumb's reach. */}

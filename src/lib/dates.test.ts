@@ -4,6 +4,7 @@ import {
   addMonths,
   formatDayLabel,
   formatMonth,
+  formatMonthShort,
   monthOf,
   todayISODate,
 } from "@/lib/dates";
@@ -117,5 +118,20 @@ describe("formatDayLabel", () => {
       process.env.TZ = timeZone;
       expect(formatDayLabel("2026-10-11", today)).toBe("Sun, Oct 11");
     }
+  });
+});
+
+describe("formatMonthShort", () => {
+  it.each([
+    ["2026-10", "Oct"],
+    ["2026-01", "Jan"],
+    ["2025-12", "Dec"],
+  ])("labels %s as %s", (month, expected) => {
+    expect(formatMonthShort(month)).toBe(expected);
+  });
+
+  it("isn't moved to another month by the time zone", () => {
+    process.env.TZ = "Pacific/Honolulu";
+    expect(formatMonthShort("2026-10")).toBe("Oct");
   });
 });

@@ -61,6 +61,15 @@ export function formatDayLabel(
   }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
+/** A short month name for chart labels, e.g. "2026-10" → "Oct". */
+export function formatMonthShort(month: string, locale = "en-US"): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, monthNumber - 1, 1)));
+}
+
 /** A month for display, e.g. "2026-10" → "October 2026". */
 export function formatMonth(month: string, locale = "en-US"): string {
   const [year, monthNumber] = month.split("-").map(Number);

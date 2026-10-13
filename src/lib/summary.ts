@@ -1,3 +1,4 @@
+import { addMonths, monthOf } from "@/lib/dates";
 import { signedAmount, type Transaction } from "@/lib/transactions";
 
 /** Totals for one currency, all in minor units (e.g. cents). */
@@ -157,4 +158,76 @@ export function accountBalance(
     }
   }
   return balance;
+}
+
+/** One category's spending, for the "Spending by category" chart. */
+export type CategorySpending = {
+  category: string;
+  amountMinor: number;
+  /** Its share of all the spending, as a whole percentage. */
+  percent: number;
+};
+
+/**
+ * Spending in `currency` per category, biggest first (ties by name), each
+ * with its share of the total. Income and other currencies are left out.
+ * The rounded shares may add up to 99 or 101; each one is still correct.
+ */
+export function spendingByCategory(
+  transactions: Transaction[],
+  currency: string,
+): CategorySpending[] {
+  const totals = new Map<string, number>();
+  for (const transaction of transactions) {
+    if (transaction.type !== "expense") continue;
+    if (transaction.amount.currency !== currency) continue;
+    const { category } = transaction;
+    totals.set(category, (totals.get(category) ?? 0) + transaction.amount.amountMinor);
+  }
+  const total = [...totals.values()].reduce((sum, amount) => sum + amount, 0);
+  return [...totals]
+    .map(([category, amountMinor]) => ({
+      category,
+      amountMinor,
+      percent: Math.round((amountMinor / total) * 100),
+    }))
+    .sort((a, b) => b.amountMinor - a.amountMinor || a.category.localeCompare(b.category));
+}
+
+/** One month's totals, for the "Last 6 months" chart. */
+export type MonthTotals = {
+  /** "YYYY-MM" */
+  month: string;
+  incomeMinor: number;
+  spendingMinor: number;
+};
+
+/**
+ * Income and spending in `currency` for the `count` months that end with
+ * `lastMonth`, oldest first. Months without transactions are included at
+ * zero, so the chart always has the same number of columns.
+ */
+export function monthlyTotals(
+  transactions: Transaction[],
+  lastMonth: string,
+  count: number,
+  currency: string,
+): MonthTotals[] {
+  const months = Array.from({ length: count }, (_, index) =>
+    addMonths(lastMonth, index - count + 1),
+  );
+  const byMonth = new Map(
+    months.map((month) => [month, { month, incomeMinor: 0, spendingMinor: 0 }]),
+  );
+  for (const transaction of transactions) {
+    if (transaction.amount.currency !== currency) continue;
+    const entry = byMonth.get(monthOf(transaction.date));
+    if (!entry) continue;
+    if (transaction.type === "income") {
+      entry.incomeMinor += transaction.amount.amountMinor;
+    } else {
+      entry.spendingMinor += transaction.amount.amountMinor;
+    }
+  }
+  return months.map((month) => byMonth.get(month)!);
 }

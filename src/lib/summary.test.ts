@@ -3,7 +3,9 @@ import {
   accountBalance,
   groupByDay,
   isOpeningBalance,
+  monthlyTotals,
   percentOfIncomeSpent,
+  spendingByCategory,
   totalsByCurrency,
   transactionsInMonth,
 } from "@/lib/summary";
@@ -204,5 +206,82 @@ describe("isOpeningBalance", () => {
     ["3000"],
   ])("rejects %j", (value) => {
     expect(isOpeningBalance(value)).toBe(false);
+  });
+});
+
+describe("spendingByCategory", () => {
+  const t = (id: string, type: TransactionType, amountMinor: number, category: string, currency = "AED") => ({
+    ...transaction(id, type, amountMinor, currency, "2026-10-05"),
+    category,
+  });
+
+  it("adds up each category, biggest first, with its share", () => {
+    const result = spendingByCategory(
+      [
+        t("a", "expense", 50000, "Rent"),
+        t("b", "expense", 15000, "Food"),
+        t("c", "expense", 5000, "Food"),
+        t("d", "expense", 10000, "Transport"),
+        t("e", "income", 900000, "Salary"),
+      ],
+      "AED",
+    );
+    expect(result).toEqual([
+      { category: "Rent", amountMinor: 50000, percent: 63 },
+      { category: "Food", amountMinor: 20000, percent: 25 },
+      { category: "Transport", amountMinor: 10000, percent: 13 },
+    ]);
+  });
+
+  it("leaves out income and other currencies", () => {
+    const result = spendingByCategory(
+      [t("a", "income", 5000, "Salary"), t("b", "expense", 5000, "Food", "USD")],
+      "AED",
+    );
+    expect(result).toEqual([]);
+  });
+
+  it("orders equal amounts by name, so the order never jumps around", () => {
+    const result = spendingByCategory(
+      [t("a", "expense", 100, "Shopping"), t("b", "expense", 100, "Bills")],
+      "AED",
+    );
+    expect(result.map((c) => c.category)).toEqual(["Bills", "Shopping"]);
+  });
+
+  it("gives one category all of the spending", () => {
+    expect(spendingByCategory([t("a", "expense", 999, "Food")], "AED")[0].percent).toBe(100);
+  });
+});
+
+describe("monthlyTotals", () => {
+  const list = [
+    transaction("aug", "income", 100000, "AED", "2026-08-01"),
+    transaction("sep", "expense", 30000, "AED", "2026-09-15"),
+    transaction("oct-in", "income", 500000, "AED", "2026-10-01"),
+    transaction("oct-out", "expense", 70000, "AED", "2026-10-13"),
+    transaction("oct-usd", "expense", 99999, "USD", "2026-10-02"),
+    transaction("old", "expense", 99999, "AED", "2026-03-31"),
+    transaction("future", "expense", 99999, "AED", "2026-11-01"),
+  ];
+
+  it("gives the months ending with the chosen one, oldest first, zeros included", () => {
+    expect(monthlyTotals(list, "2026-10", 6, "AED")).toEqual([
+      { month: "2026-05", incomeMinor: 0, spendingMinor: 0 },
+      { month: "2026-06", incomeMinor: 0, spendingMinor: 0 },
+      { month: "2026-07", incomeMinor: 0, spendingMinor: 0 },
+      { month: "2026-08", incomeMinor: 100000, spendingMinor: 0 },
+      { month: "2026-09", incomeMinor: 0, spendingMinor: 30000 },
+      { month: "2026-10", incomeMinor: 500000, spendingMinor: 70000 },
+    ]);
+  });
+
+  it("crosses into the previous year", () => {
+    expect(monthlyTotals([], "2026-02", 4, "AED").map((m) => m.month)).toEqual([
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+    ]);
   });
 });

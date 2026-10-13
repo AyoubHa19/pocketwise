@@ -8,11 +8,20 @@ export const cardClass =
   "rounded-card border border-line bg-surface shadow-card";
 
 /**
- * The home page layout, shared with its loading skeleton: one column, then
- * from lg (1024px) the summary on the left and the transactions on the right.
+ * The home page layout, shared with its loading skeleton. On phones it's one
+ * column in reading order: summary, transactions, charts. From lg (1024px)
+ * the summary and the charts stack on the left and the transactions run
+ * down the right, without changing that order for screen readers.
+ *
+ * The second row is 1fr so the long transaction list, which spans both rows,
+ * pushes its extra height there rather than opening a gap under the summary.
  */
 export const dashboardGridClass =
-  "grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-10";
+  "grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10";
+
+export const dashboardSummaryArea = "lg:col-start-1 lg:row-start-1";
+export const dashboardListArea = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
+export const dashboardChartsArea = "lg:col-start-1 lg:row-start-2";
 
 // text-base (16px) stops phones from zooming in when a field is tapped.
 export const fieldClass =

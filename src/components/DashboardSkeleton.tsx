@@ -1,4 +1,9 @@
-import { cardClass, dashboardGridClass } from "@/components/formStyles";
+import {
+  cardClass,
+  dashboardGridClass,
+  dashboardListArea,
+  dashboardSummaryArea,
+} from "@/components/formStyles";
 
 // Grey shapes where the content will be. They only pulse for people who
 // haven't asked their device to reduce motion.
@@ -17,7 +22,7 @@ export function DashboardSkeleton() {
         Loading your transactions…
       </p>
 
-      <div aria-hidden="true" className="space-y-4">
+      <div aria-hidden="true" className={`space-y-4 ${dashboardSummaryArea}`}>
         {/* The Account balance card: same fixed height as the real one. */}
         <div className={`${cardClass} h-[9.125rem] px-5 pt-2 pb-5 sm:px-6`}>
           <div className="flex h-11 items-center">
@@ -46,7 +51,7 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      <div aria-hidden="true">
+      <div aria-hidden="true" className={dashboardListArea}>
         {/* As tall as the real heading row, whose Add button is 44px. */}
         <div className="flex min-h-11 items-center">
           <div className={`${bone} h-7 w-56`} />
