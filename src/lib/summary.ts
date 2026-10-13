@@ -9,6 +9,16 @@ export type CurrencyTotals = {
   balanceMinor: number;
 };
 
+/**
+ * How much of the income went out again, as a whole percentage: 41 for 41%,
+ * and over 100 when more was spent than came in. null when there was no
+ * income to compare with.
+ */
+export function percentOfIncomeSpent(totals: CurrencyTotals): number | null {
+  if (totals.incomeMinor <= 0) return null;
+  return Math.round((totals.spendingMinor / totals.incomeMinor) * 100);
+}
+
 /** The transactions dated in `month`, written "YYYY-MM". */
 export function transactionsInMonth(
   transactions: Transaction[],

@@ -1,0 +1,62 @@
+import { cardClass, dashboardGridClass } from "@/components/formStyles";
+
+// Grey shapes where the content will be. They only pulse for people who
+// haven't asked their device to reduce motion.
+const bone = "rounded-control bg-surface-muted motion-safe:animate-pulse";
+
+/**
+ * Shown for the moment before the browser has read the saved data, in the
+ * same layout as the dashboard, so nothing jumps when the real content
+ * arrives. Each row below is as tall as the line of text it stands in for
+ * in MonthSummary and TransactionList; keep them in step when those change.
+ */
+export function DashboardSkeleton() {
+  return (
+    <div className={dashboardGridClass}>
+      <p role="status" className="sr-only">
+        Loading your transactions…
+      </p>
+
+      <div aria-hidden="true" className="space-y-4">
+        <div className={`${bone} h-11 w-64`} />
+        <div className={`${cardClass} @container p-5 sm:p-6`}>
+          {/* "Balance" label, then the balance at each screen size's height */}
+          <div className="flex h-5 items-center">
+            <div className={`${bone} h-3.5 w-16`} />
+          </div>
+          <div className={`${bone} mt-1 h-9 w-48 sm:h-12 lg:h-10`} />
+          {/* Income and spending: a label line and an amount line */}
+          <div className="mt-5 grid gap-4 border-t border-line pt-4 @2xs:grid-cols-2">
+            <div className={`${bone} h-[3.125rem]`} />
+            <div className={`${bone} h-[3.125rem]`} />
+          </div>
+          {/* The bar, and the "% of income spent" line under it */}
+          <div className={`${bone} mt-4 h-2`} />
+          <div className="mt-2 flex h-5 items-center">
+            <div className={`${bone} h-3.5 w-36`} />
+          </div>
+        </div>
+      </div>
+
+      <div aria-hidden="true">
+        {/* As tall as the real heading row, whose Add button is 44px. */}
+        <div className="flex min-h-11 items-center">
+          <div className={`${bone} h-7 w-56`} />
+        </div>
+        <div className={`${cardClass} mt-4 divide-y divide-line`}>
+          {[0, 1, 2].map((row) => (
+            // A real row: two lines of text on the left; the amount and the
+            // 44px Edit and Delete buttons on the right.
+            <div key={row} className="flex h-[5.75rem] justify-between gap-4 px-4 py-3">
+              <div className="space-y-2 pt-1">
+                <div className={`${bone} h-4 w-24`} />
+                <div className={`${bone} h-3 w-32`} />
+              </div>
+              <div className={`${bone} mt-1 h-4 w-16`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

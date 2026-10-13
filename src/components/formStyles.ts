@@ -7,6 +7,13 @@
 export const cardClass =
   "rounded-card border border-line bg-surface shadow-card";
 
+/**
+ * The home page layout, shared with its loading skeleton: one column, then
+ * from lg (1024px) the summary on the left and the transactions on the right.
+ */
+export const dashboardGridClass =
+  "grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-10";
+
 // text-base (16px) stops phones from zooming in when a field is tapped.
 export const fieldClass =
   "mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-base text-foreground";

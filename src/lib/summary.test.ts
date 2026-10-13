@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { totalsByCurrency, transactionsInMonth } from "@/lib/summary";
+import {
+  percentOfIncomeSpent,
+  totalsByCurrency,
+  transactionsInMonth,
+} from "@/lib/summary";
 import type { Transaction, TransactionType } from "@/lib/transactions";
 
 function transaction(
@@ -70,5 +74,35 @@ describe("totalsByCurrency", () => {
       "MAD",
       "USD",
     ]);
+  });
+});
+
+describe("percentOfIncomeSpent", () => {
+  const totals = (incomeMinor: number, spendingMinor: number) => ({
+    currency: "EUR",
+    incomeMinor,
+    spendingMinor,
+    balanceMinor: incomeMinor - spendingMinor,
+  });
+
+  it.each([
+    [240000, 98825, 41],
+    [100, 50, 50],
+    [300, 100, 33],
+    [300, 200, 67],
+    [100, 0, 0],
+    [100, 100, 100],
+    [1000000, 4580, 0], // 0.458% rounds down to 0
+  ])("income %i and spending %i is %i%%", (income, spending, expected) => {
+    expect(percentOfIncomeSpent(totals(income, spending))).toBe(expected);
+  });
+
+  it("goes over 100 when more was spent than came in", () => {
+    expect(percentOfIncomeSpent(totals(50000, 96345))).toBe(193);
+  });
+
+  it("has nothing to compare with when there was no income", () => {
+    expect(percentOfIncomeSpent(totals(0, 5000))).toBeNull();
+    expect(percentOfIncomeSpent(totals(0, 0))).toBeNull();
   });
 });

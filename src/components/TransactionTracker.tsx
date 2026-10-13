@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { CurrencySetup } from "@/components/CurrencySetup";
-import { primaryButtonClass } from "@/components/formStyles";
+import { DashboardSkeleton } from "@/components/DashboardSkeleton";
+import {
+  dashboardGridClass,
+  primaryButtonClass,
+} from "@/components/formStyles";
 import { MonthPicker } from "@/components/MonthPicker";
 import { MonthSummary } from "@/components/MonthSummary";
 import { Sheet } from "@/components/Sheet";
@@ -82,7 +86,7 @@ export function TransactionTracker() {
   // Both come from the browser's storage, so they're null while the server
   // renders the page and for a moment after it opens.
   if (settings === null || transactions === null) {
-    return <p className="text-sm text-muted">Loading…</p>;
+    return <DashboardSkeleton />;
   }
   if (settings.currency === null) {
     return <CurrencySetup />;
@@ -92,65 +96,80 @@ export function TransactionTracker() {
   const monthName = formatMonth(month);
 
   return (
-    // Room at the bottom on phones, so the floating Add button never covers
-    // the last transaction.
-    <div className="space-y-10 pb-24 sm:pb-0">
-      <section aria-label={`Summary for ${monthName}`} className="space-y-4">
-        <div className="flex items-start justify-between gap-4">
+    <>
+      {/* Room at the bottom on phones, so the floating Add button never
+          covers the last transaction. */}
+      <div className={`${dashboardGridClass} pb-24 sm:pb-0`}>
+        {/* On large screens this column stays in view while the list
+            scrolls past it. */}
+        <section
+          aria-label={`Summary for ${monthName}`}
+          className="space-y-4 lg:sticky lg:top-8"
+        >
           <MonthPicker
             month={month}
             currentMonth={currentMonth}
             onChange={setPickedMonth}
           />
-          {/* On larger screens Add sits here. The wrapper does the hiding,
-              because the button's own classes already set its display. */}
-          <div className="hidden sm:block">
-            <button type="button" onClick={openAdd} className={primaryButtonClass}>
-              <span aria-hidden="true" className="mr-1.5 text-lg leading-none">
-                +
-              </span>
-              Add transaction
-            </button>
-          </div>
-        </div>
-        <MonthSummary
-          totals={totalsByCurrency(monthTransactions, settings.currency)}
-        />
-      </section>
-
-      <div>
-        <h2 className="text-lg font-semibold">Transactions in {monthName}</h2>
-        <p className="mt-1 text-sm text-muted">
-          Saved in this browser on this device only. Clearing your browser
-          data deletes them.
-        </p>
-
-        {saveFailed && (
-          <p
-            role="alert"
-            className="mt-4 rounded-control border border-danger-line bg-danger-surface px-4 py-3 text-sm text-danger"
-          >
-            Your browser didn&apos;t let Pocketwise save. Your latest changes
-            will be lost when you close this page. Storage may be full, or
-            blocked by private browsing or privacy settings.
-          </p>
-        )}
-
-        <div className="mt-4">
-          <TransactionList
-            transactions={monthTransactions}
-            emptyMessage={
-              transactions.length === 0
-                ? "No transactions yet. Use the Add button to record your first one."
-                : `No transactions in ${monthName}.`
-            }
-            editingId={editing?.id ?? null}
-            onEdit={(transaction) =>
-              setSheet({ kind: "edit", id: transaction.id })
-            }
-            onDelete={remove}
+          <MonthSummary
+            totals={totalsByCurrency(monthTransactions, settings.currency)}
           />
-        </div>
+        </section>
+
+        <section aria-labelledby="transactions-heading">
+          <div className="flex min-h-11 items-center justify-between gap-4">
+            <h2 id="transactions-heading" className="text-lg font-semibold">
+              Transactions in {monthName}
+            </h2>
+            {/* From sm up, Add sits beside the list it adds to. The wrapper
+                does the hiding, because the button's own classes already
+                set its display. */}
+            <div className="hidden shrink-0 sm:block">
+              <button
+                type="button"
+                onClick={openAdd}
+                className={primaryButtonClass}
+              >
+                <span aria-hidden="true" className="mr-1.5 text-lg leading-none">
+                  +
+                </span>
+                Add transaction
+              </button>
+            </div>
+          </div>
+
+          {saveFailed && (
+            <p
+              role="alert"
+              className="mt-4 rounded-control border border-danger-line bg-danger-surface px-4 py-3 text-sm text-danger"
+            >
+              Your browser didn&apos;t let Pocketwise save. Your latest changes
+              will be lost when you close this page. Storage may be full, or
+              blocked by private browsing or privacy settings.
+            </p>
+          )}
+
+          <div className="mt-4">
+            <TransactionList
+              transactions={monthTransactions}
+              emptyMessage={
+                transactions.length === 0
+                  ? "No transactions yet. Use the Add button to record your first one."
+                  : `No transactions in ${monthName}.`
+              }
+              editingId={editing?.id ?? null}
+              onEdit={(transaction) =>
+                setSheet({ kind: "edit", id: transaction.id })
+              }
+              onDelete={remove}
+            />
+          </div>
+
+          <p className="mt-3 text-sm text-muted">
+            Saved in this browser on this device only. Clearing your browser
+            data deletes them.
+          </p>
+        </section>
       </div>
 
       {/* On phones, Add floats in the bottom corner, within thumb's reach. */}
@@ -180,6 +199,6 @@ export function TransactionTracker() {
           onCancel={closeSheet}
         />
       </Sheet>
-    </div>
+    </>
   );
 }
