@@ -5,7 +5,10 @@ export function SiteHeader() {
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-800">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
+        <Link
+          href="/"
+          className="flex min-h-11 items-center text-lg font-semibold tracking-tight"
+        >
           Pocketwise
         </Link>
         <nav aria-label="Main" className="flex gap-1">

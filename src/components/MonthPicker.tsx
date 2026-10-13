@@ -9,7 +9,7 @@ type Props = {
 };
 
 const arrowClass =
-  "flex h-10 w-10 items-center justify-center rounded-md border border-zinc-300 text-lg hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900";
+  "flex h-11 w-11 items-center justify-center rounded-md border border-zinc-300 text-lg hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900";
 
 export function MonthPicker({ month, currentMonth, onChange }: Props) {
   return (
@@ -45,7 +45,7 @@ export function MonthPicker({ month, currentMonth, onChange }: Props) {
         <button
           type="button"
           onClick={() => onChange(currentMonth)}
-          className="text-sm font-medium text-zinc-600 underline underline-offset-4 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          className="inline-flex min-h-11 items-center text-sm font-medium text-zinc-600 underline underline-offset-4 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
           Back to this month
         </button>

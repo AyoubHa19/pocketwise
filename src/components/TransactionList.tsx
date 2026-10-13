@@ -11,8 +11,9 @@ type Props = {
   onDelete: (transaction: Transaction) => void;
 };
 
+// 44px tall and wide at least, so a finger can't easily hit the wrong one.
 const actionClass =
-  "rounded px-2 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800";
+  "inline-flex min-h-11 min-w-11 items-center justify-center rounded px-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800";
 
 export function TransactionList({
   transactions,
@@ -63,7 +64,7 @@ export function TransactionList({
               >
                 {formatMoney(signedAmount(transaction))}
               </p>
-              <div className="-mr-2 mt-1 flex">
+              <div className="-mr-3 flex">
                 <button
                   type="button"
                   onClick={() => onEdit(transaction)}

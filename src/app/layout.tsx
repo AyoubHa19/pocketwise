@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   // Pages that set their own title, like "Settings", become
   // "Settings · Pocketwise". Pages that don't just show "Pocketwise".
   title: { default: "Pocketwise", template: "%s · Pocketwise" },
-  description: "Track your income, spending, and budgets in one simple place.",
+  description: "Track your income and spending, month by month.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

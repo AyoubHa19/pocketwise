@@ -2,14 +2,10 @@ import { TransactionTracker } from "@/components/TransactionTracker";
 
 export default function Home() {
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Welcome to Pocketwise
-      </h1>
-      <p className="mt-4 max-w-prose text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-        A simple way to keep track of your income, spending, and budgets.
-      </p>
-
+    <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+      {/* Hidden on screen, where the month summary speaks for itself, but
+          screen readers start from the page's h1 to know where they are. */}
+      <h1 className="sr-only">Transactions</h1>
       <TransactionTracker />
     </section>
   );

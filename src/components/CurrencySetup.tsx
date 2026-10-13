@@ -25,7 +25,7 @@ export function CurrencySetup() {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="mt-10 max-w-lg rounded-lg border border-zinc-200 p-4 sm:p-6 dark:border-zinc-800"
+      className="max-w-lg rounded-lg border border-zinc-200 p-4 sm:p-6 dark:border-zinc-800"
     >
       <h2 className="text-lg font-semibold">Choose your currency</h2>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">

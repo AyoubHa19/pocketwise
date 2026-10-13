@@ -70,7 +70,7 @@ export function TransactionTracker() {
   // Both come from the browser's storage, so they're null while the server
   // renders the page and for a moment after it opens.
   if (settings === null || transactions === null) {
-    return <p className="mt-10 text-sm text-zinc-500">Loading…</p>;
+    return <p className="text-sm text-zinc-500">Loading…</p>;
   }
   if (settings.currency === null) {
     return <CurrencySetup />;
@@ -80,7 +80,7 @@ export function TransactionTracker() {
   const monthName = formatMonth(month);
 
   return (
-    <div className="mt-10 space-y-10">
+    <div className="space-y-10">
       <section aria-label={`Summary for ${monthName}`} className="space-y-4">
         <MonthPicker
           month={month}
