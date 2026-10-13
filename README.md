@@ -62,6 +62,39 @@ integration (`npx convex env set CLERK_FRONTEND_API_URL <url>`).
 | `npm run build` | Builds the app for production, checking all the types |
 | `npm start` | Runs the production build (after `npm run build`) |
 
+## Deployment (preview)
+
+Live preview: https://pocketwise-rho-sable.vercel.app
+
+Hosted on [Vercel](https://vercel.com), connected to the GitHub repository:
+every push to `main` deploys both the backend and the site. The build
+command is `npx convex deploy --cmd 'npm run build'`, which first sends
+`convex/` to the Convex **production** deployment, then builds the site
+pointed at it.
+
+Vercel environment variables (Production):
+
+| Variable | Type | Value |
+| --- | --- | --- |
+| `CONVEX_DEPLOY_KEY` | Secret | A production deploy key from the Convex dashboard |
+| `CLERK_SECRET_KEY` | Secret | From Clerk's API keys page |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Config | From Clerk's API keys page |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Config | `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Config | `/sign-up` |
+| `NEXT_PUBLIC_CLERK_TELEMETRY_DISABLED` | Config | `1` |
+| `NEXT_PUBLIC_POCKETWISE_PREVIEW` | Config | `1` (shows the "don't enter real data" strip) |
+
+The Convex production deployment also needs `CLERK_FRONTEND_API_URL`
+(`npx convex env set --prod CLERK_FRONTEND_API_URL <url>`).
+
+It's a **preview**: sign-in still uses Clerk's development instance, which
+isn't meant for real data, hence the strip across the top. Moving to
+production needs a domain of our own, Clerk's production instance and its
+keys, and then removing `NEXT_PUBLIC_POCKETWISE_PREVIEW`.
+
+Vercel's Standard Protection stays on: preview deployments are only
+visible to the Vercel team; the production domain is public.
+
 ## Where things are
 
 ```
