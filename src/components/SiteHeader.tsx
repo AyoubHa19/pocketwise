@@ -1,3 +1,4 @@
+import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { NavLink } from "@/components/NavLink";
 
@@ -11,10 +12,20 @@ export function SiteHeader() {
         >
           Pocketwise
         </Link>
-        <nav aria-label="Main" className="flex gap-1">
-          <NavLink href="/">Dashboard</NavLink>
-          <NavLink href="/settings">Settings</NavLink>
-        </nav>
+        {/* Only once signed in: on the sign-in page, these would just lead
+            back to it. The account button holds "Manage account" and
+            "Sign out". */}
+        <Show when="signed-in">
+          <div className="flex items-center gap-1 sm:gap-3">
+            <nav aria-label="Main" className="flex gap-1">
+              <NavLink href="/">Dashboard</NavLink>
+              <NavLink href="/settings">Settings</NavLink>
+            </nav>
+            <div className="flex h-11 w-11 items-center justify-center">
+              <UserButton />
+            </div>
+          </div>
+        </Show>
       </div>
     </header>
   );
