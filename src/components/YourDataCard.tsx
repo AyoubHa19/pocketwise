@@ -19,14 +19,22 @@ import { useToday } from "@/lib/useToday";
 
 const CONFIRM_WORD = "DELETE";
 
-/** Gives the browser a file to save, made from text in memory. */
+/**
+ * Gives the browser a file to save, made from text in memory. The link is
+ * put on the page for the click (some browsers ignore clicks on links that
+ * aren't), and the file is kept in memory for a minute, because releasing
+ * it straight away can cancel the download before it starts.
+ */
 function download(text: string, fileName: string) {
   const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
+  link.hidden = true;
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 /**
