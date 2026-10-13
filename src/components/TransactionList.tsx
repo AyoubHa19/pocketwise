@@ -1,5 +1,5 @@
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { cardClass } from "@/components/formStyles";
+import { cardClass, colorTransition } from "@/components/formStyles";
 import { formatDayLabel } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { groupByDay } from "@/lib/summary";
@@ -77,7 +77,7 @@ export function TransactionList({
                       type="button"
                       aria-label={label}
                       onClick={() => onEdit(transaction)}
-                      className={`flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-muted ${
+                      className={`flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-muted ${colorTransition} ${
                         transaction.id === editingId ? "bg-surface-muted" : ""
                       }`}
                     >

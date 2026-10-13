@@ -23,21 +23,33 @@ export const dashboardSummaryArea = "lg:col-start-1 lg:row-start-1";
 export const dashboardListArea = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
 export const dashboardChartsArea = "lg:col-start-1 lg:row-start-2";
 
+// Simple interaction feedback is CSS, not Motion: it needs no JavaScript.
+// Timing matches src/lib/motion.ts (fast = 150ms, ease-pocket).
+
+/**
+ * Colours ease over 150ms on hover and focus instead of snapping. Nothing
+ * moves, so it stays on for people who reduce motion.
+ */
+export const colorTransition =
+  "transition-[color,background-color,border-color,opacity] duration-150 ease-pocket";
+
+/**
+ * For buttons: colour transitions plus a slight press-in (98%) while held,
+ * like a physical button. The press is dropped for people who reduce motion.
+ */
+export const pressable =
+  "transition-[color,background-color,border-color,opacity,scale] duration-150 ease-pocket active:scale-[0.98] motion-reduce:active:scale-100";
+
 // text-base (16px) stops phones from zooming in when a field is tapped.
-export const fieldClass =
-  "mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-base text-foreground";
+export const fieldClass = `mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-base text-foreground hover:border-muted ${colorTransition}`;
 
 /** The big amount field at the top of the transaction form. */
-export const amountFieldClass =
-  "mt-1 block min-h-14 w-full rounded-control border border-line-strong bg-surface px-4 py-2 text-2xl font-semibold tabular-nums text-foreground";
+export const amountFieldClass = `mt-1 block min-h-14 w-full rounded-control border border-line-strong bg-surface px-4 py-2 text-2xl font-semibold tabular-nums text-foreground hover:border-muted ${colorTransition}`;
 
-export const primaryButtonClass =
-  "inline-flex min-h-11 w-full items-center justify-center rounded-control bg-accent px-5 font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50 sm:w-auto";
+export const primaryButtonClass = `inline-flex min-h-11 w-full items-center justify-center rounded-control bg-accent px-5 font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50 sm:w-auto ${pressable}`;
 
-export const secondaryButtonClass =
-  "inline-flex min-h-11 w-full items-center justify-center rounded-control border border-line-strong bg-surface px-5 font-medium text-foreground hover:bg-surface-muted sm:w-auto";
+export const secondaryButtonClass = `inline-flex min-h-11 w-full items-center justify-center rounded-control border border-line-strong bg-surface px-5 font-medium text-foreground hover:bg-surface-muted sm:w-auto ${pressable}`;
 
 /** For actions that destroy something, like Delete. Pushed to the far end
     on larger screens, away from Save. */
-export const dangerButtonClass =
-  "inline-flex min-h-11 w-full items-center justify-center rounded-control px-5 font-medium text-danger hover:bg-danger-surface sm:ml-auto sm:w-auto";
+export const dangerButtonClass = `inline-flex min-h-11 w-full items-center justify-center rounded-control px-5 font-medium text-danger hover:bg-danger-surface sm:ml-auto sm:w-auto ${pressable}`;

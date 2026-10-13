@@ -7,6 +7,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { pressable } from "@/components/formStyles";
 
 type Props = {
   open: boolean;
@@ -74,26 +75,28 @@ export function Sheet({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className="fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-card border-0 bg-surface p-0 text-foreground shadow-xl backdrop:bg-black/50 sm:inset-y-0 sm:right-0 sm:left-auto sm:h-dvh sm:max-h-none sm:max-w-md sm:rounded-none sm:rounded-l-card"
+      // "sheet" gives it the slide in and out, and the backdrop's fade:
+      // see globals.css.
+      className="sheet fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-card border-0 bg-surface p-0 text-foreground shadow-xl sm:inset-y-0 sm:right-0 sm:left-auto sm:h-dvh sm:max-h-none sm:max-w-md sm:rounded-none sm:rounded-l-card"
     >
-      {open && (
-        <div className="p-4 pb-6 sm:p-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <h2 id={titleId} className="text-lg font-semibold">
-              {title}
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="-mr-2 inline-flex h-11 w-11 items-center justify-center rounded-control text-2xl leading-none text-muted hover:bg-surface-muted hover:text-foreground"
-            >
-              ×
-            </button>
-          </div>
-          {children}
+      {/* Always rendered, so the content is still there while the sheet
+          slides away. A closed <dialog> is hidden from everyone anyway. */}
+      <div className="p-4 pb-6 sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 id={titleId} className="text-lg font-semibold">
+            {title}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className={`-mr-2 inline-flex h-11 w-11 items-center justify-center rounded-control text-2xl leading-none text-muted hover:bg-surface-muted hover:text-foreground ${pressable}`}
+          >
+            ×
+          </button>
         </div>
-      )}
+        {children}
+      </div>
     </dialog>
   );
 }

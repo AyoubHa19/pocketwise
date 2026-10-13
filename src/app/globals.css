@@ -73,6 +73,10 @@
   --radius-card: 1rem; /* 16px, for cards and panels */
   --radius-control: 0.75rem; /* 12px, for fields and buttons */
 
+  /* The app's one easing curve, as the ease-pocket class: quick start,
+     gentle stop, no bounce. The same curve as `ease` in src/lib/motion.ts. */
+  --ease-pocket: cubic-bezier(0.22, 1, 0.36, 1);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -97,10 +101,93 @@ body {
   outline-offset: 2px;
 }
 
+/* The outline settles into place instead of snapping (but appears at once
+   for people who reduce motion). Only the gap animates, never the outline
+   itself, so focus is always visible straight away. */
+@media (prefers-reduced-motion: no-preference) {
+  :focus-visible {
+    transition: outline-offset 150ms var(--ease-pocket);
+  }
+}
+
 /* While a sheet (an open <dialog>) is showing, keep the page behind it still,
    so scrolling inside the sheet doesn't scroll the page too. */
 html:has(dialog[open]) {
   overflow: hidden;
+}
+
+/*
+ * The add/edit sheet (Sheet.tsx) slides in and out, and its backdrop fades.
+ * - The plain .sheet rule is where it goes when it closes: off screen.
+ * - @starting-style is where it starts from when it opens.
+ * - allow-discrete keeps it on screen (display, and the "top layer" it opens
+ *   in) until the slide has finished, so closing animates too.
+ * Browsers without these features open and close it at once, which still
+ * works. With reduced motion it doesn't slide, it fades quickly.
+ */
+.sheet {
+  translate: 0 100%; /* phones: below the screen */
+  transition:
+    translate 320ms var(--ease-pocket),
+    opacity 150ms var(--ease-pocket),
+    display 320ms allow-discrete,
+    overlay 320ms allow-discrete;
+}
+.sheet[open] {
+  translate: 0 0;
+}
+@starting-style {
+  .sheet[open] {
+    translate: 0 100%;
+  }
+}
+@media (width >= 40rem) {
+  .sheet {
+    translate: 100% 0; /* larger screens: off to the right */
+  }
+  .sheet[open] {
+    translate: 0 0;
+  }
+  @starting-style {
+    .sheet[open] {
+      translate: 100% 0;
+    }
+  }
+}
+
+.sheet::backdrop {
+  background-color: rgb(0 0 0 / 0);
+  transition:
+    background-color 320ms var(--ease-pocket),
+    display 320ms allow-discrete,
+    overlay 320ms allow-discrete;
+}
+.sheet[open]::backdrop {
+  background-color: rgb(0 0 0 / 0.5);
+}
+@starting-style {
+  .sheet[open]::backdrop {
+    background-color: rgb(0 0 0 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet[open] {
+    translate: none;
+  }
+  .sheet {
+    opacity: 0;
+  }
+  .sheet[open] {
+    opacity: 1;
+  }
+  @starting-style {
+    .sheet[open] {
+      translate: none;
+      opacity: 0;
+    }
+  }
 }
 
 ::placeholder {

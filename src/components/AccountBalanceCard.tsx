@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { fitOneLine } from "@/components/fitOneLine";
-import { cardClass } from "@/components/formStyles";
+import { cardClass, colorTransition } from "@/components/formStyles";
 import { formatDayLabel } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { accountBalance, type OpeningBalance } from "@/lib/summary";
@@ -12,8 +12,7 @@ type Props = {
   today: string;
 };
 
-const linkClass =
-  "inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline";
+const linkClass = `inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline ${colorTransition}`;
 
 /**
  * The money in the account now, for every month together. It needs a

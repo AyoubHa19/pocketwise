@@ -1,3 +1,4 @@
+import { colorTransition, pressable } from "@/components/formStyles";
 import { addMonths, formatMonth } from "@/lib/dates";
 
 type Props = {
@@ -8,8 +9,7 @@ type Props = {
   onChange: (month: string) => void;
 };
 
-const arrowClass =
-  "flex h-11 w-11 items-center justify-center rounded-control border border-line-strong bg-surface text-lg hover:bg-surface-muted";
+const arrowClass = `flex h-11 w-11 items-center justify-center rounded-control border border-line-strong bg-surface text-lg hover:bg-surface-muted ${pressable}`;
 
 export function MonthPicker({ month, currentMonth, onChange }: Props) {
   return (
@@ -45,7 +45,7 @@ export function MonthPicker({ month, currentMonth, onChange }: Props) {
         <button
           type="button"
           onClick={() => onChange(currentMonth)}
-          className="inline-flex min-h-11 items-center text-sm font-medium text-muted underline underline-offset-4 hover:text-foreground"
+          className={`inline-flex min-h-11 items-center text-sm font-medium text-muted underline underline-offset-4 hover:text-foreground ${colorTransition}`}
         >
           Back to this month
         </button>

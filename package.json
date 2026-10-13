@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "lucide-react": "^1.48.0",
+    "motion": "^13.4.6",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
@@ -26,5 +27,8 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.3"
+  },
+  "overrides": {
+    "framer-motion": "13.4.6"
   }
 }
