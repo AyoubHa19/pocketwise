@@ -84,13 +84,8 @@ Vercel environment variables (Production):
 | `NEXT_PUBLIC_CLERK_TELEMETRY_DISABLED` | Config | `1` |
 | `NEXT_PUBLIC_POCKETWISE_PREVIEW` | Config | `1` (shows the "don't enter real data" strip) |
 
-The site's backend is the `production-eu` deployment, in Europe (Ireland).
-It isn't the project's *default* production deployment (an earlier one in
-US East is), so commands for it name it: for example, it needs
-`CLERK_FRONTEND_API_URL`, set with
-`npx convex env set --deployment production-eu CLERK_FRONTEND_API_URL <url>`.
-Vercel's `CONVEX_DEPLOY_KEY` is a deploy key for `production-eu`, which is
-what makes the build deploy there.
+The Convex production deployment also needs `CLERK_FRONTEND_API_URL`
+(`npx convex env set --prod CLERK_FRONTEND_API_URL <url>`).
 
 It's a **preview**: sign-in still uses Clerk's development instance, which
 isn't meant for real data, hence the strip across the top. Moving to
