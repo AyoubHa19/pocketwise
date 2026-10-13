@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { AccountCard } from "@/components/AccountCard";
 import { OpeningBalanceForm } from "@/components/OpeningBalanceForm";
 import { SettingsForm } from "@/components/SettingsForm";
+import { YourDataCard } from "@/components/YourDataCard";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -25,6 +26,7 @@ export default async function SettingsPage() {
         <AccountCard />
         <SettingsForm />
         <OpeningBalanceForm />
+        <YourDataCard />
       </div>
     </section>
   );

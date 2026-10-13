@@ -22,6 +22,9 @@ see it wherever you sign in.
 - Keep your data in your account, in sync between tabs and devices.
 - Move data saved in the browser before accounts existed into your
   account, checked after moving, with the browser's copy kept as a backup.
+- Download all your transactions as CSV (format described in
+  `src/lib/csv.ts`), delete the browser's old copy, or delete your account
+  and all its data, from Settings.
 - Light and dark themes (following your device), and gentle animations
   that switch off when your device asks for reduced motion.
 
@@ -158,6 +161,17 @@ batches that can be retried without copies. Afterwards every transaction
 is looked up in the account before the move counts as done, and the
 browser keeps its copy.
 
+**Deleting an account deletes the data first, on the server.** The server
+action in `src/app/settings/actions.ts` deletes the user's Convex data with
+their own sign-in token, reads it back to check nothing is left, and only
+then deletes their Clerk account (which needs the secret key, so it never
+happens in the browser). If a step fails it stops there, so there's never
+data left behind that no one can sign in to.
+
+**Exported notes can't run as spreadsheet formulas.** Text the user typed
+that starts with `=`, `+`, `-` or `@` gets a leading apostrophe in the CSV
+(`src/lib/csv.ts`), which blocks "CSV injection".
+
 **Browser-only values are read with `useSyncExternalStore`.** The server
 can't see your storage, your clock, or your browser's currency list, so
 it renders a loading skeleton, and the browser fills in the real values.
@@ -174,9 +188,8 @@ recommend for fingers.
 
 ## Current limits
 
-- Only a development setup so far: it isn't deployed, and the Clerk and
-  Convex instances are development ones.
-- No export yet, and no way to delete your account's data from the app.
+- Only a preview so far: sign-in uses Clerk's development instance, so
+  the live site isn't for real data (see Deployment).
 - No exchange rates: amounts in other currencies are kept and shown apart,
   never added to the main ones.
 - One account, set up through the starting balance.

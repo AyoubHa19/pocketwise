@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   batches,
+  clearLocalData,
   hasLocalData,
   isImportMarker,
   missingAfterImport,
@@ -54,6 +55,45 @@ describe("missingAfterImport", () => {
   it("counts a copy edited in the account as arrived", () => {
     const edited = { ...t("a"), amount: { amountMinor: 999, currency: "EUR" } };
     expect(missingAfterImport([t("a")], [edited])).toEqual([]);
+  });
+});
+
+describe("clearLocalData", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** A minimal in-memory localStorage, with the parts clearLocalData uses. */
+  function fakeStorage(entries: Record<string, string>) {
+    const items = new Map(Object.entries(entries));
+    return {
+      items,
+      get length() {
+        return items.size;
+      },
+      key: (i: number) => [...items.keys()][i] ?? null,
+      removeItem: (key: string) => void items.delete(key),
+    };
+  }
+
+  it("removes every Pocketwise entry, backups and marker included, and nothing else", () => {
+    const storage = fakeStorage({
+      "pocketwise.transactions": "[]",
+      "pocketwise.settings": "{}",
+      "pocketwise.transactions.backup-1": "x",
+      "pocketwise.localImport": "{}",
+      "other-app.token": "keep me",
+    });
+    vi.stubGlobal("localStorage", storage);
+    expect(clearLocalData()).toBe(4);
+    expect([...storage.items.keys()]).toEqual(["other-app.token"]);
+  });
+
+  it("says null when the browser won't allow it", () => {
+    vi.stubGlobal("localStorage", {
+      get length(): number {
+        throw new DOMException("Blocked", "SecurityError");
+      },
+    });
+    expect(clearLocalData()).toBeNull();
   });
 });
 

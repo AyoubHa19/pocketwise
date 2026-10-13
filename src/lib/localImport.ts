@@ -69,6 +69,30 @@ export function readImportMarker(): ImportMarker | null {
   }
 }
 
+/** Every key Pocketwise uses in the browser starts with this. */
+export const LOCAL_KEY_PREFIX = "pocketwise.";
+
+/**
+ * Deletes everything Pocketwise saved in this browser: the old
+ * transactions and settings, their backups, and the import marker. The
+ * account isn't touched. Returns how many entries were removed, or null if
+ * the browser wouldn't allow it.
+ */
+export function clearLocalData(): number | null {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(LOCAL_KEY_PREFIX)) keys.push(key);
+    }
+    // Collected first: removing while counting would skip entries.
+    for (const key of keys) localStorage.removeItem(key);
+    return keys.length;
+  } catch {
+    return null;
+  }
+}
+
 /** Saves the marker. Returns whether the browser let it be saved. */
 export function writeImportMarker(status: ImportMarker["status"]): boolean {
   try {

@@ -263,6 +263,50 @@ describe("moving browser data into the account", () => {
   });
 });
 
+describe("deleting your data", () => {
+  it("deletes the user's transactions and settings, and nothing of anyone else's", async () => {
+    const { sarah, lee } = setup();
+    await sarah.mutation(api.transactions.save, { transaction: coffee });
+    await sarah.mutation(api.settings.setCurrency, { currency: "EUR" });
+    await lee.mutation(api.transactions.save, { transaction: coffee });
+    await lee.mutation(api.settings.setCurrency, { currency: "MAD" });
+
+    expect(await sarah.mutation(api.account.deleteMyData, {})).toEqual({ deleted: 1, more: false });
+
+    expect(await sarah.query(api.transactions.list, {})).toEqual([]);
+    expect(await sarah.query(api.settings.get, {})).toEqual({ currency: null, openingBalance: null });
+    // Lee's data is untouched.
+    expect(await lee.query(api.transactions.list, {})).toEqual([coffee]);
+    expect((await lee.query(api.settings.get, {})).currency).toBe("MAD");
+  });
+
+  it("works in batches for a large account, settings last", async () => {
+    const { sarah } = setup();
+    const many = Array.from({ length: 501 }, (_, i) => ({ ...coffee, id: `c-${i}` }));
+    for (const batch of [many.slice(0, 200), many.slice(200, 400), many.slice(400)]) {
+      await sarah.mutation(api.transactions.importLocal, { transactions: batch });
+    }
+    await sarah.mutation(api.settings.setCurrency, { currency: "EUR" });
+
+    expect(await sarah.mutation(api.account.deleteMyData, {})).toEqual({ deleted: 500, more: true });
+    // Not finished yet: the settings are still there.
+    expect((await sarah.query(api.settings.get, {})).currency).toBe("EUR");
+    expect(await sarah.mutation(api.account.deleteMyData, {})).toEqual({ deleted: 1, more: false });
+    expect(await sarah.query(api.transactions.list, {})).toEqual([]);
+    expect((await sarah.query(api.settings.get, {})).currency).toBeNull();
+  });
+
+  it("is fine to call with nothing left", async () => {
+    const { sarah } = setup();
+    expect(await sarah.mutation(api.account.deleteMyData, {})).toEqual({ deleted: 0, more: false });
+  });
+
+  it("needs a sign-in", async () => {
+    const { t } = setup();
+    await expect(t.mutation(api.account.deleteMyData, {})).rejects.toThrow("You need to be signed in.");
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);
