@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import {
-  cardClass,
+  amountFieldClass,
   fieldClass,
   primaryButtonClass,
   secondaryButtonClass,
@@ -22,7 +22,7 @@ type Props = {
   /** The currency for new transactions, from the settings. */
   defaultCurrency: string;
   onSave: (transaction: Transaction) => void;
-  /** Shown as a Cancel button while editing. */
+  /** Shown as a Cancel button next to Save. */
   onCancel?: () => void;
 };
 
@@ -85,25 +85,29 @@ export function TransactionForm({
       date,
       note: note.trim() || undefined,
     });
-
-    // Keep type, category and date: people often add several
-    // similar transactions in a row.
-    setAmount("");
-    setNote("");
-    setError(null);
   }
 
+  // The card and the title come from the Sheet this form is shown in.
   return (
-    <form
-      onSubmit={handleSubmit}
-      noValidate
-      className={`${cardClass} p-4 sm:p-6`}
-    >
-      <h2 className="text-lg font-semibold">
-        {isEditing ? "Edit transaction" : "Add a transaction"}
-      </h2>
+    <form onSubmit={handleSubmit} noValidate>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* The amount comes first and largest: it's what people came to
+            enter, and the sheet puts the cursor straight into it. */}
+        <label className="block text-sm font-medium sm:col-span-2">
+          Amount ({currency})
+          <input
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            data-autofocus
+            placeholder={decimals === 0 ? "0" : `0.${"0".repeat(decimals)}`}
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            aria-invalid={error !== null && amount !== "" ? true : undefined}
+            className={amountFieldClass}
+          />
+        </label>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-medium">
           Type
           <select
@@ -131,21 +135,7 @@ export function TransactionForm({
           </select>
         </label>
 
-        <label className="block text-sm font-medium">
-          Amount ({currency})
-          <input
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder={decimals === 0 ? "0" : `0.${"0".repeat(decimals)}`}
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            aria-invalid={error !== null && amount !== "" ? true : undefined}
-            className={fieldClass}
-          />
-        </label>
-
-        <label className="block text-sm font-medium">
+        <label className="block text-sm font-medium sm:col-span-2">
           Date
           <input
             type="date"
@@ -177,7 +167,7 @@ export function TransactionForm({
         <button type="submit" className={primaryButtonClass}>
           {isEditing ? "Save changes" : "Add transaction"}
         </button>
-        {isEditing && onCancel && (
+        {onCancel && (
           <button
             type="button"
             onClick={onCancel}

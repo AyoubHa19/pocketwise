@@ -89,6 +89,12 @@ body {
   outline-offset: 2px;
 }
 
+/* While a sheet (an open <dialog>) is showing, keep the page behind it still,
+   so scrolling inside the sheet doesn't scroll the page too. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
 ::placeholder {
   color: var(--muted);
   opacity: 1; /* Firefox fades placeholders by default */

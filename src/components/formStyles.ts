@@ -11,6 +11,10 @@ export const cardClass =
 export const fieldClass =
   "mt-1 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-base text-foreground";
 
+/** The big amount field at the top of the transaction form. */
+export const amountFieldClass =
+  "mt-1 block min-h-14 w-full rounded-control border border-line-strong bg-surface px-4 py-2 text-2xl font-semibold tabular-nums text-foreground";
+
 export const primaryButtonClass =
   "inline-flex min-h-11 w-full items-center justify-center rounded-control bg-accent px-5 font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50 sm:w-auto";
 

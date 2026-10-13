@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { CurrencySetup } from "@/components/CurrencySetup";
+import { primaryButtonClass } from "@/components/formStyles";
 import { MonthPicker } from "@/components/MonthPicker";
 import { MonthSummary } from "@/components/MonthSummary";
+import { Sheet } from "@/components/Sheet";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
 import { formatMonth, monthOf } from "@/lib/dates";
@@ -19,38 +21,49 @@ import {
 } from "@/lib/transactions";
 import { useToday } from "@/lib/useToday";
 
+/** What the add/edit sheet is doing. Only one of these can be true at once. */
+type SheetState =
+  | { kind: "closed" }
+  | { kind: "add" }
+  | { kind: "edit"; id: string };
+
 export function TransactionTracker() {
   const settings = useSettings();
   const transactions = useTransactions();
   const today = useToday();
   // null until the user moves to another month; until then, this month.
   const [pickedMonth, setPickedMonth] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<SheetState>({ kind: "closed" });
   const [saveFailed, setSaveFailed] = useState(false);
-  const formRef = useRef<HTMLDivElement>(null);
 
   const currentMonth = monthOf(today);
   const month = pickedMonth ?? currentMonth;
 
-  // Looked up by id, so if the transaction disappears (say, deleted in
-  // another tab), the form simply goes back to adding.
-  const editing = transactions?.find((t) => t.id === editingId);
+  // Looked up by id, so if the transaction disappears while its sheet is
+  // open (say, deleted in another tab), the sheet simply closes.
+  const editing =
+    sheet.kind === "edit"
+      ? transactions?.find((t) => t.id === sheet.id)
+      : undefined;
+  const sheetOpen = sheet.kind === "add" || editing !== undefined;
+
+  function openAdd() {
+    setSheet({ kind: "add" });
+  }
+
+  function closeSheet() {
+    setSheet({ kind: "closed" });
+  }
 
   function save(transaction: Transaction) {
     const saved = updateTransactions((previous) =>
       upsertTransaction(previous, transaction),
     );
     setSaveFailed(!saved);
-    setEditingId(null);
+    closeSheet();
     // Show the month the transaction is in, or it would seem to vanish when
     // its date is in a different month from the one on screen.
     setPickedMonth(monthOf(transaction.date));
-  }
-
-  function startEditing(transaction: Transaction) {
-    setEditingId(transaction.id);
-    // On phones the form is far above the list, so bring it into view.
-    formRef.current?.scrollIntoView({ block: "start" });
   }
 
   function remove(transaction: Transaction) {
@@ -64,7 +77,6 @@ export function TransactionTracker() {
       removeTransaction(previous, transaction.id),
     );
     setSaveFailed(!saved);
-    if (transaction.id === editingId) setEditingId(null);
   }
 
   // Both come from the browser's storage, so they're null while the server
@@ -80,28 +92,31 @@ export function TransactionTracker() {
   const monthName = formatMonth(month);
 
   return (
-    <div className="space-y-10">
+    // Room at the bottom on phones, so the floating Add button never covers
+    // the last transaction.
+    <div className="space-y-10 pb-24 sm:pb-0">
       <section aria-label={`Summary for ${monthName}`} className="space-y-4">
-        <MonthPicker
-          month={month}
-          currentMonth={currentMonth}
-          onChange={setPickedMonth}
-        />
+        <div className="flex items-start justify-between gap-4">
+          <MonthPicker
+            month={month}
+            currentMonth={currentMonth}
+            onChange={setPickedMonth}
+          />
+          {/* On larger screens Add sits here. The wrapper does the hiding,
+              because the button's own classes already set its display. */}
+          <div className="hidden sm:block">
+            <button type="button" onClick={openAdd} className={primaryButtonClass}>
+              <span aria-hidden="true" className="mr-1.5 text-lg leading-none">
+                +
+              </span>
+              Add transaction
+            </button>
+          </div>
+        </div>
         <MonthSummary
           totals={totalsByCurrency(monthTransactions, settings.currency)}
         />
       </section>
-
-      <div ref={formRef} className="scroll-mt-4">
-        {/* A new key makes React start a fresh form with the new values. */}
-        <TransactionForm
-          key={editing?.id ?? "new"}
-          transaction={editing}
-          defaultCurrency={settings.currency}
-          onSave={save}
-          onCancel={() => setEditingId(null)}
-        />
-      </div>
 
       <div>
         <h2 className="text-lg font-semibold">Transactions in {monthName}</h2>
@@ -126,15 +141,45 @@ export function TransactionTracker() {
             transactions={monthTransactions}
             emptyMessage={
               transactions.length === 0
-                ? "No transactions yet. Add your first one with the form above."
+                ? "No transactions yet. Use the Add button to record your first one."
                 : `No transactions in ${monthName}.`
             }
-            editingId={editingId}
-            onEdit={startEditing}
+            editingId={editing?.id ?? null}
+            onEdit={(transaction) =>
+              setSheet({ kind: "edit", id: transaction.id })
+            }
             onDelete={remove}
           />
         </div>
       </div>
+
+      {/* On phones, Add floats in the bottom corner, within thumb's reach. */}
+      <button
+        type="button"
+        onClick={openAdd}
+        aria-label="Add transaction"
+        className="fixed right-4 bottom-6 z-10 inline-flex h-14 items-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-accent-foreground shadow-lg sm:hidden"
+      >
+        <span aria-hidden="true" className="text-2xl leading-none">
+          +
+        </span>
+        Add
+      </button>
+
+      <Sheet
+        open={sheetOpen}
+        title={editing ? "Edit transaction" : "Add a transaction"}
+        onClose={closeSheet}
+      >
+        {/* A new key makes React start a fresh form with the new values. */}
+        <TransactionForm
+          key={editing?.id ?? "new"}
+          transaction={editing}
+          defaultCurrency={settings.currency}
+          onSave={save}
+          onCancel={closeSheet}
+        />
+      </Sheet>
     </div>
   );
 }
