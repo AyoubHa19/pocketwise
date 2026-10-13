@@ -1,3 +1,4 @@
+import { fitOneLine } from "@/components/fitOneLine";
 import { cardClass } from "@/components/formStyles";
 import { formatMoney } from "@/lib/money";
 import { percentOfIncomeSpent, type CurrencyTotals } from "@/lib/summary";
@@ -7,16 +8,6 @@ type Props = {
   totals: CurrencyTotals[];
 };
 
-/**
- * A font size that keeps `text` on one line in its box. Measured in Geist,
- * amounts need at most about 0.6em per character, so the font can be at
- * most the box's width (100cqi, from the nearest @container) divided by
- * that. `clamp` keeps it between a readable `min` and the normal `max`.
- */
-function fitOneLine(text: string, min: string, max: string) {
-  const ems = (text.length * 0.6).toFixed(2);
-  return { fontSize: `clamp(${min}, calc(100cqi / ${ems}), ${max})` };
-}
 
 /**
  * The month at a glance: the balance large, since it's what people look
@@ -37,7 +28,9 @@ export function MonthSummary({ totals }: Props) {
       <dl className="@container">
         {/* @container makes this box the one that 100cqi measures. */}
         <div className="@container">
-          <dt className="text-sm font-medium text-muted">Balance</dt>
+          {/* Not "Balance": that reads as the money in the bank, which is
+              the Account balance card's job. */}
+          <dt className="text-sm font-medium text-muted">Left this month</dt>
           {/* Normal size per layout (--balance-max), smaller for long
               amounts so they stay on one line. The line height is fixed so
               shrinking never moves anything below. overflow-wrap is only a
@@ -76,6 +69,16 @@ export function MonthSummary({ totals }: Props) {
           </div>
         </div>
       </dl>
+
+      {/* With no income yet, what's "left" is just minus the spending,
+          which alarms people who haven't entered their pay. Say why. */}
+      {/* mt-8 makes it as tall as the bar and its sentence (16 + 8 + 8 +
+          20px), so adding the first income moves nothing below. */}
+      {spentPercent === null && (
+        <p className="mt-8 text-sm text-muted">
+          Add this month&apos;s income to see what&apos;s left.
+        </p>
+      )}
 
       {spentPercent !== null && (
         <div className="mt-4">

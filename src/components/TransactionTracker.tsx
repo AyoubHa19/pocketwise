@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { AccountBalanceCard } from "@/components/AccountBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import {
@@ -110,6 +111,11 @@ export function TransactionTracker() {
           aria-label={`Summary for ${monthName}`}
           className="space-y-4 lg:sticky lg:top-8"
         >
+          <AccountBalanceCard
+            transactions={transactions}
+            openingBalance={settings.openingBalance}
+            today={today}
+          />
           <MonthPicker
             month={month}
             currentMonth={currentMonth}

@@ -109,3 +109,52 @@ export function groupByDay(transactions: Transaction[]): DayGroup[] {
       };
     });
 }
+
+/**
+ * What the account held at the start of `date` ("YYYY-MM-DD"), before any
+ * of that day's transactions. It can be zero or negative (an overdraft).
+ */
+export type OpeningBalance = {
+  amountMinor: number;
+  currency: string;
+  date: string;
+};
+
+/** Checks that saved data really is an OpeningBalance. */
+export function isOpeningBalance(value: unknown): value is OpeningBalance {
+  if (typeof value !== "object" || value === null) return false;
+  const { amountMinor, currency, date } = value as Record<string, unknown>;
+  return (
+    Number.isSafeInteger(amountMinor) &&
+    typeof currency === "string" &&
+    /^[A-Z]{3}$/.test(currency) &&
+    typeof date === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(date)
+  );
+}
+
+/**
+ * What the account holds on `today`: the opening balance plus every
+ * transaction in its currency from its date up to and including today.
+ * Transactions before that date are already part of the opening balance,
+ * later-dated ones haven't happened yet, and other currencies can't be
+ * added without an exchange rate.
+ */
+export function accountBalance(
+  transactions: Transaction[],
+  opening: OpeningBalance,
+  today: string,
+): number {
+  let balance = opening.amountMinor;
+  for (const transaction of transactions) {
+    const { amountMinor, currency } = signedAmount(transaction);
+    if (
+      currency === opening.currency &&
+      transaction.date >= opening.date &&
+      transaction.date <= today
+    ) {
+      balance += amountMinor;
+    }
+  }
+  return balance;
+}

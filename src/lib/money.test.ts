@@ -6,6 +6,7 @@ import {
   formatMoney,
   isSupportedCurrency,
   parseAmount,
+  parseBalance,
 } from "@/lib/money";
 
 // Intl puts special non-breaking spaces in some formats (like "1.234,56 €"),
@@ -112,5 +113,41 @@ describe("currencyOptions", () => {
     expect(isSupportedCurrency("XYZ")).toBe(false);
     expect(isSupportedCurrency("mad")).toBe(false);
     expect(isSupportedCurrency("")).toBe(false);
+  });
+});
+
+describe("parseBalance", () => {
+  it.each([
+    ["3000", "AED", 300000],
+    ["3000,50", "AED", 300050],
+    ["-250.50", "AED", -25050],
+    [" - 40 ", "AED", -4000],
+    ["0", "AED", 0],
+    ["0.00", "AED", 0],
+    ["-0", "AED", 0],
+    ["-1500", "JPY", -1500],
+  ])("reads %j in %s as %i", (input, currency, expected) => {
+    expect(parseBalance(input, currency)).toBe(expected);
+  });
+
+  it.each([
+    ["", "nothing"],
+    ["-", "a minus on its own"],
+    ["--5", "two minuses"],
+    ["abc", "text"],
+    ["12.345", "too many decimals"],
+  ])("rejects %j (%s)", (input) => {
+    expect(parseBalance(input, "AED")).toBeNull();
+  });
+});
+
+describe("amountToInputText with negative balances", () => {
+  it.each([
+    [-25050, "AED", "-250.50"],
+    [-5, "USD", "-0.05"],
+    [-1500, "JPY", "-1500"],
+  ])("writes %i %s as %j, which parseBalance reads back", (amountMinor, currency, text) => {
+    expect(amountToInputText({ amountMinor, currency })).toBe(text);
+    expect(parseBalance(text, currency)).toBe(amountMinor);
   });
 });

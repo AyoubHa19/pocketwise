@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  accountBalance,
   groupByDay,
+  isOpeningBalance,
   percentOfIncomeSpent,
   totalsByCurrency,
   transactionsInMonth,
@@ -150,5 +152,57 @@ describe("groupByDay", () => {
 
   it("has no groups when there are no transactions", () => {
     expect(groupByDay([])).toEqual([]);
+  });
+});
+
+describe("accountBalance", () => {
+  const opening = { amountMinor: 300000, currency: "AED", date: "2026-10-01" };
+  const today = "2026-10-13";
+
+  it("adds the transactions from the opening day up to today", () => {
+    const list = [
+      transaction("a", "expense", 50000, "AED", "2026-10-01"), // the opening day counts
+      transaction("b", "income", 900000, "AED", "2026-10-05"),
+      transaction("c", "expense", 20000, "AED", "2026-10-13"), // today counts
+    ];
+    expect(accountBalance(list, opening, today)).toBe(300000 - 50000 + 900000 - 20000);
+  });
+
+  it("leaves out what was already in the opening balance, and the future", () => {
+    const list = [
+      transaction("before", "expense", 99999, "AED", "2026-09-30"),
+      transaction("future", "expense", 99999, "AED", "2026-10-14"),
+    ];
+    expect(accountBalance(list, opening, today)).toBe(300000);
+  });
+
+  it("leaves out other currencies", () => {
+    const list = [transaction("usd", "expense", 5000, "USD", "2026-10-05")];
+    expect(accountBalance(list, opening, today)).toBe(300000);
+  });
+
+  it("can start from zero or an overdraft, and go below zero", () => {
+    const overdraft = { ...opening, amountMinor: -10000 };
+    const list = [transaction("a", "expense", 70000, "AED", "2026-10-02")];
+    expect(accountBalance(list, overdraft, today)).toBe(-80000);
+    expect(accountBalance([], { ...opening, amountMinor: 0 }, today)).toBe(0);
+  });
+});
+
+describe("isOpeningBalance", () => {
+  it("accepts a complete opening balance, including a negative one", () => {
+    expect(isOpeningBalance({ amountMinor: -500, currency: "AED", date: "2026-10-01" })).toBe(true);
+  });
+
+  it.each([
+    [{ amountMinor: 1.5, currency: "AED", date: "2026-10-01" }],
+    [{ amountMinor: "500", currency: "AED", date: "2026-10-01" }],
+    [{ amountMinor: 500, currency: "aed", date: "2026-10-01" }],
+    [{ amountMinor: 500, currency: "AED", date: "01/10/2026" }],
+    [{ amountMinor: 500, currency: "AED" }],
+    [null],
+    ["3000"],
+  ])("rejects %j", (value) => {
+    expect(isOpeningBalance(value)).toBe(false);
   });
 });

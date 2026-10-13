@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OpeningBalanceForm } from "@/components/OpeningBalanceForm";
 import { SettingsForm } from "@/components/SettingsForm";
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export default function SettingsPage() {
         Settings
       </h1>
       <SettingsForm />
+      <OpeningBalanceForm />
     </section>
   );
 }

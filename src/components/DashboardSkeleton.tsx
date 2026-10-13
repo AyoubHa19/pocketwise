@@ -18,9 +18,17 @@ export function DashboardSkeleton() {
       </p>
 
       <div aria-hidden="true" className="space-y-4">
+        {/* The Account balance card: same fixed height as the real one. */}
+        <div className={`${cardClass} h-[9.125rem] px-5 pt-2 pb-5 sm:px-6`}>
+          <div className="flex h-11 items-center">
+            <div className={`${bone} h-3.5 w-28`} />
+          </div>
+          <div className={`${bone} mt-1 h-8 w-40`} />
+          <div className={`${bone} mt-2 h-3.5 w-48`} />
+        </div>
         <div className={`${bone} h-11 w-64`} />
         <div className={`${cardClass} @container p-5 sm:p-6`}>
-          {/* "Balance" label, then the balance at each screen size's height */}
+          {/* "Left this month" label, then the amount at each screen size's height */}
           <div className="flex h-5 items-center">
             <div className={`${bone} h-3.5 w-16`} />
           </div>

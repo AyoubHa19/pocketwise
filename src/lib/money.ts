@@ -64,6 +64,10 @@ export function formatMoney(money: Money, locale = "en-US"): string {
  * The opposite of parseAmount, and like it, it works on digits, not decimals.
  */
 export function amountToInputText(money: Money): string {
+  // A balance can be negative: write the minus, then the amount as usual.
+  if (money.amountMinor < 0) {
+    return `-${amountToInputText({ ...money, amountMinor: -money.amountMinor })}`;
+  }
   const decimals = currencyDecimals(money.currency);
   const digits = String(money.amountMinor);
   if (decimals === 0) return digits;
@@ -87,4 +91,18 @@ export function parseAmount(input: string, currency: string): number | null {
   return Number.isSafeInteger(amountMinor) && amountMinor > 0
     ? amountMinor
     : null;
+}
+
+/**
+ * Like parseAmount, but for a balance, which can also be zero or negative
+ * (an overdraft), written with a leading minus: "-250.50" becomes -25050.
+ */
+export function parseBalance(input: string, currency: string): number | null {
+  const text = input.trim();
+  const negative = text.startsWith("-");
+  const digits = negative ? text.slice(1).trim() : text;
+  if (/^0+(?:[.,]0*)?$/.test(digits)) return 0; // "0", "0.00", even "-0"
+  const amountMinor = parseAmount(digits, currency);
+  if (amountMinor === null) return null;
+  return negative ? -amountMinor : amountMinor;
 }
