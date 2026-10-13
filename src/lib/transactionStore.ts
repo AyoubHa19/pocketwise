@@ -1,3 +1,6 @@
+// Since accounts (Stage 12), the app keeps its data in the signed-in
+// account (src/lib/accountData.ts). This store only reads what the browser
+// saved before that, so LocalDataImport can offer to move it.
 import { useSyncExternalStore } from "react";
 import { createStorageStore } from "@/lib/createStorageStore";
 import {

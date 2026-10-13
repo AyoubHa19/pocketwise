@@ -8,14 +8,15 @@ import {
   primaryButtonClass,
 } from "@/components/formStyles";
 import { amountToInputText, currencyDecimals, parseBalance } from "@/lib/money";
-import { setOpeningBalance, useSettings } from "@/lib/settingsStore";
+import { useAccountSettings, useSetOpeningBalance } from "@/lib/accountData";
 import { useToday } from "@/lib/useToday";
 
-type Status = "idle" | "saved" | "removed" | "failed";
+type Status = "idle" | "saving" | "saved" | "removed" | "failed";
 
 /** Settings: what the account held when the user started tracking. */
 export function OpeningBalanceForm() {
-  const settings = useSettings();
+  const settings = useAccountSettings();
+  const setOpeningBalance = useSetOpeningBalance();
   const today = useToday();
   // null until the user types or picks something; until then, show what's saved.
   const [amountText, setAmountText] = useState<string | null>(null);
@@ -48,7 +49,7 @@ export function OpeningBalanceForm() {
   const amount = amountText ?? (saved ? amountToInputText(saved) : "");
   const date = pickedDate ?? saved?.date ?? today;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const amountMinor = parseBalance(amount, currency);
     if (amountMinor === null) {
@@ -64,14 +65,20 @@ export function OpeningBalanceForm() {
       return;
     }
     setError(null);
-    setStatus(setOpeningBalance({ amountMinor, currency, date }) ? "saved" : "failed");
+    setStatus("saving");
+    setStatus((await setOpeningBalance({ amountMinor, currency, date })) ? "saved" : "failed");
   }
 
-  function handleRemove() {
-    setAmountText(null);
-    setPickedDate(null);
+  async function handleRemove() {
     setError(null);
-    setStatus(setOpeningBalance(null) ? "removed" : "failed");
+    setStatus("saving");
+    const removed = await setOpeningBalance(null);
+    // Clear the fields only once it's really gone, so a failure keeps them.
+    if (removed) {
+      setAmountText(null);
+      setPickedDate(null);
+    }
+    setStatus(removed ? "removed" : "failed");
   }
 
   function changed() {
@@ -141,11 +148,16 @@ export function OpeningBalanceForm() {
       )}
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <button type="submit" className={primaryButtonClass}>
-          Save
+        <button type="submit" disabled={status === "saving"} className={primaryButtonClass}>
+          {status === "saving" ? "Saving…" : "Save"}
         </button>
         {saved && (
-          <button type="button" onClick={handleRemove} className={dangerButtonClass}>
+          <button
+            type="button"
+            onClick={handleRemove}
+            disabled={status === "saving"}
+            className={dangerButtonClass}
+          >
             Remove
           </button>
         )}
@@ -163,8 +175,8 @@ export function OpeningBalanceForm() {
       )}
       {status === "failed" && (
         <p role="alert" className="mt-4 text-sm text-danger">
-          Your browser didn&apos;t let Pocketwise save. Storage may be full, or
-          blocked by private browsing or privacy settings.
+          Pocketwise couldn&apos;t save this to your account. Check your
+          connection and try again.
         </p>
       )}
     </form>

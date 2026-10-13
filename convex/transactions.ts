@@ -1,4 +1,5 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
+import { IMPORT_BATCH_SIZE } from "../src/lib/localImport";
 import type { Transaction } from "../src/lib/transactions";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
@@ -74,6 +75,52 @@ export const save = mutation({
     } else {
       await ctx.db.insert("transactions", { ownerId, clientId: t.id, ...fields });
     }
+  },
+});
+
+/**
+ * Moves transactions saved in the browser (before accounts existed) into
+ * the signed-in user's account. Every one is checked before anything is
+ * written, so a batch is saved completely or not at all. One whose id is
+ * already in the account is skipped, never overwritten: that's what makes
+ * retrying safe, and an edit made in the account is never undone by an
+ * older browser copy.
+ */
+export const importLocal = mutation({
+  args: { transactions: v.array(transactionArg) },
+  handler: async (ctx, args) => {
+    const ownerId = await requireOwner(ctx);
+    if (args.transactions.length > IMPORT_BATCH_SIZE) {
+      throw new ConvexError(`Send at most ${IMPORT_BATCH_SIZE} transactions at a time.`);
+    }
+    const checked = args.transactions.map(checkTransaction);
+    let added = 0;
+    let skipped = 0;
+    for (const t of checked) {
+      const existing = await ctx.db
+        .query("transactions")
+        .withIndex("by_owner_clientId", (q) =>
+          q.eq("ownerId", ownerId).eq("clientId", t.id),
+        )
+        .unique();
+      if (existing) {
+        skipped++;
+        continue;
+      }
+      await ctx.db.insert("transactions", {
+        ownerId,
+        clientId: t.id,
+        type: t.type,
+        amountMinor: t.amount.amountMinor,
+        currency: t.amount.currency,
+        category: t.category,
+        date: t.date,
+        note: t.note?.trim() || undefined,
+        updatedAt: Date.now(),
+      });
+      added++;
+    }
+    return { added, skipped };
   },
 });
 

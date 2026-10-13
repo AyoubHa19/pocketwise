@@ -4,17 +4,18 @@ import { useState, type FormEvent } from "react";
 import { CurrencySelect } from "@/components/CurrencySelect";
 import { cardClass, primaryButtonClass } from "@/components/formStyles";
 import { currencyOptions } from "@/lib/money";
-import { setCurrency, useSettings } from "@/lib/settingsStore";
+import { useAccountSettings, useSetCurrency } from "@/lib/accountData";
 
-type Status = "idle" | "saved" | "failed";
+type Status = "idle" | "saving" | "saved" | "failed";
 
 export function SettingsForm() {
-  const settings = useSettings();
+  const settings = useAccountSettings();
+  const setCurrency = useSetCurrency();
   // null until the user picks something; until then, show the saved choice.
   const [selected, setSelected] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("idle");
 
-  // Settings come from the browser's storage, so wait until they're read.
+  // Settings come from the account, so wait until they've arrived.
   if (settings === null) {
     return <p className="text-sm text-muted">Loading…</p>;
   }
@@ -22,10 +23,11 @@ export function SettingsForm() {
   const currency = selected ?? settings.currency ?? "";
   const currencyName = currencyOptions().find((o) => o.code === currency)?.name;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!currency) return;
-    setStatus(setCurrency(currency) ? "saved" : "failed");
+    setStatus("saving");
+    setStatus((await setCurrency(currency)) ? "saved" : "failed");
   }
 
   return (
@@ -54,10 +56,10 @@ export function SettingsForm() {
 
       <button
         type="submit"
-        disabled={!currency}
+        disabled={!currency || status === "saving"}
         className={`mt-6 ${primaryButtonClass}`}
       >
-        Save
+        {status === "saving" ? "Saving…" : "Save"}
       </button>
 
       {status === "saved" && (
@@ -67,8 +69,8 @@ export function SettingsForm() {
       )}
       {status === "failed" && (
         <p role="alert" className="mt-4 text-sm text-danger">
-          Your browser didn&apos;t let Pocketwise save. Storage may be full, or
-          blocked by private browsing or privacy settings.
+          Pocketwise couldn&apos;t save this to your account. Check your
+          connection and try again.
         </p>
       )}
     </form>

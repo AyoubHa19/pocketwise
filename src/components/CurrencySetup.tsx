@@ -3,22 +3,28 @@
 import { useState, type FormEvent } from "react";
 import { CurrencySelect } from "@/components/CurrencySelect";
 import { cardClass, primaryButtonClass } from "@/components/formStyles";
-import { setCurrency } from "@/lib/settingsStore";
+import { useSetCurrency } from "@/lib/accountData";
 
 /** Shown the first time, before the user has picked a currency. */
 export function CurrencySetup() {
+  const setCurrency = useSetCurrency();
   const [selected, setSelected] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selected) {
       setError("Choose a currency to continue.");
       return;
     }
-    // If the browser refuses to save, the choice still applies until the page
-    // is closed, and the transaction list warns once something can't be saved.
-    setCurrency(selected);
+    // Once the account has the currency, the dashboard replaces this screen.
+    setSaving(true);
+    const saved = await setCurrency(selected);
+    setSaving(false);
+    if (!saved) {
+      setError("Pocketwise couldn't save this to your account. Check your connection and try again.");
+    }
   }
 
   // Centred with a short welcome: it's the first thing a new user sees, so
@@ -60,8 +66,12 @@ export function CurrencySetup() {
           </p>
         )}
 
-        <button type="submit" className={`mt-6 ${primaryButtonClass}`}>
-          Continue
+        <button
+          type="submit"
+          disabled={saving}
+          className={`mt-6 ${primaryButtonClass}`}
+        >
+          {saving ? "Saving…" : "Continue"}
         </button>
       </form>
     </div>

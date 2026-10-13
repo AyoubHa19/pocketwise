@@ -8,6 +8,7 @@ import { AccountBalanceCard } from "@/components/AccountBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import {
+  cardClass,
   dashboardChartsArea,
   dashboardGridClass,
   dashboardListArea,
@@ -30,20 +31,21 @@ import { TransactionList } from "@/components/TransactionList";
 import { formatMonth, monthOf } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { fadeRise, monthSlide } from "@/lib/motion";
-import { useSettings } from "@/lib/settingsStore";
+import { LocalDataImport, useLocalDataOffer } from "@/components/LocalDataImport";
+import {
+  useAccountSettings,
+  useAccountStatus,
+  useAccountTransactions,
+  useRemoveTransaction,
+  useSaveTransaction,
+} from "@/lib/accountData";
 import {
   monthlyTotals,
   spendingByCategory,
   totalsByCurrency,
   transactionsInMonth,
 } from "@/lib/summary";
-import { updateTransactions, useTransactions } from "@/lib/transactionStore";
-import {
-  removeTransaction,
-  signedAmount,
-  upsertTransaction,
-  type Transaction,
-} from "@/lib/transactions";
+import { signedAmount, type Transaction } from "@/lib/transactions";
 import { useToday } from "@/lib/useToday";
 
 // The dashboard's entrance plays once per visit to the site, not again each
@@ -62,8 +64,14 @@ type SheetState = { open: boolean; session: number } & (
 );
 
 export function TransactionTracker() {
-  const settings = useSettings();
-  const transactions = useTransactions();
+  // From the signed-in user's account.
+  const status = useAccountStatus();
+  const settings = useAccountSettings();
+  const transactions = useAccountTransactions();
+  const saveTransaction = useSaveTransaction();
+  const deleteTransaction = useRemoveTransaction();
+  // What this browser saved before accounts, if it hasn't been moved yet.
+  const localOffer = useLocalDataOffer();
   const today = useToday();
   // null until the user moves to another month; until then, this month.
   const [pickedMonth, setPickedMonth] = useState<string | null>(null);
@@ -131,42 +139,66 @@ export function TransactionTracker() {
     setSheet((previous) => ({ ...previous, open: false }));
   }
 
-  // Only when the browser really saved: otherwise the warning says so.
+  // Only once the account really saved: otherwise the warning says so.
   function report(saved: boolean, text: string) {
     setSaveFailed(!saved);
     setNotice(saved ? { id: Date.now(), text } : null);
   }
 
-  function save(transaction: Transaction) {
+  async function save(transaction: Transaction) {
     const isNew = !transactions?.some((t) => t.id === transaction.id);
-    const saved = updateTransactions((previous) =>
-      upsertTransaction(previous, transaction),
-    );
-    report(saved, isNew ? "Transaction added" : "Changes saved");
+    // The change is on screen straight away; the message waits for the
+    // server to confirm it.
     closeSheet();
     // Show the month the transaction is in, or it would seem to vanish when
     // its date is in a different month from the one on screen.
     changeMonth(monthOf(transaction.date));
+    report(await saveTransaction(transaction), isNew ? "Transaction added" : "Changes saved");
   }
 
-  function remove(transaction: Transaction) {
+  async function remove(transaction: Transaction) {
     const amount = formatMoney(signedAmount(transaction));
     const confirmed = window.confirm(
       `Delete ${transaction.category}, ${amount} on ${transaction.date}? This can't be undone.`,
     );
     if (!confirmed) return;
 
-    const saved = updateTransactions((previous) =>
-      removeTransaction(previous, transaction.id),
-    );
-    report(saved, "Transaction deleted");
     closeSheet();
+    report(await deleteTransaction(transaction.id), "Transaction deleted");
   }
 
-  // Both come from the browser's storage, so they're null while the server
-  // renders the page and for a moment after it opens.
-  if (settings === null || transactions === null) {
+  // Signed in with Clerk, but the server didn't accept it: say so instead
+  // of loading forever.
+  if (status === "unconfirmed") {
+    return (
+      <p role="alert" className={`${cardClass} max-w-lg p-4 text-sm text-danger sm:p-6`}>
+        Pocketwise&apos;s server couldn&apos;t confirm your sign-in, so your
+        data can&apos;t be shown. Try signing out and back in.
+      </p>
+    );
+  }
+  // Null while the account and the browser's own data are being read.
+  if (settings === null || transactions === null || localOffer === undefined) {
     return <DashboardSkeleton />;
+  }
+  const account = { settings, transactions };
+  const accountIsEmpty =
+    transactions.length === 0 &&
+    settings.currency === null &&
+    settings.openingBalance === null;
+  // A new account with data in this browser: offer to move it before
+  // asking for a currency, which the old data probably already has.
+  if (localOffer && accountIsEmpty) {
+    return (
+      <>
+        <LocalDataImport
+          local={localOffer}
+          account={account}
+          onMoved={(text) => report(true, text)}
+        />
+        <Toast notice={notice} />
+      </>
+    );
   }
   if (settings.currency === null) {
     return <CurrencySetup />;
@@ -187,6 +219,16 @@ export function TransactionTracker() {
 
   return (
     <>
+      {/* Old browser data not yet in this (non-empty) account. It hides
+          itself when there's nothing left to move. */}
+      {localOffer && (
+        <LocalDataImport
+          local={localOffer}
+          account={account}
+          onMoved={(text) => report(true, text)}
+        />
+      )}
+
       {/* Room at the bottom on phones, so the floating Add button never
           covers the last transaction. */}
       <div className={`${dashboardGridClass} pb-24 sm:pb-0`}>
@@ -253,9 +295,9 @@ export function TransactionTracker() {
               role="alert"
               className="mt-4 rounded-control border border-danger-line bg-danger-surface px-4 py-3 text-sm text-danger"
             >
-              Your browser didn&apos;t let Pocketwise save. Your latest changes
-              will be lost when you close this page. Storage may be full, or
-              blocked by private browsing or privacy settings.
+              Pocketwise couldn&apos;t save your last change to your account,
+              so it was undone on screen. Check your connection and try
+              again.
             </p>
           )}
 
@@ -284,8 +326,7 @@ export function TransactionTracker() {
           </m.div>
 
           <p className="mt-3 text-sm text-muted">
-            Saved in this browser on this device only. Clearing your browser
-            data deletes them.
+            Saved in your account, so you see them wherever you sign in.
           </p>
         </m.section>
 

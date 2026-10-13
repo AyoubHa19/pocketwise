@@ -175,6 +175,94 @@ describe("settings", () => {
   });
 });
 
+describe("moving browser data into the account", () => {
+  const tea = { ...coffee, id: "tea-1", amount: { amountMinor: 300, currency: "EUR" }, note: "Tea" };
+
+  it("adds every transaction, and says how many", async () => {
+    const { sarah } = setup();
+    const result = await sarah.mutation(api.transactions.importLocal, { transactions: [coffee, tea] });
+    expect(result).toEqual({ added: 2, skipped: 0 });
+    expect(await sarah.query(api.transactions.list, {})).toHaveLength(2);
+  });
+
+  it("can be retried without making copies", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.transactions.importLocal, { transactions: [coffee, tea] });
+    const again = await sarah.mutation(api.transactions.importLocal, { transactions: [coffee, tea] });
+    expect(again).toEqual({ added: 0, skipped: 2 });
+    expect(await sarah.query(api.transactions.list, {})).toHaveLength(2);
+  });
+
+  it("never overwrites a transaction already edited in the account", async () => {
+    const { sarah } = setup();
+    const edited = { ...coffee, amount: { amountMinor: 999, currency: "EUR" } };
+    await sarah.mutation(api.transactions.save, { transaction: edited });
+    await sarah.mutation(api.transactions.importLocal, { transactions: [coffee] });
+    expect(await sarah.query(api.transactions.list, {})).toEqual([edited]);
+  });
+
+  it("skips a repeated id within the same batch", async () => {
+    const { sarah } = setup();
+    const result = await sarah.mutation(api.transactions.importLocal, { transactions: [coffee, coffee] });
+    expect(result).toEqual({ added: 1, skipped: 1 });
+  });
+
+  it("saves nothing from a batch with one bad transaction", async () => {
+    const { sarah } = setup();
+    const bad = { ...tea, date: "2026-02-30" };
+    await expect(
+      sarah.mutation(api.transactions.importLocal, { transactions: [coffee, bad] }),
+    ).rejects.toThrow();
+    expect(await sarah.query(api.transactions.list, {})).toEqual([]);
+  });
+
+  it("refuses batches over 200", async () => {
+    const { sarah } = setup();
+    const many = Array.from({ length: 201 }, (_, i) => ({ ...coffee, id: `c-${i}` }));
+    await expect(
+      sarah.mutation(api.transactions.importLocal, { transactions: many }),
+    ).rejects.toThrow("at most 200");
+  });
+
+  it("adds them to the signed-in user only", async () => {
+    const { sarah, lee } = setup();
+    await sarah.mutation(api.transactions.importLocal, { transactions: [coffee] });
+    expect(await lee.query(api.transactions.list, {})).toEqual([]);
+  });
+
+  it("needs a sign-in", async () => {
+    const { t } = setup();
+    await expect(t.mutation(api.transactions.importLocal, { transactions: [coffee] })).rejects.toThrow(
+      "You need to be signed in.",
+    );
+  });
+
+  const balance = { amountMinor: 300000, currency: "MAD", date: "2026-05-01" };
+
+  it("fills in the settings of an account that has none", async () => {
+    const { sarah } = setup();
+    const result = await sarah.mutation(api.settings.importLocal, { currency: "MAD", openingBalance: balance });
+    expect(result).toEqual({ currency: true, openingBalance: true });
+    expect(await sarah.query(api.settings.get, {})).toEqual({ currency: "MAD", openingBalance: balance });
+  });
+
+  it("keeps settings the account already has", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.settings.setCurrency, { currency: "EUR" });
+    const result = await sarah.mutation(api.settings.importLocal, { currency: "MAD", openingBalance: balance });
+    expect(result).toEqual({ currency: false, openingBalance: true });
+    expect(await sarah.query(api.settings.get, {})).toEqual({ currency: "EUR", openingBalance: balance });
+  });
+
+  it("saves neither setting if one is invalid", async () => {
+    const { sarah } = setup();
+    await expect(
+      sarah.mutation(api.settings.importLocal, { currency: "MAD", openingBalance: { ...balance, date: "2026-13-01" } }),
+    ).rejects.toThrow();
+    expect(await sarah.query(api.settings.get, {})).toEqual({ currency: null, openingBalance: null });
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);

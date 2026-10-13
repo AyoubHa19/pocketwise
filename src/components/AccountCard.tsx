@@ -35,8 +35,8 @@ export function AccountCard() {
           , and connected to Pocketwise&apos;s server.
         </p>
         <p className="mt-3 text-sm text-muted">
-          Your transactions and settings are still saved in this browser
-          only. Moving them to your account is the next update.
+          Your transactions and settings are saved in your account, so you
+          see them wherever you sign in.
         </p>
       </>
     );

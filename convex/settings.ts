@@ -56,6 +56,37 @@ export const setCurrency = mutation({
   },
 });
 
+/**
+ * Moves settings saved in the browser into the account, filling in only
+ * what the account doesn't have yet: a currency or balance already chosen
+ * in the account is kept. Returns what was filled in.
+ */
+export const importLocal = mutation({
+  args: {
+    currency: v.union(v.string(), v.null()),
+    openingBalance: v.union(
+      v.object({ amountMinor: v.number(), currency: v.string(), date: v.string() }),
+      v.null(),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const ownerId = await requireOwner(ctx);
+    // Check both before writing either.
+    const currency = args.currency === null ? null : checkCurrency(args.currency);
+    const openingBalance =
+      args.openingBalance === null ? null : checkOpeningBalance(args.openingBalance);
+    const row = await ctx.db
+      .query("settings")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .unique();
+    const change: Partial<Settings> = {};
+    if (currency !== null && !row?.currency) change.currency = currency;
+    if (openingBalance !== null && !row?.openingBalance) change.openingBalance = openingBalance;
+    if (Object.keys(change).length > 0) await saveSettings(ctx, ownerId, change);
+    return { currency: "currency" in change, openingBalance: "openingBalance" in change };
+  },
+});
+
 /** Sets the starting balance, or removes it with null. */
 export const setOpeningBalance = mutation({
   args: {

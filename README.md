@@ -4,8 +4,9 @@ A simple personal finance tracker for the web, made for people anywhere in
 the world. Record what you earn and spend, and see each month's income,
 spending, and balance at a glance. It works on phones and computers.
 
-Everything stays in your browser: there is no account, no server, and your
-data never leaves your device.
+You sign in (with [Clerk](https://clerk.com)), and your data is saved in
+your account on Pocketwise's server ([Convex](https://convex.dev)), so you
+see it wherever you sign in.
 
 ## What it does
 
@@ -18,7 +19,9 @@ data never leaves your device.
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income
   and spending side by side.
-- Keep your data after you close the page, and stay in sync between tabs.
+- Keep your data in your account, in sync between tabs and devices.
+- Move data saved in the browser before accounts existed into your
+  account, checked after moving, with the browser's copy kept as a backup.
 - Light and dark themes (following your device), and gentle animations
   that switch off when your device asks for reduced motion.
 
@@ -35,7 +38,20 @@ npm install
 npm run dev
 ```
 
+In a second terminal, keep the backend running (it sends the code in
+`convex/` to your Convex development deployment as you save):
+
+```bash
+npx convex dev
+```
+
 Then open http://localhost:3000. The page updates as you edit the code.
+
+`.env.local` (never committed) needs the Clerk keys
+(`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`); `npx convex dev`
+adds the Convex ones. The Convex deployment itself needs
+`CLERK_FRONTEND_API_URL`, the Frontend API URL from Clerk's Convex
+integration (`npx convex env set CLERK_FRONTEND_API_URL <url>`).
 
 | Command | What it does |
 | --- | --- |
@@ -90,10 +106,19 @@ you picked stays that day, even if you travel. "Today" is read from your
 own clock, not UTC, which is already tomorrow or still yesterday for much
 of the world at some point each day.
 
-**Data lives in `localStorage`, with a version number.** Saved data is
-checked before use (`isTransaction`). If it's damaged or in an unknown
-format, a copy is kept under a `.backup-` key before anything is
-replaced, so nothing is silently lost.
+**Data lives in the user's account, and the server decides who owns it.**
+Every Convex function starts with `requireOwner` (`convex/ownership.ts`),
+which takes the user from the sign-in token Convex checked itself, never
+from what the browser sends. The server checks every value again with the
+same rules as the app (shared from `src/lib`), and refuses anything wrong
+without saving part of it. `convex/backend.test.ts` tests this, including
+that one user can't read, change, or delete another's data.
+
+**Data saved in the browser before accounts is moved, never lost.** The
+old `localStorage` data is offered for moving (`LocalDataImport.tsx`), in
+batches that can be retried without copies. Afterwards every transaction
+is looked up in the account before the move counts as done, and the
+browser keeps its copy.
 
 **Browser-only values are read with `useSyncExternalStore`.** The server
 can't see your storage, your clock, or your browser's currency list, so
@@ -111,14 +136,13 @@ recommend for fingers.
 
 ## Current limits
 
-- Data is saved only in this browser on this device. Clearing your browser
-  data deletes it, there's no export or backup yet, and there's no sync
-  between devices.
+- Only a development setup so far: it isn't deployed, and the Clerk and
+  Convex instances are development ones.
+- No export yet, and no way to delete your account's data from the app.
 - No exchange rates: amounts in other currencies are kept and shown apart,
   never added to the main ones.
 - One account, set up through the starting balance.
 - English only, and the categories are a fixed list.
 - The tests cover money, dates, monthly totals, the account balance,
-  transactions, and recovering damaged saved data. The parts that need a
-  browser (the screens and the stores that connect React to
-  `localStorage`) were checked by hand.
+  transactions, the server's functions and their permissions, and moving
+  browser data. The screens were checked by hand.
