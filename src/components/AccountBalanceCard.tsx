@@ -4,7 +4,11 @@ import { fitOneLine } from "@/components/fitOneLine";
 import { cardClass, colorTransition } from "@/components/formStyles";
 import { formatDayLabel } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
-import { accountBalance, type OpeningBalance } from "@/lib/summary";
+import {
+  accountBalance,
+  currenciesLeftOut,
+  type OpeningBalance,
+} from "@/lib/summary";
 import type { Transaction } from "@/lib/transactions";
 
 type Props = {
@@ -43,6 +47,7 @@ export function AccountBalanceCard({ transactions, openingBalance, today }: Prop
       {openingBalance ? (
         <BalanceAmount
           balanceMinor={accountBalance(transactions, openingBalance, today)}
+          leftOut={currenciesLeftOut(transactions, openingBalance, today)}
           openingBalance={openingBalance}
           today={today}
         />
@@ -58,10 +63,13 @@ export function AccountBalanceCard({ transactions, openingBalance, today }: Prop
 
 function BalanceAmount({
   balanceMinor,
+  leftOut,
   openingBalance,
   today,
 }: {
   balanceMinor: number;
+  /** Currencies of transactions the balance can't include. */
+  leftOut: string[];
   openingBalance: OpeningBalance;
   today: string;
 }) {
@@ -82,6 +90,15 @@ function BalanceAmount({
       <p className="mt-1 truncate text-sm text-muted">
         Started with {start} · {formatDayLabel(openingBalance.date, today)}
       </p>
+      {/* Said out loud, so a missing amount never looks like a wrong total.
+          Only shown when it happens, so the card is usually its fixed
+          height; this line makes it one line taller. */}
+      {leftOut.length > 0 && (
+        <p className="mt-1 text-sm text-muted">
+          Doesn&apos;t include {leftOut.join(", ")} transactions: there&apos;s
+          no exchange rate to convert them.
+        </p>
+      )}
     </div>
   );
 }

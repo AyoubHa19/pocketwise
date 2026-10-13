@@ -10,12 +10,20 @@ data never leaves your device.
 ## What it does
 
 - Add, edit, and delete transactions (income or expense, with a category,
-  date, and optional note).
+  date, and optional note), grouped by day with each day's total.
 - Pick your currency once, from every currency your browser knows, and
   change it later in Settings.
-- See one month at a time: income, spending, and balance, with ‹ and › to
-  move between months.
+- Set a starting balance in Settings, and see your account balance today.
+- See one month at a time on the dashboard, with ‹ and › to move between
+  months: income, spending, what's left, and how much of the income went.
+- See the month's spending by category, and the last 6 months of income
+  and spending side by side.
 - Keep your data after you close the page, and stay in sync between tabs.
+- Light and dark themes (following your device), and gentle animations
+  that switch off when your device asks for reduced motion.
+
+The full plan for the product, including what isn't built yet, is in
+[POCKETWISE_PRD.md](POCKETWISE_PRD.md).
 
 ## Running it
 
@@ -47,15 +55,17 @@ src/
 │   ├── page.tsx    The home page (/)
 │   ├── icon.svg    The app icon; apple-icon.tsx turns it into a PNG
 │   └── settings/
-├── components/     The pieces of the screens (forms, lists, header)
+├── components/     The pieces of the screens (forms, lists, charts,
+│                   header) and the shared styles in formStyles.ts
 └── lib/            Everything that isn't a screen: money, dates,
-                    totals, saving. Tests sit beside the code they
-                    check, as *.test.ts.
+                    totals, saving, animation timing. Tests sit beside
+                    the code they check, as *.test.ts.
 ```
 
 Built with [Next.js](https://nextjs.org) (App Router), TypeScript,
-[Tailwind CSS](https://tailwindcss.com), and [Vitest](https://vitest.dev)
-for tests.
+[Tailwind CSS](https://tailwindcss.com), [Motion](https://motion.dev) for
+animations, [Lucide](https://lucide.dev) for icons, and
+[Vitest](https://vitest.dev) for tests.
 
 ## Decisions worth knowing
 
@@ -87,19 +97,28 @@ replaced, so nothing is silently lost.
 
 **Browser-only values are read with `useSyncExternalStore`.** The server
 can't see your storage, your clock, or your browser's currency list, so
-it renders a "Loading…" state, and the browser fills in the real values.
-This keeps the server's HTML and the browser's first render the same.
+it renders a loading skeleton, and the browser fills in the real values.
+This keeps the server's HTML and the browser's first render the same. The
+skeleton has the same layout as the real dashboard, so nothing jumps.
+
+**Animations never stand in for information.** Numbers swap to their new
+value without counting through ones that aren't real, every change is also
+said in words (like "Transaction added"), and with reduced motion things
+change instantly or just fade. The timing lives in `src/lib/motion.ts`.
 
 **Every control is at least 44px tall**, the size Apple and Google
 recommend for fingers.
 
-## Limits of this first version
+## Current limits
 
 - Data is saved only in this browser on this device. Clearing your browser
-  data deletes it, and there's no sync between devices yet.
-- One currency at a time, with no exchange rates.
+  data deletes it, there's no export or backup yet, and there's no sync
+  between devices.
+- No exchange rates: amounts in other currencies are kept and shown apart,
+  never added to the main ones.
+- One account, set up through the starting balance.
 - English only, and the categories are a fixed list.
-- The tests cover money, dates, monthly totals, transactions, and
-  recovering damaged saved data. The parts that need a browser (the
-  screens and the stores that connect React to `localStorage`) were
-  checked by hand.
+- The tests cover money, dates, monthly totals, the account balance,
+  transactions, and recovering damaged saved data. The parts that need a
+  browser (the screens and the stores that connect React to
+  `localStorage`) were checked by hand.

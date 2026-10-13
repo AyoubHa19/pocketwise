@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accountBalance,
+  currenciesLeftOut,
   groupByDay,
   isOpeningBalance,
   monthlyTotals,
@@ -188,6 +189,34 @@ describe("accountBalance", () => {
     const list = [transaction("a", "expense", 70000, "AED", "2026-10-02")];
     expect(accountBalance(list, overdraft, today)).toBe(-80000);
     expect(accountBalance([], { ...opening, amountMinor: 0 }, today)).toBe(0);
+  });
+});
+
+describe("currenciesLeftOut", () => {
+  const opening = { amountMinor: 300000, currency: "AED", date: "2026-10-01" };
+  const today = "2026-10-13";
+
+  it("names each other currency once, sorted by code", () => {
+    const list = [
+      transaction("a", "expense", 100, "USD", "2026-10-02"),
+      transaction("b", "income", 100, "EUR", "2026-10-03"),
+      transaction("c", "expense", 100, "USD", "2026-10-13"),
+      transaction("d", "expense", 100, "AED", "2026-10-04"),
+    ];
+    expect(currenciesLeftOut(list, opening, today)).toEqual(["EUR", "USD"]);
+  });
+
+  it("ignores other currencies outside the balance's dates, like the balance does", () => {
+    const list = [
+      transaction("before", "expense", 100, "USD", "2026-09-30"),
+      transaction("future", "expense", 100, "EUR", "2026-10-14"),
+    ];
+    expect(currenciesLeftOut(list, opening, today)).toEqual([]);
+  });
+
+  it("is empty when everything is in the balance's currency", () => {
+    const list = [transaction("a", "expense", 100, "AED", "2026-10-02")];
+    expect(currenciesLeftOut(list, opening, today)).toEqual([]);
   });
 });
 

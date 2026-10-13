@@ -160,6 +160,26 @@ export function accountBalance(
   return balance;
 }
 
+/**
+ * The currencies of transactions that accountBalance leaves out because
+ * they aren't in the balance's currency, sorted, so the user can be told
+ * rather than have them silently missing. Only transactions in the
+ * balance's date range count: the others are left out for every currency.
+ */
+export function currenciesLeftOut(
+  transactions: Transaction[],
+  opening: OpeningBalance,
+  today: string,
+): string[] {
+  const left = new Set<string>();
+  for (const { amount, date } of transactions) {
+    if (amount.currency !== opening.currency && date >= opening.date && date <= today) {
+      left.add(amount.currency);
+    }
+  }
+  return [...left].sort();
+}
+
 /** One category's spending, for the "Spending by category" chart. */
 export type CategorySpending = {
   category: string;
