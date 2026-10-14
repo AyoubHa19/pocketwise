@@ -76,6 +76,8 @@ export default defineSchema({
   })
     .index("by_owner_date", ["ownerId", "date"])
     .index("by_owner_clientId", ["ownerId", "clientId"])
-    // Finds what's left to assign to an account.
-    .index("by_owner_account", ["ownerId", "accountId"]),
+    // Finds what's left to assign to an account, and what's in an account.
+    .index("by_owner_account", ["ownerId", "accountId"])
+    // Finds transfers into an account.
+    .index("by_owner_toAccount", ["ownerId", "toAccountId"]),
 });

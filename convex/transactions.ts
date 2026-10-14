@@ -1,9 +1,9 @@
 import { ConvexError, v } from "convex/values";
 import { IMPORT_BATCH_SIZE } from "../src/lib/localImport";
 import type { Transaction } from "../src/lib/transactions";
-import { ownedAccount } from "./accounts";
+import { defaultAccountFor, ownedAccount } from "./accounts";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./_generated/server";
 import { requireOwner } from "./ownership";
 import { checkTransaction } from "./validation";
 
@@ -39,13 +39,17 @@ function toTransaction(row: Doc<"transactions">): Transaction {
  * The accounts a transaction names, checked: each must be the user's own
  * and in the transaction's currency (a transfer between currencies needs an
  * exchange rate, which comes later). checkTransaction has already made sure
- * a transfer names two different accounts.
+ * a transfer names two different accounts. A transaction that names none
+ * goes to the account for its currency, so every new one is in an account
+ * and every balance stays complete.
  */
-async function checkedAccounts(ctx: QueryCtx, ownerId: string, t: Transaction) {
+async function checkedAccounts(ctx: MutationCtx, ownerId: string, t: Transaction) {
   const currency = t.amount.currency;
-  const from = t.accountId ? await ownedAccount(ctx, ownerId, t.accountId, currency) : undefined;
+  const from = t.accountId
+    ? await ownedAccount(ctx, ownerId, t.accountId, currency)
+    : await defaultAccountFor(ctx, ownerId, currency);
   const to = t.toAccountId ? await ownedAccount(ctx, ownerId, t.toAccountId, currency) : undefined;
-  return { accountId: from?._id, toAccountId: to?._id };
+  return { accountId: from._id, toAccountId: to?._id };
 }
 
 /** The signed-in user's transactions: newest day first, newest first within a day. */
@@ -114,7 +118,7 @@ export const importLocal = mutation({
     }
     const checked = args.transactions.map(checkTransaction);
     // The browser's old data is from before accounts: it has none, and so
-    // no transfers. ensureAccounts gives these an account afterwards.
+    // no transfers. Each goes to the account for its currency.
     if (checked.some((t) => t.type === "transfer" || t.accountId !== undefined)) {
       throw new ConvexError("Browser data from before accounts can't name accounts.");
     }
@@ -140,6 +144,7 @@ export const importLocal = mutation({
         category: t.category,
         date: t.date,
         note: t.note?.trim() || undefined,
+        accountId: (await defaultAccountFor(ctx, ownerId, t.amount.currency))._id,
         updatedAt: Date.now(),
       });
       added++;

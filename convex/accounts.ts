@@ -80,6 +80,70 @@ export const create = mutation({
   },
 });
 
+/** The user's own account with this id, or a refusal. */
+async function ownAccount(ctx: QueryCtx, ownerId: string, id: string): Promise<Doc<"accounts">> {
+  const accountId = ctx.db.normalizeId("accounts", id);
+  const account = accountId ? await ctx.db.get(accountId) : null;
+  if (!account || account.ownerId !== ownerId) {
+    throw new ConvexError("That account isn't one of yours.");
+  }
+  return account;
+}
+
+/**
+ * Changes an account's name, type and starting balance. Its currency can't
+ * change: everything recorded in it is in that currency.
+ */
+export const update = mutation({
+  args: { id: v.string(), name: v.string(), type: accountTypeArg, opening: openingArg },
+  handler: async (ctx, args) => {
+    const ownerId = await requireOwner(ctx);
+    const account = await ownAccount(ctx, ownerId, args.id);
+    await ctx.db.patch(account._id, {
+      name: checkName(args.name),
+      type: args.type,
+      opening: checkOpening(args.opening),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/** Archives an account (hidden from choices, history kept) or brings it back. */
+export const setArchived = mutation({
+  args: { id: v.string(), archived: v.boolean() },
+  handler: async (ctx, args) => {
+    const ownerId = await requireOwner(ctx);
+    const account = await ownAccount(ctx, ownerId, args.id);
+    await ctx.db.patch(account._id, { archived: args.archived, updatedAt: Date.now() });
+  },
+});
+
+/**
+ * Deletes an account, only if nothing was ever recorded in it (no
+ * transaction, no transfer in or out), so no history is ever lost; an
+ * account with history can be archived instead (PRD 8).
+ */
+export const remove = mutation({
+  args: { id: v.string() },
+  handler: async (ctx, args) => {
+    const ownerId = await requireOwner(ctx);
+    const account = await ownAccount(ctx, ownerId, args.id);
+    const used =
+      (await ctx.db
+        .query("transactions")
+        .withIndex("by_owner_account", (q) => q.eq("ownerId", ownerId).eq("accountId", account._id))
+        .first()) ??
+      (await ctx.db
+        .query("transactions")
+        .withIndex("by_owner_toAccount", (q) => q.eq("ownerId", ownerId).eq("toAccountId", account._id))
+        .first());
+    if (used) {
+      throw new ConvexError(`${account.name} has transactions, so it can only be archived.`);
+    }
+    await ctx.db.delete(account._id);
+  },
+});
+
 /**
  * The user's own account with this id, in `currency`, or a refusal. The id
  * comes from the browser, so it's checked: it must be a real account id, it
@@ -92,11 +156,7 @@ export async function ownedAccount(
   id: string,
   currency: string,
 ): Promise<Doc<"accounts">> {
-  const accountId = ctx.db.normalizeId("accounts", id);
-  const account = accountId ? await ctx.db.get(accountId) : null;
-  if (!account || account.ownerId !== ownerId) {
-    throw new ConvexError("That account isn't one of yours.");
-  }
+  const account = await ownAccount(ctx, ownerId, id);
   if (account.currency !== currency) {
     throw new ConvexError(`${account.name} is in ${account.currency}, not ${currency}.`);
   }
@@ -110,7 +170,7 @@ export async function ownedAccount(
  * more than one currency, in which case an untouched "Main account" in
  * another currency is renamed the same way so the names stay apart.
  */
-async function defaultAccountFor(
+export async function defaultAccountFor(
   ctx: MutationCtx,
   ownerId: string,
   currency: string,

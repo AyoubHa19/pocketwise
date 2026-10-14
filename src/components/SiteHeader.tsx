@@ -1,5 +1,5 @@
 import { Show, UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Settings } from "lucide-react";
+import { LayoutDashboard, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { NavLink } from "@/components/NavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -10,11 +10,11 @@ export function SiteHeader() {
   return (
     <header className="border-b border-line bg-surface">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
-        {/* Signed in, on the narrowest phones (under 360px), the name makes
-            way for the links; the Dashboard link leads home just the same.
-            Signed out there are no links, so it always shows. */}
+        {/* Signed in, on narrow phones (under 400px), the name makes way for
+            the links; the Dashboard link leads home just the same. Signed
+            out there are no links, so it always shows. */}
         <Show when="signed-in">
-          <Link href="/" className={`hidden min-[360px]:flex ${logoClass}`}>
+          <Link href="/" className={`hidden min-[400px]:flex ${logoClass}`}>
             Pocketwise
           </Link>
         </Show>
@@ -31,6 +31,9 @@ export function SiteHeader() {
             <nav aria-label="Main" className="flex gap-1">
               <NavLink href="/" icon={<LayoutDashboard size={20} />}>
                 Dashboard
+              </NavLink>
+              <NavLink href="/accounts" icon={<Wallet size={20} />}>
+                Accounts
               </NavLink>
               <NavLink href="/settings" icon={<Settings size={20} />}>
                 Settings

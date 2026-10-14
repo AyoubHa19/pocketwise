@@ -4,7 +4,7 @@
 // bundle smaller than importing them from "motion/react".
 import * as m from "motion/react-m";
 import { useEffect, useRef, useState } from "react";
-import { AccountBalanceCard } from "@/components/AccountBalanceCard";
+import { TotalBalanceCard } from "@/components/TotalBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import {
@@ -34,6 +34,7 @@ import { fadeRise, monthSlide } from "@/lib/motion";
 import { LocalDataImport, useLocalDataOffer } from "@/components/LocalDataImport";
 import {
   useAccountPreferences,
+  useAccounts,
   useAccountSettings,
   useAccountStatus,
   useAccountTransactions,
@@ -68,6 +69,7 @@ export function TransactionTracker() {
   // From the signed-in user's account.
   const status = useAccountStatus();
   const settings = useAccountSettings();
+  const accounts = useAccounts();
   const preferences = useAccountPreferences();
   const transactions = useAccountTransactions();
   const saveTransaction = useSaveTransaction();
@@ -155,7 +157,19 @@ export function TransactionTracker() {
     // Show the month the transaction is in, or it would seem to vanish when
     // its date is in a different month from the one on screen.
     changeMonth(monthOf(transaction.date));
-    report(await saveTransaction(transaction), isNew ? "Transaction added" : "Changes saved");
+    // The form doesn't choose accounts yet: an edited transaction keeps its
+    // own, and a new one goes to the first open account in its currency
+    // (the server picks, or makes, one if there's none).
+    const previous = transactions?.find((t) => t.id === transaction.id);
+    const accountId =
+      previous?.accountId ??
+      accounts?.find((a) => !a.archived && a.currency === transaction.amount.currency)?.id;
+    const toSave: Transaction = {
+      ...transaction,
+      ...(accountId && { accountId }),
+      ...(previous?.toAccountId && { toAccountId: previous.toAccountId }),
+    };
+    report(await saveTransaction(toSave), isNew ? "Transaction added" : "Changes saved");
   }
 
   async function remove(transaction: Transaction) {
@@ -185,6 +199,7 @@ export function TransactionTracker() {
     settings === null ||
     transactions === null ||
     preferences === null ||
+    accounts === null ||
     localOffer === undefined
   ) {
     return <DashboardSkeleton />;
@@ -245,11 +260,11 @@ export function TransactionTracker() {
           className={`${summaryGridClass} ${dashboardSummaryArea}`}
         >
           <m.div {...appear(0)} className={summaryBalanceArea}>
-            <AccountBalanceCard
+            <TotalBalanceCard
+              accounts={accounts}
               transactions={transactions}
-              openingBalance={settings.openingBalance}
               today={today}
-              dateOrder={preferences.dateOrder}
+              mainCurrency={settings.currency}
             />
           </m.div>
           <m.div {...appear(1)} className={summaryPickerArea}>

@@ -14,7 +14,13 @@ see it wherever you sign in.
   date, and optional note), grouped by day with each day's total.
 - Pick your currency once, from every currency your browser knows, and
   change it later in Settings.
-- Set a starting balance in Settings, and see your account balance today.
+- Keep several accounts (cash, bank, savings, wallet, other), each in its
+  own currency with an optional starting balance; archive one to hide it
+  without losing its history, or delete one that was never used. The
+  dashboard shows your total balance and each account's. A balance is the
+  starting balance plus income, minus spending, plus transfers in, minus
+  transfers out (`accountBalances` in `src/lib/summary.ts`); transfers are
+  never counted as income or spending.
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income
@@ -195,7 +201,9 @@ recommend for fingers.
   the live site isn't for real data (see Deployment).
 - No exchange rates: amounts in other currencies are kept and shown apart,
   never added to the main ones.
-- One account, set up through the starting balance.
+- Transactions go to the first account in their currency for now:
+  choosing an account, and transfers between accounts, come to the
+  transaction form next.
 - English only, and the categories are a fixed list.
 - The tests cover money, dates, monthly totals, the account balance,
   transactions, the server's functions and their permissions, and moving

@@ -1,7 +1,8 @@
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { ConvexError } from "convex/values";
+import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
 import type { Preferences } from "@/lib/preferences";
 import type { Settings } from "@/lib/settingsStore";
-import type { OpeningBalance } from "@/lib/summary";
 import {
   removeTransaction,
   upsertTransaction,
@@ -89,6 +90,80 @@ export function useSetCurrency() {
   return (currency: string) => succeeded(set({ currency }));
 }
 
+/** The user's money accounts (archived ones too), or null while they load. */
+export function useAccounts(): Account[] | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.accounts.list, isAuthenticated ? {} : "skip") ?? null;
+}
+
+export type SaveResult = { ok: true } | { ok: false; message: string };
+
+/**
+ * Runs a save and says how it went, with the server's own words when it
+ * refused (like "Give the account a name."), or a general message when it
+ * couldn't be reached.
+ */
+async function withMessage(save: Promise<unknown>): Promise<SaveResult> {
+  try {
+    await save;
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof ConvexError && typeof error.data === "string") {
+      return { ok: false, message: error.data };
+    }
+    return {
+      ok: false,
+      message: "Pocketwise couldn't save this to your account. Check your connection and try again.",
+    };
+  }
+}
+
+type AccountFields = { name: string; type: AccountType; opening: AccountOpening | null };
+
+/** Adds an account. */
+export function useCreateAccount() {
+  const create = useMutation(api.accounts.create);
+  // Named fields only, for the same reason as useUpdateAccount.
+  return ({ name, type, currency, opening }: AccountFields & { currency: string }) =>
+    withMessage(create({ name, type, currency, opening }));
+}
+
+/** Changes an account's name, type and starting balance. */
+export function useUpdateAccount() {
+  const update = useMutation(api.accounts.update).withOptimisticUpdate((store, change) => {
+    const list = store.getQuery(api.accounts.list, {});
+    if (list === undefined) return;
+    store.setQuery(
+      api.accounts.list,
+      {},
+      list.map((a) =>
+        a.id === change.id ? { ...a, name: change.name.trim(), type: change.type, opening: change.opening } : a,
+      ),
+    );
+  });
+  // Only the fields update accepts: Convex refuses any extra (like a
+  // currency, which can't change), and a form may hand over more.
+  return (id: string, { name, type, opening }: AccountFields) =>
+    withMessage(update({ id, name, type, opening }));
+}
+
+/** Archives an account, or brings it back. */
+export function useSetAccountArchived() {
+  const set = useMutation(api.accounts.setArchived).withOptimisticUpdate((store, { id, archived }) => {
+    const list = store.getQuery(api.accounts.list, {});
+    if (list !== undefined) {
+      store.setQuery(api.accounts.list, {}, list.map((a) => (a.id === id ? { ...a, archived } : a)));
+    }
+  });
+  return (id: string, archived: boolean) => withMessage(set({ id, archived }));
+}
+
+/** Deletes an account that has never been used. */
+export function useRemoveAccount() {
+  const remove = useMutation(api.accounts.remove);
+  return (id: string) => withMessage(remove({ id }));
+}
+
 /** The account's display preferences, or null while they load. */
 export function useAccountPreferences(): Preferences | null {
   const { isAuthenticated } = useConvexAuth();
@@ -104,15 +179,3 @@ export function useSetPreferences() {
   return (change: Partial<Preferences>) => succeeded(set(change));
 }
 
-/** Saves the starting balance, or removes it with null. */
-export function useSetOpeningBalance() {
-  const set = useMutation(api.settings.setOpeningBalance).withOptimisticUpdate(
-    (store, { openingBalance }) => {
-      const settings = store.getQuery(api.settings.get, {});
-      if (settings !== undefined) {
-        store.setQuery(api.settings.get, {}, { ...settings, openingBalance });
-      }
-    },
-  );
-  return (openingBalance: OpeningBalance | null) => succeeded(set({ openingBalance }));
-}

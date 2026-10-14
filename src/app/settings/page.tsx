@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import { AccountCard } from "@/components/AccountCard";
-import { OpeningBalanceForm } from "@/components/OpeningBalanceForm";
 import { PreferencesForm } from "@/components/PreferencesForm";
 import { SettingsForm } from "@/components/SettingsForm";
 import { YourDataCard } from "@/components/YourDataCard";
@@ -27,7 +26,6 @@ export default async function SettingsPage() {
         <AccountCard />
         <PreferencesForm />
         <SettingsForm />
-        <OpeningBalanceForm />
         <YourDataCard />
       </div>
     </section>
