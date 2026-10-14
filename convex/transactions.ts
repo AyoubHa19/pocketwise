@@ -18,7 +18,9 @@ const transactionArg = v.object({
   category: v.string(),
   categoryId: v.optional(v.string()),
   date: v.string(),
+  description: v.optional(v.string()),
   note: v.optional(v.string()),
+  tags: v.optional(v.array(v.string())),
   accountId: v.optional(v.string()),
   toAccountId: v.optional(v.string()),
 });
@@ -35,7 +37,9 @@ function toTransaction(row: Doc<"transactions">, names: Map<string, string>): Tr
     category: (row.categoryId && names.get(row.categoryId)) ?? row.category,
     ...(row.categoryId !== undefined && { categoryId: row.categoryId }),
     date: row.date,
+    ...(row.description !== undefined && { description: row.description }),
     ...(row.note !== undefined && { note: row.note }),
+    ...(row.tags !== undefined && { tags: row.tags }),
     ...(row.accountId !== undefined && { accountId: row.accountId }),
     ...(row.toAccountId !== undefined && { toAccountId: row.toAccountId }),
   };
@@ -98,7 +102,9 @@ export const save = mutation({
       category: category?.name ?? t.category,
       categoryId: category?._id,
       date: t.date,
+      description: t.description?.trim() || undefined,
       note: t.note?.trim() || undefined,
+      tags: t.tags?.length ? t.tags : undefined,
       ...(await checkedAccounts(ctx, ownerId, t)),
       updatedAt: Date.now(),
     };

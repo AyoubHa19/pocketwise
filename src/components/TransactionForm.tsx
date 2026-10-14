@@ -15,6 +15,14 @@ import { DEFAULT_CATEGORIES, sameName, type Category } from "@/lib/categories";
 import { amountToInputText, currencyDecimals, parseAmount } from "@/lib/money";
 import { fadeRise } from "@/lib/motion";
 import {
+  MAX_DESCRIPTION_LENGTH,
+  MAX_TAG_LENGTH,
+  MAX_TAGS,
+  parseTags,
+  tagsProblem,
+  tagsToText,
+} from "@/lib/tags";
+import {
   newTransactionId,
   TRANSFER_CATEGORY,
   type Transaction,
@@ -38,7 +46,7 @@ type Props = {
   onDelete?: () => void;
 };
 
-type Field = "amount" | "date" | "account" | "to";
+type Field = "amount" | "date" | "account" | "to" | "tags";
 
 /** The value of the "new Main account" choice, when the user has none yet. */
 const NEW_ACCOUNT = "";
@@ -109,7 +117,11 @@ export function TransactionForm({
   const [amount, setAmount] = useState(transaction ? amountToInputText(transaction.amount) : "");
   // null until the user picks a date themselves; until then, use today.
   const [pickedDate, setPickedDate] = useState<string | null>(transaction?.date ?? null);
+  const [description, setDescription] = useState(transaction?.description ?? "");
   const [note, setNote] = useState(transaction?.note ?? "");
+  const [tagsText, setTagsText] = useState(tagsToText(transaction?.tags));
+  const tags = parseTags(tagsText);
+  const tagsHelpId = useId();
   // Which field the error is about, so that field can be marked invalid.
   const [error, setError] = useState<{ field: Field; message: string } | null>(null);
   const errorId = useId();
@@ -150,6 +162,12 @@ export function TransactionForm({
       return;
     }
 
+    const tagProblem = tagsProblem(tags);
+    if (tagProblem) {
+      setError({ field: "tags", message: tagProblem });
+      return;
+    }
+
     const categoryId = ofKind.find((c) => sameName(c.name, category))?.id;
     onSave({
       // Editing keeps the same id, so the saved one is replaced, not copied.
@@ -159,7 +177,9 @@ export function TransactionForm({
       category: isTransfer ? TRANSFER_CATEGORY : category,
       ...(categoryId && { categoryId }),
       date,
+      description: description.trim() || undefined,
       note: note.trim() || undefined,
+      ...(tags.length > 0 && { tags }),
       ...(accountId !== NEW_ACCOUNT && { accountId }),
       ...(isTransfer && toAccountId && { toAccountId }),
     });
@@ -272,6 +292,19 @@ export function TransactionForm({
         )}
 
         <label className="block text-sm font-medium sm:col-span-2">
+          Description <span className="font-normal text-muted">(optional)</span>
+          <input
+            type="text"
+            maxLength={MAX_DESCRIPTION_LENGTH}
+            autoComplete="off"
+            placeholder={isTransfer ? "Like: Savings for the trip" : "Like: Carrefour, Netflix, rent"}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            className={fieldClass}
+          />
+        </label>
+
+        <label className="block text-sm font-medium sm:col-span-2">
           Date
           <input
             type="date"
@@ -292,6 +325,35 @@ export function TransactionForm({
             className={fieldClass}
           />
         </label>
+
+        <div className="sm:col-span-2">
+          <label className="block text-sm font-medium">
+            Tags <span className="font-normal text-muted">(optional)</span>
+            <input
+              type="text"
+              autoComplete="off"
+              placeholder="Like: trip, family"
+              value={tagsText}
+              onChange={(event) => setTagsText(event.target.value)}
+              className={fieldClass}
+              aria-describedby={error?.field === "tags" ? `${tagsHelpId} ${errorId}` : tagsHelpId}
+              {...(error?.field === "tags" && { "aria-invalid": true as const })}
+            />
+          </label>
+          <p id={tagsHelpId} className="mt-1 text-sm text-muted">
+            Separate them with commas: up to {MAX_TAGS}, of up to {MAX_TAG_LENGTH} characters.
+          </p>
+          {tags.length > 0 && (
+            // What will be saved, tidied up: the same tags the list shows.
+            <ul aria-label="Tags to save" className="mt-2 flex flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <li key={tag} className="max-w-full truncate rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium">
+                  {tag}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* The message fades in. It's announced the moment it's added

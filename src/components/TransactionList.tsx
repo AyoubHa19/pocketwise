@@ -108,16 +108,28 @@ export function TransactionList({
                       : showAccounts && transaction.accountId
                         ? name(transaction.accountId)
                         : undefined;
-                    const details = [where, transaction.note].filter(Boolean).join(" · ");
+                    // With a description, it's the title ("Carrefour") and
+                    // the category moves down with the details.
+                    const title = transaction.description ?? transaction.category;
+                    const details = [
+                      transaction.description && transaction.category,
+                      where,
+                      transaction.note,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ");
+                    const tags = transaction.tags ?? [];
                     // Spelled out, with commas for pauses, rather than left to
                     // each screen reader to piece together from the row's
                     // text, which some read as "FoodCoffee". It holds the
                     // visible words in order, so voice control ("click Food")
                     // still works.
                     const label = [
-                      `Edit ${transaction.category}`,
+                      `Edit ${title}`,
+                      transaction.description && transaction.category,
                       where?.replace(" → ", " to "),
                       transaction.note,
+                      tags.length > 0 && `tags: ${tags.join(", ")}`,
                       amount,
                     ]
                       .filter(Boolean)
@@ -145,12 +157,27 @@ export function TransactionList({
                         >
                           <CategoryIcon category={transaction.category} />
                           <span className="min-w-0 flex-1">
-                            <span className="block font-medium">
-                              {transaction.category}
+                            <span className="block truncate font-medium">
+                              {title}
                             </span>
                             {details && (
                               <span className="block truncate text-sm text-muted">
                                 {details}
+                              </span>
+                            )}
+                            {tags.length > 0 && (
+                              // One line, so a row never grows tall on a phone;
+                              // tags that don't fit are cut off at the edge (all
+                              // of them are in the row's label, and in the form).
+                              <span className="mt-1 flex gap-1 overflow-hidden">
+                                {tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="max-w-full shrink-0 truncate rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-muted"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
                               </span>
                             )}
                           </span>

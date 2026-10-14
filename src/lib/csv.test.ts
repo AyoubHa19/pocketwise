@@ -21,9 +21,9 @@ describe("transactionsToCsv", () => {
     ]);
     expect(csv).toBe(
       BOM +
-        "Date,Type,Category,Amount,Currency,Account,To account,Note\r\n" +
-        "2026-10-13,expense,Food,-4.50,EUR,,,Coffee\r\n" +
-        "2026-10-01,income,Salary,5200.00,MAD,,,\r\n",
+        "Date,Type,Category,Description,Amount,Currency,Account,To account,Note,Tags\r\n" +
+        "2026-10-13,expense,Food,,-4.50,EUR,,,Coffee,\r\n" +
+        "2026-10-01,income,Salary,,5200.00,MAD,,,,\r\n",
     );
   });
 
@@ -36,8 +36,8 @@ describe("transactionsToCsv", () => {
       ],
       names,
     );
-    expect(csv).toContain("2026-10-13,expense,Food,-4.50,EUR,Cash,,Coffee\r\n");
-    expect(csv).toContain("2026-10-13,transfer,Transfer,500.00,EUR,CIH Bank,Cash,\r\n");
+    expect(csv).toContain("2026-10-13,expense,Food,,-4.50,EUR,Cash,,Coffee,\r\n");
+    expect(csv).toContain("2026-10-13,transfer,Transfer,,500.00,EUR,CIH Bank,Cash,,\r\n");
   });
 
   it("defuses an account name that looks like a formula", () => {
@@ -55,16 +55,27 @@ describe("transactionsToCsv", () => {
   });
 
   it("is just the header when there are no transactions", () => {
-    expect(transactionsToCsv([])).toBe(BOM + "Date,Type,Category,Amount,Currency,Account,To account,Note\r\n");
+    expect(transactionsToCsv([])).toBe(
+      BOM + "Date,Type,Category,Description,Amount,Currency,Account,To account,Note,Tags\r\n",
+    );
   });
 
   it("keeps notes with commas, quotes and line breaks in one field", () => {
     const csv = transactionsToCsv([t({ note: 'Lunch, "big" one\nwith Sam' })]);
-    expect(csv).toContain(',"Lunch, ""big"" one\nwith Sam"\r\n');
+    expect(csv).toContain(',"Lunch, ""big"" one\nwith Sam",\r\n');
   });
 
   it("keeps Arabic and accents as they are", () => {
-    expect(transactionsToCsv([t({ note: "قهوة café" })])).toContain(",قهوة café\r\n");
+    expect(transactionsToCsv([t({ note: "قهوة café" })])).toContain(",قهوة café,\r\n");
+  });
+
+  it("writes the description and the tags, made safe like notes", () => {
+    const csv = transactionsToCsv([
+      t({ description: "Carrefour, Maarif", tags: ["trip", "family"] }),
+      t({ category: "=HYPERLINK()", description: "+1", tags: ["-x"] }),
+    ]);
+    expect(csv).toContain('2026-10-13,expense,Food,"Carrefour, Maarif",-4.50,EUR,,,,trip; family\r\n');
+    expect(csv).toContain("2026-10-13,expense,'=HYPERLINK(),'+1,-4.50,EUR,,,,'-x\r\n");
   });
 });
 

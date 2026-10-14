@@ -33,7 +33,11 @@ export type Transaction = {
    * so the day never shifts when the user travels or changes time zone.
    */
   date: string;
+  /** Who was paid or paid you, or what it was: "Carrefour", "Netflix". */
+  description?: string;
   note?: string;
+  /** Free words to group by, as src/lib/tags.ts parses them. */
+  tags?: string[];
   /**
    * The account it happened in; for a transfer, the one the money left.
    * Missing only on transactions from before accounts existed, until
@@ -51,7 +55,7 @@ export type Transaction = {
  */
 export function isTransaction(value: unknown): value is Transaction {
   if (typeof value !== "object" || value === null) return false;
-  const { id, type, amount, category, categoryId, date, note, accountId, toAccountId } =
+  const { id, type, amount, category, categoryId, date, description, note, tags, accountId, toAccountId } =
     value as Record<string, unknown>;
   if (typeof amount !== "object" || amount === null) return false;
   const { amountMinor, currency } = amount as Record<string, unknown>;
@@ -78,7 +82,9 @@ export function isTransaction(value: unknown): value is Transaction {
     typeof category === "string" &&
     typeof date === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(date) &&
-    (note === undefined || typeof note === "string")
+    (description === undefined || typeof description === "string") &&
+    (note === undefined || typeof note === "string") &&
+    (tags === undefined || (Array.isArray(tags) && tags.every((t) => typeof t === "string")))
   );
 }
 

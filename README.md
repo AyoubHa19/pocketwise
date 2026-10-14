@@ -11,7 +11,10 @@ see it wherever you sign in.
 ## What it does
 
 - Add, edit, and delete transactions (income or expense, with a category,
-  date, and optional note), grouped by day with each day's total.
+  date, and optional description, note and tags), grouped by day with
+  each day's total. The description ("Carrefour", "Netflix") becomes the
+  row's title; tags are free words typed with commas ("trip, family"),
+  tidied up the same way in the app and on the server (`src/lib/tags.ts`).
 - Use your own categories, for spending and for income: everyone starts
   with a default list (`src/lib/categories.ts`), and can add, rename or
   archive categories in Settings. A transaction refers to its category by

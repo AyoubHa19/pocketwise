@@ -170,7 +170,8 @@ export function TransactionTracker() {
 
   async function remove(transaction: Transaction) {
     const amount = formatMoney(signedAmount(transaction));
-    const what = transaction.type === "transfer" ? "this transfer" : transaction.category;
+    const what =
+      transaction.type === "transfer" ? "this transfer" : (transaction.description ?? transaction.category);
     const confirmed = window.confirm(
       `Delete ${what}, ${amount} on ${transaction.date}? This can't be undone.`,
     );

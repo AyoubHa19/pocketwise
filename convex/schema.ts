@@ -85,7 +85,11 @@ export default defineSchema({
     category: v.string(),
     // The calendar day, "YYYY-MM-DD", with no time zone.
     date: v.string(),
+    // Who was paid, or what it was (src/lib/tags.ts has the limits).
+    description: v.optional(v.string()),
     note: v.optional(v.string()),
+    // Missing when there are none.
+    tags: v.optional(v.array(v.string())),
     updatedAt: v.number(),
   })
     .index("by_owner_date", ["ownerId", "date"])

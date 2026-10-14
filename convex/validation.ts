@@ -1,6 +1,7 @@
 import { ConvexError } from "convex/values";
 import { isSupportedCurrency } from "../src/lib/money";
 import { isOpeningBalance, type OpeningBalance } from "../src/lib/summary";
+import { MAX_DESCRIPTION_LENGTH, tagsProblem } from "../src/lib/tags";
 import { isTransaction, type Transaction } from "../src/lib/transactions";
 
 // The server checks everything again, with the same rules the app uses
@@ -43,6 +44,11 @@ export function checkTransaction(value: unknown): Transaction {
   if (value.note !== undefined && value.note.length > MAX_NOTE_LENGTH) {
     throw new ConvexError(`A note can be up to ${MAX_NOTE_LENGTH} characters.`);
   }
+  if (value.description !== undefined && value.description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new ConvexError(`A description can be up to ${MAX_DESCRIPTION_LENGTH} characters.`);
+  }
+  const tagProblem = value.tags && tagsProblem(value.tags);
+  if (tagProblem) throw new ConvexError(tagProblem);
   return value;
 }
 

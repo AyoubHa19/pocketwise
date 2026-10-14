@@ -830,6 +830,35 @@ describe("moving to categories (ensureCategories)", () => {
   });
 });
 
+describe("descriptions and tags", () => {
+  it("are saved and given back, trimmed, and removed when cleared", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.transactions.save, {
+      transaction: { ...coffee, description: "  Café Sam ", tags: ["work", "سفر"] },
+    });
+    expect((await sarah.query(api.transactions.list, {}))[0]).toMatchObject({
+      description: "Café Sam",
+      tags: ["work", "سفر"],
+    });
+    await sarah.mutation(api.transactions.save, { transaction: { ...coffee, description: " ", tags: [] } });
+    const [saved] = await sarah.query(api.transactions.list, {});
+    expect(saved.description).toBeUndefined();
+    expect(saved.tags).toBeUndefined();
+  });
+
+  it("refuse a long description, and untidy, long or too many tags", async () => {
+    const { sarah } = setup();
+    const save = (over: Partial<Transaction>) =>
+      sarah.mutation(api.transactions.save, { transaction: { ...coffee, ...over } });
+    await expect(save({ description: "x".repeat(61) })).rejects.toThrow("up to 60 characters");
+    await expect(save({ tags: ["trip", "TRIP"] })).rejects.toThrow("can't be empty or repeated");
+    await expect(save({ tags: [""] })).rejects.toThrow("can't be empty or repeated");
+    await expect(save({ tags: ["x".repeat(25)] })).rejects.toThrow("up to 24 characters");
+    await expect(save({ tags: Array.from({ length: 11 }, (_, i) => `t${i}`) })).rejects.toThrow("up to 10 tags");
+    expect(await sarah.query(api.transactions.list, {})).toEqual([]);
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);

@@ -5,13 +5,15 @@ import { signedAmount, type Transaction } from "@/lib/transactions";
 // Google Sheets and Numbers all open. The format:
 //
 // - One row per transaction, newest day first, under a header row:
-//   Date, Type, Category, Amount, Currency, Account, To account, Note.
+//   Date, Type, Category, Description, Amount, Currency, Account,
+//   To account, Note, Tags.
 // - Date is "YYYY-MM-DD". Amount is a plain number with a point for
 //   decimals and a minus for spending (-4.50), so a column can be summed;
 //   it has the currency's own number of decimals (2 for EUR, 0 for JPY).
 //   A transfer's amount has no sign (it moves money between your accounts,
 //   from Account to To account, and isn't income or spending); To account
-//   is empty for everything else.
+//   is empty for everything else. Tags are in one field, separated by
+//   "; ".
 // - Lines end with CRLF and fields are quoted when they need it, as the
 //   CSV standard (RFC 4180) describes. The file starts with a UTF-8 byte
 //   order mark, which Excel needs to read accents and Arabic correctly.
@@ -20,11 +22,13 @@ export const CSV_HEADER = [
   "Date",
   "Type",
   "Category",
+  "Description",
   "Amount",
   "Currency",
   "Account",
   "To account",
   "Note",
+  "Tags",
 ];
 
 /** Quotes a field if it contains a comma, a quote or a line break. */
@@ -45,8 +49,9 @@ export function userText(value: string): string {
 
 /**
  * The CSV text for these transactions, header included. `accountNames`
- * turns account ids into the names the user gave them (typed text, so made
- * safe like notes).
+ * turns account ids into the names the user gave them. Everything the user
+ * typed (category and account names, descriptions, notes, tags) is made
+ * safe with userText.
  */
 export function transactionsToCsv(
   transactions: Transaction[],
@@ -57,12 +62,14 @@ export function transactionsToCsv(
     [
       t.date,
       t.type,
-      quote(t.category),
+      userText(t.category),
+      userText(t.description ?? ""),
       amountToInputText(signedAmount(t)),
       t.amount.currency,
       name(t.accountId),
       name(t.toAccountId),
       userText(t.note ?? ""),
+      userText((t.tags ?? []).join("; ")),
     ].join(","),
   );
   return "﻿" + [CSV_HEADER.join(","), ...rows].join("\r\n") + "\r\n";
