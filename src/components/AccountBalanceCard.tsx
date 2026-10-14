@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { fitOneLine } from "@/components/fitOneLine";
 import { cardClass, colorTransition } from "@/components/formStyles";
-import { formatDayLabel } from "@/lib/dates";
+import { DEFAULT_PREFERENCES, formatDay, type DateOrder } from "@/lib/preferences";
 import { formatMoney } from "@/lib/money";
 import {
   accountBalance,
@@ -15,8 +15,8 @@ type Props = {
   transactions: Transaction[];
   openingBalance: OpeningBalance | null;
   today: string;
-  /** Writes the start date in the user's order (Oct 13 or 13 Oct). */
-  dateLocale?: string;
+  /** Writes the start date in the user's date format (13 Oct, Oct 13, 13/10/2026). */
+  dateOrder?: DateOrder;
 };
 
 const linkClass = `inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline ${colorTransition}`;
@@ -31,7 +31,7 @@ export function AccountBalanceCard({
   transactions,
   openingBalance,
   today,
-  dateLocale = "en-US",
+  dateOrder = DEFAULT_PREFERENCES.dateOrder,
 }: Props) {
   return (
     <section
@@ -57,7 +57,7 @@ export function AccountBalanceCard({
           leftOut={currenciesLeftOut(transactions, openingBalance, today)}
           openingBalance={openingBalance}
           today={today}
-          dateLocale={dateLocale}
+          dateOrder={dateOrder}
         />
       ) : (
         <p className="mt-1 text-sm text-muted">
@@ -74,14 +74,14 @@ function BalanceAmount({
   leftOut,
   openingBalance,
   today,
-  dateLocale,
+  dateOrder,
 }: {
   balanceMinor: number;
   /** Currencies of transactions the balance can't include. */
   leftOut: string[];
   openingBalance: OpeningBalance;
   today: string;
-  dateLocale: string;
+  dateOrder: DateOrder;
 }) {
   const currency = openingBalance.currency;
   const balance = formatMoney({ amountMinor: balanceMinor, currency });
@@ -98,7 +98,7 @@ function BalanceAmount({
         <AnimatedNumber text={balance} value={balanceMinor} />
       </p>
       <p className="mt-1 truncate text-sm text-muted">
-        Started with {start} · {formatDayLabel(openingBalance.date, today, dateLocale)}
+        Started with {start} · {formatDay(openingBalance.date, today, dateOrder)}
       </p>
       {/* Said out loud, so a missing amount never looks like a wrong total.
           Only shown when it happens, so the card is usually its fixed

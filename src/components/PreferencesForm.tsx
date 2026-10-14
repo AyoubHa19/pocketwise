@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { cardClass, colorTransition } from "@/components/formStyles";
 import { useAccountPreferences, useSetPreferences } from "@/lib/accountData";
-import { addDays, formatDayLabel } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import {
-  dateLocale,
+  DATE_ORDERS,
+  formatDay,
   type DateOrder,
   type Preferences,
   type Theme,
@@ -16,6 +17,12 @@ const THEME_LABELS: Record<Theme, string> = {
   system: "Same as this device",
   light: "Light",
   dark: "Dark",
+};
+
+const DATE_LABELS: Record<DateOrder, string> = {
+  "day-first": "Day first",
+  "month-first": "Month first",
+  numeric: "Numbers",
 };
 
 // Each option is a whole row you can tap (min 44px), with the radio inside.
@@ -41,10 +48,9 @@ export function PreferencesForm() {
     setStatus((await setPreferences(update)) ? "saved" : "failed");
   }
 
-  // A real example: ten days ago, in each order. (Today and yesterday read
+  // A real example: ten days ago, in each format. (Today and yesterday read
   // as words, so they wouldn't show the difference.)
   const example = addDays(today, -10);
-  const sample = (order: DateOrder) => formatDayLabel(example, today, dateLocale(order));
 
   return (
     <section
@@ -77,7 +83,7 @@ export function PreferencesForm() {
       <fieldset className="mt-4">
         <legend className="text-sm font-medium">Dates</legend>
         <div className="mt-1 space-y-1">
-          {(["month-first", "day-first"] as const).map((order) => (
+          {DATE_ORDERS.map((order) => (
             <label key={order} className={optionClass}>
               <input
                 type="radio"
@@ -88,8 +94,8 @@ export function PreferencesForm() {
                 className="h-4 w-4 accent-accent"
               />
               <span className="text-sm">
-                {order === "month-first" ? "Month first" : "Day first"}{" "}
-                <span className="text-muted">({sample(order)})</span>
+                {DATE_LABELS[order]}{" "}
+                <span className="text-muted">({formatDay(example, today, order)})</span>
               </span>
             </label>
           ))}

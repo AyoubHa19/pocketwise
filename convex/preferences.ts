@@ -27,7 +27,9 @@ export const get = query({
 export const set = mutation({
   args: {
     theme: v.optional(v.union(v.literal("system"), v.literal("light"), v.literal("dark"))),
-    dateOrder: v.optional(v.union(v.literal("month-first"), v.literal("day-first"))),
+    dateOrder: v.optional(
+      v.union(v.literal("day-first"), v.literal("month-first"), v.literal("numeric")),
+    ),
   },
   handler: async (ctx, args) => {
     const ownerId = await requireOwner(ctx);

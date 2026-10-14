@@ -308,17 +308,23 @@ describe("deleting your data", () => {
 });
 
 describe("preferences", () => {
-  it("start as the device's theme and month-first dates", async () => {
+  it("start as the device's theme and day-first dates", async () => {
     const { sarah } = setup();
-    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "system", dateOrder: "month-first" });
+    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "system", dateOrder: "day-first" });
+  });
+
+  it("accept dates as numbers", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.preferences.set, { dateOrder: "numeric" });
+    expect((await sarah.query(api.preferences.get, {})).dateOrder).toBe("numeric");
   });
 
   it("save one at a time, keeping the other and the settings", async () => {
     const { sarah } = setup();
     await sarah.mutation(api.settings.setCurrency, { currency: "MAD" });
     await sarah.mutation(api.preferences.set, { theme: "dark" });
-    await sarah.mutation(api.preferences.set, { dateOrder: "day-first" });
-    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "dark", dateOrder: "day-first" });
+    await sarah.mutation(api.preferences.set, { dateOrder: "month-first" });
+    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "dark", dateOrder: "month-first" });
     expect((await sarah.query(api.settings.get, {})).currency).toBe("MAD");
   });
 

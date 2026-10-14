@@ -1,27 +1,42 @@
 // The user's display preferences, saved in their account (convex/
 // preferences.ts) and shared by the app and the server.
 
+import { addDays, formatDayLabel } from "@/lib/dates";
+
 export const THEMES = ["system", "light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
 
-/** Which comes first in a date like "Mon, Oct 13" or "Mon 13 Oct". */
-export const DATE_ORDERS = ["month-first", "day-first"] as const;
+/**
+ * How dates are written: "Mon 13 Oct" (day first), "Mon, Oct 13" (month
+ * first) or "13/10/2026" (numbers, day first). Stored as `dateOrder`.
+ */
+export const DATE_ORDERS = ["day-first", "month-first", "numeric"] as const;
 export type DateOrder = (typeof DATE_ORDERS)[number];
 
 export type Preferences = { theme: Theme; dateOrder: DateOrder };
 
-/** What a user who never chose gets: the device's theme, and Oct 13. */
+/** What a user who never chose gets: the device's theme, and 13 Oct. */
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
-  dateOrder: "month-first",
+  dateOrder: "day-first",
 };
 
 /**
- * The locale that writes dates in that order. Only the order differs: both
- * are English, so day and month names stay the same.
+ * A calendar day ("YYYY-MM-DD") as a heading, in the user's format. Today
+ * and yesterday are words in every format, since they read fastest. The
+ * year shows only when it isn't this year, except in numbers, which always
+ * have it. Dates are read in UTC so the day never shifts with time zones.
  */
-export function dateLocale(order: DateOrder): string {
-  return order === "day-first" ? "en-GB" : "en-US";
+export function formatDay(date: string, today: string, order: DateOrder): string {
+  if (order !== "numeric") {
+    // Same words in both: only the order differs (en-GB day first, en-US month first).
+    return formatDayLabel(date, today, order === "day-first" ? "en-GB" : "en-US");
+  }
+  if (date === today) return "Today";
+  if (date === addDays(today, -1)) return "Yesterday";
+  // "YYYY-MM-DD" rearranged: the digits are already two wide and in UTC.
+  const [year, month, day] = date.split("-");
+  return `${day}/${month}/${year}`;
 }
 
 /**

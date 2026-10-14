@@ -29,7 +29,6 @@ import { TransactionForm } from "@/components/TransactionForm";
 import { Toast, type Notice } from "@/components/Toast";
 import { TransactionList } from "@/components/TransactionList";
 import { formatMonth, monthOf } from "@/lib/dates";
-import { dateLocale } from "@/lib/preferences";
 import { formatMoney } from "@/lib/money";
 import { fadeRise, monthSlide } from "@/lib/motion";
 import { LocalDataImport, useLocalDataOffer } from "@/components/LocalDataImport";
@@ -250,7 +249,7 @@ export function TransactionTracker() {
               transactions={transactions}
               openingBalance={settings.openingBalance}
               today={today}
-              dateLocale={dateLocale(preferences.dateOrder)}
+              dateOrder={preferences.dateOrder}
             />
           </m.div>
           <m.div {...appear(1)} className={summaryPickerArea}>
@@ -330,7 +329,7 @@ export function TransactionTracker() {
                   : `No transactions in ${monthName}.`
               }
               today={today}
-              dateLocale={dateLocale(preferences.dateOrder)}
+              dateOrder={preferences.dateOrder}
               editingId={sheetOpen && editing ? editing.id : null}
               onEdit={openEdit}
             />

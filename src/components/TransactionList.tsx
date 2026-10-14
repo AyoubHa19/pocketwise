@@ -5,7 +5,7 @@ import * as m from "motion/react-m";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { cardClass, colorTransition } from "@/components/formStyles";
-import { formatDayLabel } from "@/lib/dates";
+import { DEFAULT_PREFERENCES, formatDay, type DateOrder } from "@/lib/preferences";
 import { formatMoney } from "@/lib/money";
 import { collapse } from "@/lib/motion";
 import { groupByDay } from "@/lib/summary";
@@ -17,8 +17,8 @@ type Props = {
   emptyMessage: string;
   /** Today's date, for the "Today" and "Yesterday" headings. */
   today: string;
-  /** Writes the day headings in the user's order (Oct 13 or 13 Oct). */
-  dateLocale?: string;
+  /** Writes the day headings in the user's date format (13 Oct, Oct 13, 13/10/2026). */
+  dateOrder?: DateOrder;
   /** The transaction open in the sheet, highlighted in the list. */
   editingId: string | null;
   onEdit: (transaction: Transaction) => void;
@@ -36,7 +36,7 @@ export function TransactionList({
   transactions,
   emptyMessage,
   today,
-  dateLocale = "en-US",
+  dateOrder = DEFAULT_PREFERENCES.dateOrder,
   editingId,
   onEdit,
 }: Props) {
@@ -77,7 +77,7 @@ export function TransactionList({
             >
               <div className="mb-2 flex items-baseline justify-between gap-4 px-1">
                 <h3 id={headingId} className="text-sm font-semibold text-muted">
-                  {formatDayLabel(day.date, today, dateLocale)}
+                  {formatDay(day.date, today, dateOrder)}
                 </h3>
                 <p className="text-sm tabular-nums text-muted">
                   <span className="sr-only">Total for the day: </span>
