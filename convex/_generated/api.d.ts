@@ -16,6 +16,8 @@ import type * as goals from "../goals.js";
 import type * as ownership from "../ownership.js";
 import type * as preferences from "../preferences.js";
 import type * as rates from "../rates.js";
+import type * as receipts from "../receipts.js";
+import type * as receiptsNode from "../receiptsNode.js";
 import type * as recurring from "../recurring.js";
 import type * as settings from "../settings.js";
 import type * as transactions from "../transactions.js";
@@ -37,6 +39,8 @@ declare const fullApi: ApiFromModules<{
   ownership: typeof ownership;
   preferences: typeof preferences;
   rates: typeof rates;
+  receipts: typeof receipts;
+  receiptsNode: typeof receiptsNode;
   recurring: typeof recurring;
   settings: typeof settings;
   transactions: typeof transactions;

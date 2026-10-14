@@ -73,6 +73,13 @@ see it wherever you sign in.
   converted. Converted amounts are always labelled with the rate they
   used; originals never change; a currency without a rate is left out
   and named, never guessed. The arithmetic is exact (`src/lib/rates.ts`).
+- Scan a receipt: take or choose a photo, and Claude reads the shop,
+  date, total, currency, category and items. Nothing is saved until you
+  check it: doubtful fields come with warnings, a possible duplicate is
+  pointed out, and "Check and save" opens the usual form, filled in. The
+  photo is shrunk in the browser, read on the server only, and deleted
+  straight after; each user can scan 30 a day. Needs an Anthropic API key
+  set in Convex (`ANTHROPIC_API_KEY`); without one the button says so.
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income

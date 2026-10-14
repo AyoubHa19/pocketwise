@@ -1,9 +1,10 @@
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
 import type { Budget } from "@/lib/budgets";
 import type { Contribution, Goal } from "@/lib/goals";
 import type { ExchangeRate } from "@/lib/rates";
+import type { ReceiptReading } from "@/lib/receipts";
 import type { RecurringRule } from "@/lib/recurring";
 import type { Category, CategoryKind } from "@/lib/categories";
 import type { Preferences } from "@/lib/preferences";
@@ -14,6 +15,7 @@ import {
   type Transaction,
 } from "@/lib/transactions";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 // The signed-in user's data, read from and saved to their account (Convex).
 // The hooks keep the shapes the screens already used with localStorage:
@@ -418,6 +420,29 @@ export function useRemoveRate() {
     if (list !== undefined) store.setQuery(api.rates.list, {}, list.filter((r) => r.id !== id));
   });
   return (id: string) => withMessage(remove({ id }));
+}
+
+/**
+ * Uploads a (shrunk) receipt image and has the server read it. Resolves to
+ * the reading, or the server's own message when it couldn't (not set up,
+ * daily limit, unreadable image).
+ */
+export function useScanReceipt() {
+  const uploadUrl = useMutation(api.receipts.generateUploadUrl);
+  const scan = useAction(api.receiptsNode.scan);
+  return async (image: Blob): Promise<{ ok: true; reading: ReceiptReading } | { ok: false; message: string }> => {
+    try {
+      const url = await uploadUrl({});
+      const upload = await fetch(url, { method: "POST", headers: { "Content-Type": image.type }, body: image });
+      if (!upload.ok) return { ok: false, message: "The photo couldn't be uploaded. Check your connection and try again." };
+      // The upload hands back the stored file's id; the server checks it.
+      const { storageId } = (await upload.json()) as { storageId: Id<"_storage"> };
+      return { ok: true, reading: await scan({ storageId }) };
+    } catch (error) {
+      if (error instanceof ConvexError && typeof error.data === "string") return { ok: false, message: error.data };
+      return { ok: false, message: "The receipt couldn't be read just now. Check your connection and try again." };
+    }
+  };
 }
 
 /** The account's display preferences, or null while they load. */

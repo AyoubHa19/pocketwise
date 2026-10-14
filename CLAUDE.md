@@ -59,13 +59,21 @@ Done and live (see `git log` for the details of each):
   exact BigInt arithmetic (`src/lib/rates.ts`). A converted total on the
   balance card, and reports can include other currencies, converted;
   budgets never use converted amounts. No live rates are fetched.
+  24: receipt scanning ("Scan a receipt" on the dashboard): the photo is
+  shrunk in the browser, read by Claude (`claude-opus-5-5`, effort low,
+  structured JSON, server-side fallback) in `convex/receiptsNode.ts`,
+  deleted straight after, checked (`src/lib/receipts.ts`), shown for
+  review, then opened in the filled-in form. 30 scans per user per day.
+  **Needs `ANTHROPIC_API_KEY`** as a Convex environment variable (see
+  below); without it the button says scanning isn't set up yet. The review
+  card has only been tested by its unit tests until a key is added: test
+  it with a real receipt then.
 
 Next, in order (PRD 29):
 
-- **24: AI receipt scanning** (PRD 20): needs a decision on the
-  extraction service (cost, privacy) before building; server-side only,
-  the user reviews every field before saving.
-- 25: safe-to-spend and salary day planner.
+- **When the user adds the API key**: test a real receipt end to end on
+  localhost (review card, warnings, duplicates, saving), then production.
+- **25: safe-to-spend and salary day planner** (PRD 15, 16).
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
 - 26: what-if simulator and debt tracking. 27: final review.
@@ -85,6 +93,21 @@ they're used daily; the header only fits five items on a 320px phone.
   another computer it has to be copied over privately (not in a chat).
 - Checks before every commit: `npm test`, `npx tsc --noEmit`,
   `npx tsc -p convex --noEmit`, `npm run lint`.
+
+## The Anthropic API key (receipt scanning)
+
+It lives only in Convex, never in the code, `.env.local` or a chat. The
+user sets it themselves in a terminal (it's typed there, not pasted to
+Claude):
+
+```bash
+npx convex env set ANTHROPIC_API_KEY
+npx convex env set --deployment production-eu ANTHROPIC_API_KEY
+```
+
+(Each asks for the value. The first is the dev deployment, the second the
+live site's.) Costs a few US cents per scan; the daily cap is
+`DAILY_SCAN_LIMIT` in `src/lib/receipts.ts`.
 
 ## Deployments
 

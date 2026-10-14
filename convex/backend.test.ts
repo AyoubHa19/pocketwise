@@ -6,7 +6,7 @@
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 import type { Transaction } from "../src/lib/transactions";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import schema from "./schema";
 import { isCalendarDate } from "./validation";
 
@@ -1211,6 +1211,57 @@ describe("exchange rates", () => {
   it("need a sign-in", async () => {
     const { t } = setup();
     await expect(t.query(api.rates.list, {})).rejects.toThrow("You need to be signed in.");
+  });
+});
+
+describe("receipt scanning", () => {
+  it("gives an upload URL to signed-in users only", async () => {
+    const { t, sarah } = setup();
+    expect(typeof (await sarah.mutation(api.receipts.generateUploadUrl, {}))).toBe("string");
+    await expect(t.mutation(api.receipts.generateUploadUrl, {})).rejects.toThrow("You need to be signed in.");
+  });
+
+  it("caps scans per user per day", async () => {
+    const { t } = setup();
+    const count = (ownerId: string, day = "2026-10-14") => t.mutation(internal.receipts.countScan, { ownerId, day });
+    for (let i = 1; i <= 30; i++) expect(await count("test|sarah")).toBe(i);
+    await expect(count("test|sarah")).rejects.toThrow("up to 30 receipts a day");
+    // Another user, and the next day, start from zero.
+    expect(await count("test|lee")).toBe(1);
+    expect(await count("test|sarah", "2026-10-15")).toBe(1);
+  });
+
+  it("says it isn't set up without an API key, and deletes the image anyway", async () => {
+    const { t, sarah } = setup();
+    const previous = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    try {
+      const storageId = await t.run((ctx) => ctx.storage.store(new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], { type: "image/jpeg" })));
+      await expect(sarah.action(api.receiptsNode.scan, { storageId })).rejects.toThrow("Receipt scanning isn't set up yet");
+      expect(await t.run((ctx) => ctx.storage.get(storageId))).toBeNull();
+    } finally {
+      if (previous !== undefined) process.env.ANTHROPIC_API_KEY = previous;
+    }
+  });
+
+  it("refuses a file that isn't an image, before any model call or count", async () => {
+    const { t, sarah } = setup();
+    const previous = process.env.ANTHROPIC_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test-key-never-used";
+    try {
+      const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["%PDF-1.7 not a photo"], { type: "image/jpeg" })));
+      await expect(sarah.action(api.receiptsNode.scan, { storageId })).rejects.toThrow("isn't a photo Pocketwise can read");
+      expect(await t.run((ctx) => ctx.db.query("receiptScans").collect())).toEqual([]);
+    } finally {
+      if (previous === undefined) delete process.env.ANTHROPIC_API_KEY;
+      else process.env.ANTHROPIC_API_KEY = previous;
+    }
+  });
+
+  it("needs a sign-in to scan", async () => {
+    const { t } = setup();
+    const storageId = await t.run((ctx) => ctx.storage.store(new Blob([new Uint8Array([0xff, 0xd8, 0xff])])));
+    await expect(t.action(api.receiptsNode.scan, { storageId })).rejects.toThrow("You need to be signed in.");
   });
 });
 

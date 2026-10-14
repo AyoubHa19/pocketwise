@@ -6,6 +6,7 @@ import * as m from "motion/react-m";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BudgetsCard } from "@/components/BudgetsCard";
+import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { UpcomingCard } from "@/components/UpcomingCard";
 import { TotalBalanceCard } from "@/components/TotalBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
@@ -247,6 +248,18 @@ export function TransactionTracker() {
                 Add transaction
               </button>
             </div>
+          </div>
+
+          <div className="mt-3">
+            <ReceiptScanner
+              accounts={accounts}
+              categories={categories}
+              transactions={transactions}
+              mainCurrency={settings.currency}
+              today={today}
+              dateOrder={preferences.dateOrder}
+              onReview={openPrefilled}
+            />
           </div>
 
           {saveFailed && (

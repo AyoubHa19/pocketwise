@@ -125,6 +125,15 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
+  // How many receipts each user scanned each day, to cap the cost
+  // (DAILY_SCAN_LIMIT in src/lib/receipts.ts). The images themselves are
+  // deleted as soon as they've been read.
+  receiptScans: defineTable({
+    ownerId: v.string(),
+    day: v.string(),
+    count: v.number(),
+  }).index("by_owner_day", ["ownerId", "day"]),
+
   // The user's money accounts (src/lib/accounts.ts).
   accounts: defineTable({
     ownerId: v.string(),
