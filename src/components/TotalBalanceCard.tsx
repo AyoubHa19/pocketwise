@@ -4,6 +4,8 @@ import { fitOneLine } from "@/components/fitOneLine";
 import { cardClass, colorTransition } from "@/components/formStyles";
 import type { Account } from "@/lib/accounts";
 import { formatMoney } from "@/lib/money";
+import { DEFAULT_PREFERENCES, formatDay, type DateOrder } from "@/lib/preferences";
+import { convertedTotal, rateText, type ExchangeRate } from "@/lib/rates";
 import { accountBalances, totalBalanceByCurrency } from "@/lib/summary";
 import type { Transaction } from "@/lib/transactions";
 
@@ -13,6 +15,9 @@ type Props = {
   today: string;
   /** The user's currency, whose total is shown first and largest. */
   mainCurrency: string;
+  /** The user's exchange rates, for a converted total across currencies. */
+  rates?: ExchangeRate[];
+  dateOrder?: DateOrder;
 };
 
 const linkClass = `inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline ${colorTransition}`;
@@ -23,12 +28,23 @@ const linkClass = `inline-flex min-h-11 items-center text-sm font-medium text-ac
  * account with its own balance. An account without a starting balance has
  * no balance yet, and says so instead of showing a made-up number.
  */
-export function TotalBalanceCard({ accounts, transactions, today, mainCurrency }: Props) {
+export function TotalBalanceCard({
+  accounts,
+  transactions,
+  today,
+  mainCurrency,
+  rates = [],
+  dateOrder = DEFAULT_PREFERENCES.dateOrder,
+}: Props) {
   const open = accounts.filter((account) => !account.archived);
   const balances = accountBalances(open, transactions, today);
   const totals = totalBalanceByCurrency(open, balances);
   const main = totals.find((t) => t.currency === mainCurrency) ?? totals[0];
   const others = totals.filter((t) => t !== main);
+  // Everything in the main currency, converted at the user's own rates
+  // (PRD 11): shown as converted, beside the rates and their dates, and
+  // leaving out any currency without a rate rather than guessing.
+  const converted = others.length > 0 ? convertedTotal(totals, mainCurrency, rates) : null;
 
   return (
     <section
@@ -60,8 +76,31 @@ export function TotalBalanceCard({ accounts, transactions, today, mainCurrency }
           )}
           {others.length > 0 && (
             <p className="mt-1 text-sm text-muted">
-              Also, kept apart (no exchange rates):{" "}
-              {others.map((t) => formatMoney(t)).join(" · ")}
+              Also, in their own currencies: {others.map((t) => formatMoney(t)).join(" · ")}
+            </p>
+          )}
+          {converted && converted.used.length > 0 && (
+            <div className="mt-2 rounded-control bg-surface-muted px-3 py-2 text-sm">
+              <p>
+                All together, converted to {mainCurrency}:{" "}
+                <span className="font-semibold tabular-nums">
+                  {formatMoney({ amountMinor: converted.amountMinor, currency: mainCurrency })}
+                </span>
+              </p>
+              <p className="mt-0.5 text-xs text-muted">
+                At your rates:{" "}
+                {converted.used.map((r) => `${rateText(r)} (${formatDay(r.date, today, dateOrder)})`).join(", ")}
+                {converted.missing.length > 0 && `. No rate for ${converted.missing.join(", ")}, so not included.`}
+              </p>
+            </div>
+          )}
+          {converted && converted.used.length === 0 && (
+            <p className="mt-1 text-xs text-muted">
+              To see them all together in {mainCurrency}, add exchange rates in{" "}
+              <Link href="/settings" className="font-medium text-foreground underline underline-offset-2">
+                Settings
+              </Link>
+              .
             </p>
           )}
           <ul className="mt-3 space-y-1 border-t border-line pt-3 text-sm">

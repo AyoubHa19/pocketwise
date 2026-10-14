@@ -169,6 +169,11 @@ export function insights(data: {
   goals: Goal[];
   goalSaved: (goal: Goal) => number | null;
   rules: RecurringRule[];
+  /**
+   * What budgets count from, when it isn't `transactions`: a budget only
+   * ever counts spending in its own currency, never converted amounts.
+   */
+  budgetTransactions?: Transaction[];
   currency: string;
   today: string;
 }): Insight[] {
@@ -196,7 +201,7 @@ export function insights(data: {
   // Budgets over their limit in the last month of the period.
   for (const budget of data.budgets) {
     if (budget.limit.currency !== currency) continue;
-    const p = budgetProgress(budget, data.transactions, lastMonth);
+    const p = budgetProgress(budget, data.budgetTransactions ?? data.transactions, lastMonth);
     if (p.state === "over") {
       out.push({
         id: `budget-${budget.id}`,

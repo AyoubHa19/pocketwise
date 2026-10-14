@@ -112,6 +112,19 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
+  // Exchange rates the user entered (src/lib/rates.ts): one per pair of
+  // currencies, whichever way round.
+  exchangeRates: defineTable({
+    ownerId: v.string(),
+    from: v.string(),
+    to: v.string(),
+    // The decimal as typed ("4.2815"), so no precision is lost.
+    rate: v.string(),
+    date: v.string(),
+    source: v.string(),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
   // The user's money accounts (src/lib/accounts.ts).
   accounts: defineTable({
     ownerId: v.string(),

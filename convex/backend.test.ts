@@ -1164,6 +1164,56 @@ describe("recurring items", () => {
   });
 });
 
+describe("exchange rates", () => {
+  const rate = (over: Record<string, string> = {}) => ({
+    from: "EUR",
+    to: "AED",
+    rate: "4.2815",
+    date: "2026-10-14",
+    source: " My bank ",
+    ...over,
+  });
+
+  it("are saved as typed, one per pair whichever way round, and deleted", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.rates.save, rate());
+    expect(await sarah.query(api.rates.list, {})).toMatchObject([
+      { from: "EUR", to: "AED", rate: "4.2815", date: "2026-10-14", source: "My bank" },
+    ]);
+    // The same pair the other way round replaces it.
+    const id = await sarah.mutation(api.rates.save, rate({ from: "AED", to: "EUR", rate: "0.2336" }));
+    expect(await sarah.query(api.rates.list, {})).toMatchObject([{ id, from: "AED", to: "EUR" }]);
+    await sarah.mutation(api.rates.save, rate({ from: "USD", rate: "3.6725" }));
+    expect(await sarah.query(api.rates.list, {})).toHaveLength(2);
+    await sarah.mutation(api.rates.remove, { id });
+    expect((await sarah.query(api.rates.list, {})).map((r) => r.from)).toEqual(["USD"]);
+  });
+
+  it("refuse bad rates, the same currency twice, and unknown currencies", async () => {
+    const { sarah } = setup();
+    await expect(sarah.mutation(api.rates.save, rate({ rate: "0" }))).rejects.toThrow("greater than zero");
+    await expect(sarah.mutation(api.rates.save, rate({ rate: "4.1234567" }))).rejects.toThrow("up to 6 decimals");
+    await expect(sarah.mutation(api.rates.save, rate({ to: "EUR" }))).rejects.toThrow("two different");
+    await expect(sarah.mutation(api.rates.save, rate({ from: "XYZ" }))).rejects.toThrow("Choose two currencies");
+    await expect(sarah.mutation(api.rates.save, rate({ date: "2026-13-01" }))).rejects.toThrow("date the rate is from");
+    expect(await sarah.query(api.rates.list, {})).toEqual([]);
+  });
+
+  it("are each user's own, and go with their data", async () => {
+    const { sarah, lee } = setup();
+    const id = await sarah.mutation(api.rates.save, rate());
+    expect(await lee.query(api.rates.list, {})).toEqual([]);
+    await expect(lee.mutation(api.rates.remove, { id })).rejects.toThrow("isn't one of yours");
+    await sarah.mutation(api.account.deleteMyData, {});
+    expect(await sarah.query(api.rates.list, {})).toEqual([]);
+  });
+
+  it("need a sign-in", async () => {
+    const { t } = setup();
+    await expect(t.query(api.rates.list, {})).rejects.toThrow("You need to be signed in.");
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);

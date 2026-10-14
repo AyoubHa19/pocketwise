@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { AccountCard } from "@/components/AccountCard";
 import { CategoriesCard } from "@/components/CategoriesCard";
 import { PreferencesForm } from "@/components/PreferencesForm";
+import { RatesCard } from "@/components/RatesCard";
 import { SettingsForm } from "@/components/SettingsForm";
 import { YourDataCard } from "@/components/YourDataCard";
 
@@ -30,6 +31,7 @@ export default async function SettingsPage() {
         <SettingsForm />
         <YourDataCard />
         <CategoriesCard />
+        <RatesCard />
       </div>
     </section>
   );

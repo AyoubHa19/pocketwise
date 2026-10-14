@@ -7,6 +7,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { cardClass, fieldClass } from "@/components/formStyles";
 import { MonthPicker } from "@/components/MonthPicker";
 import {
+  useAccountPreferences,
   useAccounts,
   useAccountSettings,
   useAccountTransactions,
@@ -14,12 +15,15 @@ import {
   useCategories,
   useGoalContributions,
   useGoals,
+  useRates,
   useRecurringRules,
 } from "@/lib/accountData";
 import { budgetLabel, budgetProgress } from "@/lib/budgets";
 import { formatMonth, formatMonthShort, monthOf } from "@/lib/dates";
 import { goalProgress, savedFromContributions, type Goal } from "@/lib/goals";
 import { formatMoney } from "@/lib/money";
+import { DEFAULT_PREFERENCES, formatDay } from "@/lib/preferences";
+import { convertTransactions, rateText } from "@/lib/rates";
 import {
   categoryComparison,
   compare,
@@ -74,7 +78,11 @@ export function ReportsView() {
   const contributions = useGoalContributions();
   const accounts = useAccounts();
   const rules = useRecurringRules();
+  const rates = useRates();
+  const preferences = useAccountPreferences();
   const today = useToday();
+  // Other currencies come in converted, at the user's rates, unless turned off.
+  const [withConverted, setWithConverted] = useState(true);
   const [length, setLength] = useState<(typeof LENGTHS)[number]>(3);
   const [pickedMonth, setPickedMonth] = useState<string | null>(null);
   const [direction, setDirection] = useState(0);
@@ -87,7 +95,8 @@ export function ReportsView() {
     goals === null ||
     contributions === null ||
     accounts === null ||
-    rules === null
+    rules === null ||
+    rates === null
   ) {
     return <p className="text-sm text-muted">Loading…</p>;
   }
@@ -106,15 +115,20 @@ export function ReportsView() {
 
   const currentMonth = monthOf(today);
   const lastMonth = pickedMonth ?? currentMonth;
-  const comparison = compare(transactions, lastMonth, length, currency);
+  const conversion = convertTransactions(transactions, currency, rates);
+  // What the report counts: everything in the main currency, plus, when
+  // chosen, the rest converted at the user's rates (shown as such below).
+  const counted = withConverted ? conversion.transactions : transactions;
+  const comparison = compare(counted, lastMonth, length, currency);
   const { current, previous, rows, months, previousMonths } = comparison;
-  const categoryRows = categoryComparison(transactions, months, previousMonths, currency);
+  const categoryRows = categoryComparison(counted, months, previousMonths, currency);
   const categoryNames = new Map(categories.map((c) => [c.id, c.name]));
   const balances = accountBalances(accounts, transactions, today);
   const goalSaved = (g: Goal) =>
     g.accountId === null ? savedFromContributions(g.id, contributions) : (balances.get(g.accountId) ?? null);
   const found = insights({
-    transactions,
+    transactions: counted,
+    budgetTransactions: transactions,
     comparison,
     categories: categoryRows,
     budgets,
@@ -127,10 +141,15 @@ export function ReportsView() {
   });
   const recurring = recurringPerMonth(rules, currency, today);
   const money = (amountMinor: number) => formatMoney({ amountMinor, currency });
-  const inPeriod = new Set(months);
-  const otherCurrency = transactions.filter(
+  const inPeriod = new Set([...months, ...previousMonths]);
+  const inOther = transactions.filter(
     (t) => inPeriod.has(monthOf(t.date)) && t.type !== "transfer" && t.amount.currency !== currency,
-  ).length;
+  );
+  // Other-currency transactions in these periods: converted, and not (no rate).
+  const convertible = inOther.filter((t) => conversion.transactions.find((c) => c.id === t.id)?.convertedFrom);
+  const leftOut = withConverted ? inOther.length - convertible.length : inOther.length;
+  const usedRates = conversion.used.filter((r) => convertible.some((t) => t.amount.currency === r.from || t.amount.currency === r.to));
+  const dateOrder = preferences?.dateOrder ?? DEFAULT_PREFERENCES.dateOrder;
   const periodName =
     length === 1 ? formatMonth(lastMonth) : `${formatMonthShort(months[0])} – ${formatMonth(lastMonth)}`;
   const previousName =
@@ -186,9 +205,32 @@ export function ReportsView() {
         </h2>
         <p className="mt-1 text-sm text-muted">
           Compared with {previousName}. In {currency}; transfers between your accounts aren&apos;t counted.
-          {otherCurrency > 0 &&
-            ` ${otherCurrency} ${otherCurrency === 1 ? "transaction" : "transactions"} in other currencies aren't included.`}
+          {leftOut > 0 &&
+            (leftOut === 1
+              ? ` 1 transaction in another currency ${withConverted ? "has no exchange rate, so it " : ""}isn't included.`
+              : ` ${leftOut} transactions in other currencies ${withConverted ? "have no exchange rate, so they " : ""}aren't included.`)}
         </p>
+        {convertible.length > 0 && (
+          <div className="mt-2 rounded-control bg-surface-muted px-3 py-2 text-sm">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={withConverted}
+                onChange={(event) => setWithConverted(event.target.checked)}
+                className="h-4 w-4 accent-accent"
+              />
+              Include {convertible.length} {convertible.length === 1 ? "transaction" : "transactions"} in other
+              currencies, converted to {currency}
+            </label>
+            {withConverted && (
+              <p className="text-xs text-muted">
+                At your rates:{" "}
+                {usedRates.map((r) => `${rateText(r)} (${formatDay(r.date, today, dateOrder)})`).join(", ")}. Every
+                date uses this one rate; budgets still count only their own currency.
+              </p>
+            )}
+          </div>
+        )}
         {nothing ? (
           <p className="mt-4 rounded-card border border-dashed border-line-strong px-4 py-8 text-center text-sm text-muted">
             No income or spending in {currency} in this period yet.

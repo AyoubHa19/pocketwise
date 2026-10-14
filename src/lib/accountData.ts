@@ -3,6 +3,7 @@ import { ConvexError } from "convex/values";
 import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
 import type { Budget } from "@/lib/budgets";
 import type { Contribution, Goal } from "@/lib/goals";
+import type { ExchangeRate } from "@/lib/rates";
 import type { RecurringRule } from "@/lib/recurring";
 import type { Category, CategoryKind } from "@/lib/categories";
 import type { Preferences } from "@/lib/preferences";
@@ -394,6 +395,28 @@ export function useSetSkipped() {
 /** Deletes a recurring rule; what it recorded stays. */
 export function useRemoveRule() {
   const remove = useMutation(api.recurring.remove);
+  return (id: string) => withMessage(remove({ id }));
+}
+
+/** The user's exchange rates, or null while they load. */
+export function useRates(): ExchangeRate[] | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.rates.list, isAuthenticated ? {} : "skip") ?? null;
+}
+
+/** Saves the rate for a pair, replacing any earlier one for it. */
+export function useSaveRate() {
+  const save = useMutation(api.rates.save);
+  return ({ from, to, rate, date, source }: Omit<ExchangeRate, "id">) =>
+    withMessage(save({ from, to, rate, date, source }));
+}
+
+/** Deletes an exchange rate. */
+export function useRemoveRate() {
+  const remove = useMutation(api.rates.remove).withOptimisticUpdate((store, { id }) => {
+    const list = store.getQuery(api.rates.list, {});
+    if (list !== undefined) store.setQuery(api.rates.list, {}, list.filter((r) => r.id !== id));
+  });
   return (id: string) => withMessage(remove({ id }));
 }
 

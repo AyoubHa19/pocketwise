@@ -54,13 +54,20 @@ Done and live (see `git log` for the details of each):
   22: reports and insights (`/reports`, in "More"): a 1–12 month period
   beside the one before it; insights each carry "how" (their calculation)
   and appear only when the data allows (`src/lib/reports.ts`).
+  23: currency conversion: exchange rates entered by the user (Settings
+  → Exchange rates; date and source; one per pair either way round),
+  exact BigInt arithmetic (`src/lib/rates.ts`). A converted total on the
+  balance card, and reports can include other currencies, converted;
+  budgets never use converted amounts. No live rates are fetched.
 
 Next, in order (PRD 29):
 
-- **23: currency conversion** (PRD 11): explicit exchange rates (their
-  source and date), converted totals shown as such, never silently mixing
-  currencies; until now amounts in other currencies are shown apart.
-- 24: AI receipt scanning. 25: safe-to-spend and salary day planner.
+- **24: AI receipt scanning** (PRD 20): needs a decision on the
+  extraction service (cost, privacy) before building; server-side only,
+  the user reviews every field before saving.
+- 25: safe-to-spend and salary day planner.
+- Optional later: automatic exchange rates from a provider (PRD 11.4),
+  once one is chosen and its limits documented.
 - 26: what-if simulator and debt tracking. 27: final review.
 - Later: a domain of our own, Clerk's production instance (then remove
   the preview strip), and the mobile app (Expo).
@@ -91,8 +98,10 @@ they're used daily; the header only fits five items on a 320px phone.
 ## Test data kept on the dev deployment
 
 Everything named "(sample)": transactions (Coffee, ATM withdrawal,
-Supermarket, Bus ticket, Rent), budgets (All spending, Food, Pet food),
-goals (Trip, Emergency fund), recurring items (Rent, Internet, Salary).
+Supermarket, Bus ticket, Rent, Croissant in EUR), the "Euro wallet"
+account, budgets (All spending, Food, Pet food), goals (Trip, Emergency
+fund), recurring items (Rent, Internet, Salary), and the rate
+1 EUR = 4.2815 AED ("My bank (sample)").
 The live site's data is separate (production-eu).
 
 ## Gotchas

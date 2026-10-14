@@ -67,6 +67,12 @@ see it wherever you sign in.
   falling behind, spending far from the recent average) each say how
   they're worked out, and appear only when the data allows it
   (`src/lib/reports.ts`).
+- See totals across currencies at your own exchange rates (Settings →
+  Exchange rates, each with its date and source): a converted total of
+  all your accounts, and reports that include other currencies,
+  converted. Converted amounts are always labelled with the rate they
+  used; originals never change; a currency without a rate is left out
+  and named, never guessed. The arithmetic is exact (`src/lib/rates.ts`).
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income
@@ -245,8 +251,8 @@ recommend for fingers.
 
 - Only a preview so far: sign-in uses Clerk's development instance, so
   the live site isn't for real data (see Deployment).
-- No exchange rates: amounts in other currencies are kept and shown apart,
-  never added to the main ones.
+- Exchange rates are entered by hand: Pocketwise doesn't fetch live
+  rates, and uses each pair's one rate for every date.
 - Transfers only between accounts in the same currency: one between
   currencies needs an exchange rate, which comes with currency support.
 - English only. Categories have no custom icon or colour yet: the default

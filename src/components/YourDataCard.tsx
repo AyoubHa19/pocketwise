@@ -151,7 +151,8 @@ export function YourDataCard() {
       <h3 className="mt-6 text-sm font-medium text-danger">Delete your account</h3>
       <p className="mt-1 text-sm text-muted">
         Deletes all your transactions, recurring items, goals, budgets,
-        accounts, categories and settings, then your account. This can&apos;t be undone, so download your data first if you want to keep it.
+        exchange rates, accounts, categories and settings, then your
+        account. This can&apos;t be undone, so download your data first if you want to keep it.
       </p>
 
       {!confirming ? (

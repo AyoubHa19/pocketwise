@@ -44,6 +44,7 @@ import {
   useAccountTransactions,
   useBudgets,
   useRecurringRules,
+  useRates,
 } from "@/lib/accountData";
 import {
   monthlyTotals,
@@ -65,6 +66,7 @@ export function TransactionTracker() {
   const categories = useCategories();
   const budgets = useBudgets();
   const rules = useRecurringRules();
+  const rates = useRates();
   const preferences = useAccountPreferences();
   const transactions = useAccountTransactions();
   // What this browser saved before accounts, if it hasn't been moved yet.
@@ -195,6 +197,8 @@ export function TransactionTracker() {
               accounts={accounts}
               transactions={transactions}
               today={today}
+              rates={rates ?? []}
+              dateOrder={preferences.dateOrder}
               mainCurrency={settings.currency}
             />
           </m.div>
