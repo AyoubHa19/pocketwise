@@ -68,15 +68,22 @@ Done and live (see `git log` for the details of each):
   below); without it the button says scanning isn't set up yet. The review
   card has only been tested by its unit tests until a key is added: test
   it with a real receipt then.
+  25: plan to payday (`/plan`, in "More"; "Safe to spend" card on the
+  dashboard): safe-to-spend = chosen balances − unrecorded bills before
+  payday − spending recorded with a later date − planned savings −
+  reserve; expected income is listed, never counted. Payday is a
+  recurring income (any frequency) or a chosen date (`src/lib/plan.ts`).
 
 Next, in order (PRD 29):
 
 - **When the user adds the API key**: test a real receipt end to end on
   localhost (review card, warnings, duplicates, saving), then production.
-- **25: safe-to-spend and salary day planner** (PRD 15, 16).
+- **26: what-if simulator and debt tracking** (PRD 17, 18): debts and
+  installments (balance, payments, interest stated plainly), and "what if
+  I spend/save/earn X" against the plan, clearly marked as simulations.
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
-- 26: what-if simulator and debt tracking. 27: final review.
+- 27: final review (security, accessibility, performance, docs).
 - Later: a domain of our own, Clerk's production instance (then remove
   the preview strip), and the mobile app (Expo).
 
@@ -123,8 +130,9 @@ live site's.) Costs a few US cents per scan; the daily cap is
 Everything named "(sample)": transactions (Coffee, ATM withdrawal,
 Supermarket, Bus ticket, Rent, Croissant in EUR), the "Euro wallet"
 account, budgets (All spending, Food, Pet food), goals (Trip, Emergency
-fund), recurring items (Rent, Internet, Salary), and the rate
-1 EUR = 4.2815 AED ("My bank (sample)").
+fund), recurring items (Rent, Internet, Salary), the rate
+1 EUR = 4.2815 AED ("My bank (sample)"), and the plan (payday = Salary
+(sample), savings 888.89, reserve 1,000).
 The live site's data is separate (production-eu).
 
 ## Gotchas

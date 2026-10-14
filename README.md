@@ -80,6 +80,16 @@ see it wherever you sign in.
   photo is shrunk in the browser, read on the server only, and deleted
   straight after; each user can scan 30 a day. Needs an Anthropic API key
   set in Convex (`ANTHROPIC_API_KEY`); without one the button says so.
+- Plan to payday: how much is safe to spend until your next payday, and
+  per day. It's your chosen balances, minus the bills still to pay
+  before payday, minus spending you've recorded ahead, minus what you
+  mean to save and the reserve you keep aside; every part of the sum is
+  shown. Expected income (your salary included) isn't counted until it
+  arrives; a bill is never subtracted twice; an account without a
+  starting balance is named, not guessed. Payday follows a recurring
+  income of any frequency, or a date you choose; the pay period shows
+  what you've spent so far against what's safe per day, and what's
+  coming before payday (`src/lib/plan.ts`).
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income
