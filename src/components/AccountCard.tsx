@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useConvexAuth, useQuery } from "convex/react";
 import { cardClass } from "@/components/formStyles";
 import { api } from "../../convex/_generated/api";
@@ -13,6 +14,11 @@ export function AccountCard() {
   const { isLoading, isAuthenticated } = useConvexAuth();
   // Skipped until Convex has the sign-in, so it's never asked too early.
   const viewer = useQuery(api.viewer.get, isAuthenticated ? {} : "skip");
+  // Convex's token may not carry the email (Clerk's Convex integration
+  // doesn't add it by default), so the name to show comes from Clerk;
+  // Convex's answer is what proves the connection.
+  const { user } = useUser();
+  const who = user?.primaryEmailAddress?.emailAddress ?? viewer?.email ?? viewer?.name ?? "you";
 
   let status;
   if (isLoading || (isAuthenticated && viewer === undefined)) {
@@ -30,7 +36,7 @@ export function AccountCard() {
         <p className="mt-1 text-sm text-muted">
           Signed in as{" "}
           <span className="font-medium text-foreground">
-            {viewer.email ?? viewer.name ?? "you"}
+            {who}
           </span>
           , and connected to Pocketwise&apos;s server.
         </p>

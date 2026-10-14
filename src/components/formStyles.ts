@@ -17,8 +17,12 @@ export const cardClass =
  * next to a short one, which left big empty areas when a month had only a
  * few transactions.
  */
+// On phones the single column is minmax(0, 1fr), not the default auto: an
+// auto column grows to fit its widest unbreakable line (a long note, say),
+// which pushed the page wider than the screen. This way it takes the screen's
+// width and long text is cut short with "…" as intended.
 export const dashboardGridClass =
-  "grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-10";
+  "grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-10";
 
 export const dashboardSummaryArea = "lg:col-span-2";
 export const dashboardListArea = "lg:col-start-1 lg:row-start-2";
