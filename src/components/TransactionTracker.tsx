@@ -35,6 +35,7 @@ import { LocalDataImport, useLocalDataOffer } from "@/components/LocalDataImport
 import {
   useAccountPreferences,
   useAccounts,
+  useCategories,
   useAccountSettings,
   useAccountStatus,
   useAccountTransactions,
@@ -70,6 +71,7 @@ export function TransactionTracker() {
   const status = useAccountStatus();
   const settings = useAccountSettings();
   const accounts = useAccounts();
+  const categories = useCategories();
   const preferences = useAccountPreferences();
   const transactions = useAccountTransactions();
   const saveTransaction = useSaveTransaction();
@@ -195,6 +197,7 @@ export function TransactionTracker() {
     transactions === null ||
     preferences === null ||
     accounts === null ||
+    categories === null ||
     localOffer === undefined
   ) {
     return <DashboardSkeleton />;
@@ -404,6 +407,7 @@ export function TransactionTracker() {
             key={sheet.session}
             transaction={editing}
             accounts={accounts}
+            categories={categories}
             defaultCurrency={settings.currency}
             onSave={save}
             onCancel={closeSheet}

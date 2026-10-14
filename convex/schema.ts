@@ -33,6 +33,16 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
+  // The user's categories (src/lib/categories.ts). A name is unique among
+  // the user's categories of its kind, ignoring case and spaces.
+  categories: defineTable({
+    ownerId: v.string(),
+    name: v.string(),
+    kind: v.union(v.literal("expense"), v.literal("income")),
+    archived: v.boolean(),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
   // The user's money accounts (src/lib/accounts.ts).
   accounts: defineTable({
     ownerId: v.string(),
@@ -65,6 +75,10 @@ export default defineSchema({
     accountId: v.optional(v.id("accounts")),
     // A transfer's destination.
     toAccountId: v.optional(v.id("accounts")),
+    // The category, by id, so a rename shows everywhere. `category` below
+    // keeps the name too: it's all that transactions from before categories
+    // had, until ensureCategories links them.
+    categoryId: v.optional(v.id("categories")),
     // Whole minor units (cents), always positive; `type` gives the sign.
     amountMinor: v.number(),
     currency: v.string(),
@@ -79,5 +93,8 @@ export default defineSchema({
     // Finds what's left to assign to an account, and what's in an account.
     .index("by_owner_account", ["ownerId", "accountId"])
     // Finds transfers into an account.
-    .index("by_owner_toAccount", ["ownerId", "toAccountId"]),
+    .index("by_owner_toAccount", ["ownerId", "toAccountId"])
+    // Finds income and spending left to link to a category (transfers
+    // never have one, so they're kept out by type).
+    .index("by_owner_type_category", ["ownerId", "type", "categoryId"]),
 });

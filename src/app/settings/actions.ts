@@ -44,11 +44,19 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
       const { more } = await fetchMutation(api.account.deleteMyData, {}, { token });
       if (!more) break;
     }
-    const [left, settings] = await Promise.all([
+    const [left, accounts, categories, settings] = await Promise.all([
       fetchQuery(api.transactions.list, {}, { token }),
+      fetchQuery(api.accounts.list, {}, { token }),
+      fetchQuery(api.categories.list, {}, { token }),
       fetchQuery(api.settings.get, {}, { token }),
     ]);
-    if (left.length > 0 || settings.currency !== null || settings.openingBalance !== null) {
+    if (
+      left.length > 0 ||
+      accounts.length > 0 ||
+      categories.length > 0 ||
+      settings.currency !== null ||
+      settings.openingBalance !== null
+    ) {
       return { ok: false, step: "data", message: "Some of your data couldn't be deleted. Your account was kept. Try again." };
     }
   } catch {

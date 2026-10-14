@@ -1,11 +1,7 @@
 import { ConvexError } from "convex/values";
 import { isSupportedCurrency } from "../src/lib/money";
 import { isOpeningBalance, type OpeningBalance } from "../src/lib/summary";
-import {
-  CATEGORIES,
-  isTransaction,
-  type Transaction,
-} from "../src/lib/transactions";
+import { isTransaction, type Transaction } from "../src/lib/transactions";
 
 // The server checks everything again, with the same rules the app uses
 // (shared from src/lib), plus a few the app's forms enforce but a request
@@ -38,10 +34,9 @@ export function checkTransaction(value: unknown): Transaction {
   if (!isSupportedCurrency(value.amount.currency)) {
     throw new ConvexError(`${value.amount.currency} isn't a known currency.`);
   }
-  // A transfer's category is always "Transfer" (isTransaction checks that).
-  if (value.type !== "transfer" && !(CATEGORIES as readonly string[]).includes(value.category)) {
-    throw new ConvexError(`${value.category} isn't one of the categories.`);
-  }
+  // The category itself is checked against the user's own categories when
+  // it's saved (categories.ts); a transfer's is always "Transfer"
+  // (isTransaction checks that).
   if (!isCalendarDate(value.date)) {
     throw new ConvexError(`${value.date} isn't a real date.`);
   }

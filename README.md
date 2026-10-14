@@ -12,6 +12,11 @@ see it wherever you sign in.
 
 - Add, edit, and delete transactions (income or expense, with a category,
   date, and optional note), grouped by day with each day's total.
+- Use your own categories, for spending and for income: everyone starts
+  with a default list (`src/lib/categories.ts`), and can add, rename or
+  archive categories in Settings. A transaction refers to its category by
+  id, so a rename shows everywhere at once; an archived category is no
+  longer offered, and past transactions keep it.
 - Pick your currency once, from every currency your browser knows, and
   change it later in Settings.
 - Keep several accounts (cash, bank, savings, wallet, other), each in its
@@ -203,7 +208,8 @@ recommend for fingers.
   never added to the main ones.
 - Transfers only between accounts in the same currency: one between
   currencies needs an exchange rate, which comes with currency support.
-- English only, and the categories are a fixed list.
+- English only. Categories have no custom icon or colour yet: the default
+  ones have their own icon, others share a tag icon.
 - The tests cover money, dates, monthly totals, the account balance,
   transactions, the server's functions and their permissions, and moving
   browser data. The screens were checked by hand.

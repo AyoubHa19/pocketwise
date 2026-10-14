@@ -10,24 +10,24 @@ export type TransactionType = "income" | "expense" | "transfer";
 /** The category every transfer has: it isn't spending on anything. */
 export const TRANSFER_CATEGORY = "Transfer";
 
-export const CATEGORIES = [
-  "Salary",
-  "Food",
-  "Rent",
-  "Transport",
-  "Shopping",
-  "Bills",
-  "Health",
-  "Other",
-] as const;
-
 /** One money movement: something you earned or something you spent. */
 export type Transaction = {
   id: string;
   type: TransactionType;
   /** Always positive. `type` says whether money came in or went out. */
   amount: Money;
+  /**
+   * The category's name (for a transfer, always TRANSFER_CATEGORY). The
+   * server fills in the current name, so a renamed category shows its new
+   * one everywhere.
+   */
   category: string;
+  /**
+   * Which of the user's categories (src/lib/categories.ts) it's in; never
+   * set on a transfer. Left out when saving, the server finds the category
+   * by name.
+   */
+  categoryId?: string;
   /**
    * The calendar day as "YYYY-MM-DD", with no time or time zone,
    * so the day never shifts when the user travels or changes time zone.
@@ -51,19 +51,22 @@ export type Transaction = {
  */
 export function isTransaction(value: unknown): value is Transaction {
   if (typeof value !== "object" || value === null) return false;
-  const { id, type, amount, category, date, note, accountId, toAccountId } =
+  const { id, type, amount, category, categoryId, date, note, accountId, toAccountId } =
     value as Record<string, unknown>;
   if (typeof amount !== "object" || amount === null) return false;
   const { amountMinor, currency } = amount as Record<string, unknown>;
-  // A transfer needs both ends, and they must differ; others have no "to".
+  // A transfer needs both ends, and they must differ, and has no category
+  // id; others have no "to".
   const accountsOk =
     type === "transfer"
       ? typeof accountId === "string" &&
         typeof toAccountId === "string" &&
         accountId !== toAccountId &&
-        category === TRANSFER_CATEGORY
+        category === TRANSFER_CATEGORY &&
+        categoryId === undefined
       : (accountId === undefined || typeof accountId === "string") &&
-        toAccountId === undefined;
+        toAccountId === undefined &&
+        (categoryId === undefined || typeof categoryId === "string");
 
   return (
     typeof id === "string" &&

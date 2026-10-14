@@ -2,7 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { cookies } from "next/headers";
-import { AccountsSync } from "@/components/AccountsSync";
+import { DataSync } from "@/components/DataSync";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { MotionProvider } from "@/components/MotionProvider";
 import { PreviewBanner } from "@/components/PreviewBanner";
@@ -42,7 +42,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <ClerkProvider>
           <ConvexClientProvider>
             <ThemeSync />
-            <AccountsSync />
+            <DataSync />
             <MotionProvider>
               <PreviewBanner />
               <SiteHeader />

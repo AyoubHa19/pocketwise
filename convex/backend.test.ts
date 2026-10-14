@@ -22,14 +22,37 @@ function setup() {
 }
 
 /**
- * Transactions without the account the server gives them: for the tests
- * that are about other things than accounts.
+ * Transactions without the account and category ids the server gives them:
+ * for the tests that are about other things.
  */
 function plain(list: Transaction[]): Transaction[] {
   return list.map((t) => {
     const copy = { ...t };
     delete copy.accountId;
+    delete copy.categoryId;
     return copy;
+  });
+}
+
+/**
+ * Transactions saved before accounts and categories existed, with neither:
+ * written straight into the test database, since nothing saves them that
+ * way now.
+ */
+async function legacy(t: ReturnType<typeof setup>["t"], ownerId: string, transactions: Transaction[]) {
+  await t.run(async (ctx) => {
+    for (const x of transactions) {
+      await ctx.db.insert("transactions", {
+        ownerId,
+        clientId: x.id,
+        type: x.type,
+        amountMinor: x.amount.amountMinor,
+        currency: x.amount.currency,
+        category: x.category,
+        date: x.date,
+        updatedAt: 0,
+      });
+    }
   });
 }
 
@@ -276,7 +299,7 @@ describe("moving browser data into the account", () => {
 });
 
 describe("deleting your data", () => {
-  it("deletes the user's transactions and settings, and nothing of anyone else's", async () => {
+  it("deletes the user's transactions, accounts, categories and settings, and nothing of anyone else's", async () => {
     const { sarah, lee } = setup();
     await sarah.mutation(api.transactions.save, { transaction: coffee });
     await sarah.mutation(api.settings.setCurrency, { currency: "EUR" });
@@ -288,6 +311,7 @@ describe("deleting your data", () => {
 
     expect(plain(await sarah.query(api.transactions.list, {}))).toEqual([]);
     expect(await sarah.query(api.accounts.list, {})).toEqual([]);
+    expect(await sarah.query(api.categories.list, {})).toEqual([]);
     expect(await sarah.query(api.settings.get, {})).toEqual({ currency: null, openingBalance: null });
     // Lee's data is untouched.
     expect(plain(await lee.query(api.transactions.list, {}))).toEqual([coffee]);
@@ -557,27 +581,6 @@ describe("every new transaction is in an account", () => {
 describe("moving to accounts (ensureAccounts)", () => {
   const balance = { amountMinor: 300000, currency: "EUR", date: "2026-05-01" };
 
-  /**
-   * Transactions saved before accounts existed, with no account: written
-   * straight into the test database, since nothing saves them that way now.
-   */
-  async function legacy(t: ReturnType<typeof setup>["t"], ownerId: string, transactions: Transaction[]) {
-    await t.run(async (ctx) => {
-      for (const x of transactions) {
-        await ctx.db.insert("transactions", {
-          ownerId,
-          clientId: x.id,
-          type: x.type,
-          amountMinor: x.amount.amountMinor,
-          currency: x.amount.currency,
-          category: x.category,
-          date: x.date,
-          updatedAt: 0,
-        });
-      }
-    });
-  }
-
   it("makes a Main account with the starting balance and gives it every transaction", async () => {
     const { t, sarah } = setup();
     await sarah.mutation(api.settings.setOpeningBalance, { openingBalance: balance });
@@ -645,6 +648,185 @@ describe("moving to accounts (ensureAccounts)", () => {
     const { t } = setup();
     await expect(t.mutation(api.accounts.ensureAccounts, {})).rejects.toThrow("You need to be signed in.");
     await expect(t.query(api.accounts.list, {})).rejects.toThrow("You need to be signed in.");
+  });
+});
+
+describe("categories", () => {
+  const kinds = (list: { name: string; kind: string }[], kind: string) =>
+    list.filter((c) => c.kind === kind).map((c) => c.name);
+
+  it("start as the default list, given on the first save", async () => {
+    const { sarah } = setup();
+    expect(await sarah.query(api.categories.list, {})).toEqual([]);
+    await sarah.mutation(api.transactions.save, { transaction: coffee });
+    const list = await sarah.query(api.categories.list, {});
+    expect(kinds(list, "expense")).toEqual([
+      "Housing", "Food", "Transport", "Bills", "Health", "Shopping", "Entertainment",
+      "Education", "Travel", "Personal Care", "Subscriptions", "Debt Payments", "Other",
+    ]);
+    expect(kinds(list, "income")).toEqual(["Salary", "Freelance", "Business", "Investments", "Gifts", "Other Income"]);
+    expect(list.every((c) => !c.archived)).toBe(true);
+  });
+
+  it("are given only once", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.categories.ensureCategories, {});
+    await sarah.mutation(api.categories.ensureCategories, {});
+    await sarah.mutation(api.transactions.save, { transaction: coffee });
+    expect(await sarah.query(api.categories.list, {})).toHaveLength(19);
+  });
+
+  it("link a saved transaction by id, found by name when none is sent", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.transactions.save, { transaction: { ...coffee, category: "food " } });
+    const food = (await sarah.query(api.categories.list, {})).find((c) => c.name === "Food")!;
+    const [saved] = await sarah.query(api.transactions.list, {});
+    expect(saved).toMatchObject({ category: "Food", categoryId: food.id });
+  });
+
+  it("refuse a name the user doesn't have, or one of the other kind", async () => {
+    const { sarah } = setup();
+    await expect(
+      sarah.mutation(api.transactions.save, { transaction: { ...coffee, category: "Rent" } }),
+    ).rejects.toThrow("Rent isn't one of your categories.");
+    await expect(
+      sarah.mutation(api.transactions.save, { transaction: { ...coffee, category: "Salary" } }),
+    ).rejects.toThrow("Salary isn't one of your categories.");
+    // (A refused save keeps nothing, not even the default list.)
+    await sarah.mutation(api.categories.ensureCategories, {});
+    const salary = (await sarah.query(api.categories.list, {})).find((c) => c.name === "Salary")!;
+    await expect(
+      sarah.mutation(api.transactions.save, { transaction: { ...coffee, categoryId: salary.id } }),
+    ).rejects.toThrow("Salary is for income.");
+  });
+
+  it("are added, renamed everywhere at once, and archived without touching history", async () => {
+    const { sarah } = setup();
+    const pets = await sarah.mutation(api.categories.create, { name: "  Pets ", kind: "expense" });
+    await sarah.mutation(api.transactions.save, { transaction: { ...coffee, category: "Pets", categoryId: pets } });
+    await sarah.mutation(api.categories.rename, { id: pets, name: "Pet care" });
+    expect((await sarah.query(api.transactions.list, {}))[0]).toMatchObject({ category: "Pet care", categoryId: pets });
+
+    await sarah.mutation(api.categories.setArchived, { id: pets, archived: true });
+    expect((await sarah.query(api.categories.list, {})).find((c) => c.id === pets)).toMatchObject({ name: "Pet care", archived: true });
+    expect((await sarah.query(api.transactions.list, {}))[0].category).toBe("Pet care");
+    // Editing a transaction in an archived category keeps it there.
+    await sarah.mutation(api.transactions.save, { transaction: { ...coffee, category: "Pet care", categoryId: pets, note: "Vet" } });
+    expect((await sarah.query(api.transactions.list, {}))[0]).toMatchObject({ categoryId: pets, note: "Vet" });
+  });
+
+  it("refuse an empty, too long, repeated or reserved name", async () => {
+    const { sarah } = setup();
+    const create = (name: string, kind: "expense" | "income" = "expense") =>
+      sarah.mutation(api.categories.create, { name, kind });
+    await expect(create("  ")).rejects.toThrow("Give the category a name.");
+    await expect(create("x".repeat(31))).rejects.toThrow("up to 30 characters");
+    await expect(create(" FOOD")).rejects.toThrow("There's already a spending category called Food.");
+    await expect(create("transfer")).rejects.toThrow("Transfer is kept for transfers");
+    // The same name is fine for the other kind.
+    await create("Food", "income");
+    const housing = (await sarah.query(api.categories.list, {})).find((c) => c.name === "Housing")!;
+    await expect(sarah.mutation(api.categories.rename, { id: housing.id, name: "bills" })).rejects.toThrow("already");
+    // Renaming to its own name in other letters is fine.
+    await sarah.mutation(api.categories.rename, { id: housing.id, name: "HOUSING" });
+  });
+
+  it("can't be seen or changed by someone else", async () => {
+    const { sarah, lee } = setup();
+    const pets = await sarah.mutation(api.categories.create, { name: "Pets", kind: "expense" });
+    expect((await lee.query(api.categories.list, {})).some((c) => c.id === pets)).toBe(false);
+    await expect(lee.mutation(api.categories.rename, { id: pets, name: "Mine" })).rejects.toThrow("isn't one of yours");
+    await expect(lee.mutation(api.categories.setArchived, { id: pets, archived: true })).rejects.toThrow("isn't one of yours");
+    await expect(
+      lee.mutation(api.transactions.save, { transaction: { ...coffee, categoryId: pets } }),
+    ).rejects.toThrow("isn't one of yours");
+    await expect(lee.mutation(api.categories.rename, { id: "nonsense", name: "x" })).rejects.toThrow("isn't one of yours");
+  });
+
+  it("are never on a transfer", async () => {
+    const { sarah } = setup();
+    const bank = await sarah.mutation(api.accounts.create, { name: "Bank", type: "bank", currency: "EUR", opening: null });
+    const cash = await sarah.mutation(api.accounts.create, { name: "Cash", type: "cash", currency: "EUR", opening: null });
+    const transfer = { ...coffee, id: "t1", type: "transfer" as const, category: "Transfer", accountId: bank, toAccountId: cash };
+    await sarah.mutation(api.transactions.save, { transaction: transfer });
+    const saved = (await sarah.query(api.transactions.list, {}))[0];
+    expect(saved.categoryId).toBeUndefined();
+    await sarah.mutation(api.categories.ensureCategories, {});
+    const food = (await sarah.query(api.categories.list, {})).find((c) => c.name === "Food")!;
+    await expect(
+      sarah.mutation(api.transactions.save, { transaction: { ...transfer, categoryId: food.id } }),
+    ).rejects.toThrow("isn't complete or valid");
+  });
+
+  it("are made for browser data with names the user doesn't have", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.transactions.importLocal, {
+      transactions: [{ ...coffee, category: "Rent" }, { ...coffee, id: "c2", category: "rent" }],
+    });
+    const rent = (await sarah.query(api.categories.list, {})).filter((c) => c.name.toLowerCase() === "rent");
+    expect(rent).toMatchObject([{ name: "Rent", kind: "expense" }]);
+    for (const x of await sarah.query(api.transactions.list, {})) expect(x.categoryId).toBe(rent[0].id);
+    await expect(
+      sarah.mutation(api.transactions.importLocal, { transactions: [{ ...coffee, id: "c3", categoryId: rent[0].id }] }),
+    ).rejects.toThrow("can't name accounts or categories");
+  });
+
+  it("need a sign-in", async () => {
+    const { t } = setup();
+    const message = "You need to be signed in.";
+    await expect(t.query(api.categories.list, {})).rejects.toThrow(message);
+    await expect(t.mutation(api.categories.create, { name: "Pets", kind: "expense" })).rejects.toThrow(message);
+    await expect(t.mutation(api.categories.ensureCategories, {})).rejects.toThrow(message);
+  });
+});
+
+describe("moving to categories (ensureCategories)", () => {
+  it("links old transactions by name and kind, making the ones the user doesn't have", async () => {
+    const { t, sarah } = setup();
+    await legacy(t, "test|sarah", [
+      coffee,
+      { ...coffee, id: "r", category: "Rent" },
+      { ...coffee, id: "s", type: "income", category: "Salary" },
+      // The fixed list allowed any category for either kind.
+      { ...coffee, id: "o", type: "income", category: "Other" },
+    ]);
+    expect(await sarah.mutation(api.categories.ensureCategories, {})).toEqual({ linked: 4, more: false });
+    const list = await sarah.query(api.categories.list, {});
+    const id = (name: string, kind: string) => list.find((c) => c.name === name && c.kind === kind)?.id;
+    expect(id("Rent", "expense")).toBeDefined();
+    expect(id("Other", "income")).toBeDefined();
+    const byClient = new Map((await sarah.query(api.transactions.list, {})).map((x) => [x.id, x.categoryId]));
+    expect(byClient.get("coffee-1")).toBe(id("Food", "expense"));
+    expect(byClient.get("r")).toBe(id("Rent", "expense"));
+    expect(byClient.get("s")).toBe(id("Salary", "income"));
+    expect(byClient.get("o")).toBe(id("Other", "income"));
+    expect(list).toHaveLength(21);
+  });
+
+  it("does nothing new when run again", async () => {
+    const { t, sarah } = setup();
+    await legacy(t, "test|sarah", [coffee]);
+    await sarah.mutation(api.categories.ensureCategories, {});
+    expect(await sarah.mutation(api.categories.ensureCategories, {})).toEqual({ linked: 0, more: false });
+  });
+
+  it("works in batches for a large history", async () => {
+    const { t, sarah } = setup();
+    await legacy(t, "test|sarah", [
+      ...Array.from({ length: 150 }, (_, i) => ({ ...coffee, id: `e-${i}` })),
+      ...Array.from({ length: 100 }, (_, i) => ({ ...coffee, id: `i-${i}`, type: "income" as const, category: "Salary" })),
+    ]);
+    expect(await sarah.mutation(api.categories.ensureCategories, {})).toEqual({ linked: 200, more: true });
+    expect(await sarah.mutation(api.categories.ensureCategories, {})).toEqual({ linked: 50, more: false });
+    expect((await sarah.query(api.transactions.list, {})).every((x) => x.categoryId)).toBe(true);
+  });
+
+  it("touches only the signed-in user's data", async () => {
+    const { t, sarah, lee } = setup();
+    await legacy(t, "test|lee", [coffee]);
+    await sarah.mutation(api.categories.ensureCategories, {});
+    expect(await lee.query(api.categories.list, {})).toEqual([]);
+    expect((await lee.query(api.transactions.list, {}))[0].categoryId).toBeUndefined();
   });
 });
 

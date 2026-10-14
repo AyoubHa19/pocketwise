@@ -11,10 +11,10 @@ import {
   secondaryButtonClass,
 } from "@/components/formStyles";
 import type { Account } from "@/lib/accounts";
+import { DEFAULT_CATEGORIES, sameName, type Category } from "@/lib/categories";
 import { amountToInputText, currencyDecimals, parseAmount } from "@/lib/money";
 import { fadeRise } from "@/lib/motion";
 import {
-  CATEGORIES,
   newTransactionId,
   TRANSFER_CATEGORY,
   type Transaction,
@@ -27,6 +27,8 @@ type Props = {
   transaction?: Transaction;
   /** The user's accounts, archived ones too (an edited one may be in one). */
   accounts: Account[];
+  /** The user's categories, archived ones too (an edited one may be in one). */
+  categories: Category[];
   /** The user's main currency, for a new transaction's first account. */
   defaultCurrency: string;
   onSave: (transaction: Transaction) => void;
@@ -46,6 +48,7 @@ const NEW_ACCOUNT = "";
 export function TransactionForm({
   transaction,
   accounts,
+  categories,
   defaultCurrency,
   onSave,
   onCancel,
@@ -81,9 +84,28 @@ export function TransactionForm({
   // A transfer needs two accounts in one currency.
   const canTransfer = open.some((a) => open.some((b) => b.id !== a.id && b.currency === a.currency));
 
-  const [category, setCategory] = useState<string>(
-    transaction && transaction.type !== "transfer" ? transaction.category : "Food",
+  // The categories you can pick for this type: the open ones, plus the
+  // transaction's own if it has been archived since. Until the user's own
+  // list has arrived (a first visit), the default names, which the server
+  // finds by name.
+  const isTransfer = type === "transfer";
+  const ofKind = isTransfer
+    ? []
+    : categories.filter(
+        (c) => c.kind === type && (!c.archived || c.id === transaction?.categoryId),
+      );
+  const categoryChoices: Pick<Category, "name" | "archived">[] =
+    ofKind.length > 0 || isTransfer
+      ? ofKind
+      : DEFAULT_CATEGORIES.filter((c) => c.kind === type).map((c) => ({ ...c, archived: false }));
+  // Picked by name: names are unique within a type.
+  const [pickedCategory, setPickedCategory] = useState<string | null>(
+    transaction && transaction.type !== "transfer" ? transaction.category : null,
   );
+  const category =
+    categoryChoices.find((c) => pickedCategory !== null && sameName(c.name, pickedCategory))?.name ??
+    categoryChoices[0]?.name ??
+    "";
   const [amount, setAmount] = useState(transaction ? amountToInputText(transaction.amount) : "");
   // null until the user picks a date themselves; until then, use today.
   const [pickedDate, setPickedDate] = useState<string | null>(transaction?.date ?? null);
@@ -94,7 +116,6 @@ export function TransactionForm({
 
   const today = useToday();
   const date = pickedDate ?? today;
-  const isTransfer = type === "transfer";
 
   const invalid = (field: Field) =>
     error?.field === field ? { "aria-invalid": true as const, "aria-describedby": errorId } : {};
@@ -129,12 +150,14 @@ export function TransactionForm({
       return;
     }
 
+    const categoryId = ofKind.find((c) => sameName(c.name, category))?.id;
     onSave({
       // Editing keeps the same id, so the saved one is replaced, not copied.
       id: transaction?.id ?? newTransactionId(),
       type,
       amount: { amountMinor, currency },
       category: isTransfer ? TRANSFER_CATEGORY : category,
+      ...(categoryId && { categoryId }),
       date,
       note: note.trim() || undefined,
       ...(accountId !== NEW_ACCOUNT && { accountId }),
@@ -199,12 +222,13 @@ export function TransactionForm({
             Category
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={(event) => setPickedCategory(event.target.value)}
               className={fieldClass}
             >
-              {CATEGORIES.map((name) => (
-                <option key={name} value={name}>
-                  {name}
+              {categoryChoices.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                  {c.archived ? ", archived" : ""}
                 </option>
               ))}
             </select>

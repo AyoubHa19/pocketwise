@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { IMPORT_BATCH_SIZE } from "../src/lib/localImport";
 import type { Transaction } from "../src/lib/transactions";
 import { defaultAccountFor, ownedAccount } from "./accounts";
+import { categoriesOf, categoryNamed, checkedCategory } from "./categories";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { requireOwner } from "./ownership";
@@ -15,19 +16,24 @@ const transactionArg = v.object({
   type: v.union(v.literal("income"), v.literal("expense"), v.literal("transfer")),
   amount: v.object({ amountMinor: v.number(), currency: v.string() }),
   category: v.string(),
+  categoryId: v.optional(v.string()),
   date: v.string(),
   note: v.optional(v.string()),
   accountId: v.optional(v.string()),
   toAccountId: v.optional(v.string()),
 });
 
-/** A stored row back in the shape the app uses, without server-only fields. */
-function toTransaction(row: Doc<"transactions">): Transaction {
+/**
+ * A stored row back in the shape the app uses, without server-only fields,
+ * named after its category as it's called now (`names`, by id).
+ */
+function toTransaction(row: Doc<"transactions">, names: Map<string, string>): Transaction {
   return {
     id: row.clientId,
     type: row.type,
     amount: { amountMinor: row.amountMinor, currency: row.currency },
-    category: row.category,
+    category: (row.categoryId && names.get(row.categoryId)) ?? row.category,
+    ...(row.categoryId !== undefined && { categoryId: row.categoryId }),
     date: row.date,
     ...(row.note !== undefined && { note: row.note }),
     ...(row.accountId !== undefined && { accountId: row.accountId }),
@@ -62,7 +68,12 @@ export const list = query({
       .withIndex("by_owner_date", (q) => q.eq("ownerId", ownerId))
       .order("desc")
       .collect();
-    return rows.map(toTransaction);
+    const categories = await ctx.db
+      .query("categories")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .collect();
+    const names = new Map<string, string>(categories.map((c) => [c._id, c.name]));
+    return rows.map((row) => toTransaction(row, names));
   },
 });
 
@@ -76,11 +87,16 @@ export const save = mutation({
   handler: async (ctx, args) => {
     const ownerId = await requireOwner(ctx);
     const t = checkTransaction(args.transaction);
+    const category =
+      t.type === "transfer"
+        ? undefined
+        : await checkedCategory(ctx, ownerId, t.type, t.categoryId, t.category);
     const fields = {
       type: t.type,
       amountMinor: t.amount.amountMinor,
       currency: t.amount.currency,
-      category: t.category,
+      category: category?.name ?? t.category,
+      categoryId: category?._id,
       date: t.date,
       note: t.note?.trim() || undefined,
       ...(await checkedAccounts(ctx, ownerId, t)),
@@ -117,11 +133,17 @@ export const importLocal = mutation({
       throw new ConvexError(`Send at most ${IMPORT_BATCH_SIZE} transactions at a time.`);
     }
     const checked = args.transactions.map(checkTransaction);
-    // The browser's old data is from before accounts: it has none, and so
-    // no transfers. Each goes to the account for its currency.
-    if (checked.some((t) => t.type === "transfer" || t.accountId !== undefined)) {
-      throw new ConvexError("Browser data from before accounts can't name accounts.");
+    // The browser's old data is from before accounts and categories: it has
+    // neither, and so no transfers. Each goes to the account for its
+    // currency, and to the category of its name, made if needed.
+    if (
+      checked.some(
+        (t) => t.type === "transfer" || t.accountId !== undefined || t.categoryId !== undefined,
+      )
+    ) {
+      throw new ConvexError("Browser data from before accounts can't name accounts or categories.");
     }
+    const categories = await categoriesOf(ctx, ownerId);
     let added = 0;
     let skipped = 0;
     for (const t of checked) {
@@ -135,13 +157,16 @@ export const importLocal = mutation({
         skipped++;
         continue;
       }
+      // Checked above: old data has only income and expenses.
+      const category = await categoryNamed(ctx, ownerId, categories, t.category, t.type as "income" | "expense");
       await ctx.db.insert("transactions", {
         ownerId,
         clientId: t.id,
         type: t.type,
         amountMinor: t.amount.amountMinor,
         currency: t.amount.currency,
-        category: t.category,
+        category: category.name,
+        categoryId: category._id,
         date: t.date,
         note: t.note?.trim() || undefined,
         accountId: (await defaultAccountFor(ctx, ownerId, t.amount.currency))._id,

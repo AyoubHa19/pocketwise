@@ -1,6 +1,7 @@
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
+import type { Category, CategoryKind } from "@/lib/categories";
 import type { Preferences } from "@/lib/preferences";
 import type { Settings } from "@/lib/settingsStore";
 import {
@@ -162,6 +163,49 @@ export function useSetAccountArchived() {
 export function useRemoveAccount() {
   const remove = useMutation(api.accounts.remove);
   return (id: string) => withMessage(remove({ id }));
+}
+
+/** The user's categories (archived ones too), oldest first, or null while they load. */
+export function useCategories(): Category[] | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.categories.list, isAuthenticated ? {} : "skip") ?? null;
+}
+
+/** Adds a category. */
+export function useCreateCategory() {
+  const create = useMutation(api.categories.create);
+  return (name: string, kind: CategoryKind) => withMessage(create({ name, kind }));
+}
+
+/** Renames a category, and every transaction in it shows the new name at once. */
+export function useRenameCategory() {
+  const rename = useMutation(api.categories.rename).withOptimisticUpdate((store, { id, name }) => {
+    const trimmed = name.trim();
+    const list = store.getQuery(api.categories.list, {});
+    if (list !== undefined) {
+      store.setQuery(api.categories.list, {}, list.map((c) => (c.id === id ? { ...c, name: trimmed } : c)));
+    }
+    const transactions = store.getQuery(api.transactions.list, {});
+    if (transactions !== undefined) {
+      store.setQuery(
+        api.transactions.list,
+        {},
+        transactions.map((t) => (t.categoryId === id ? { ...t, category: trimmed } : t)),
+      );
+    }
+  });
+  return (id: string, name: string) => withMessage(rename({ id, name }));
+}
+
+/** Archives a category, or brings it back. */
+export function useSetCategoryArchived() {
+  const set = useMutation(api.categories.setArchived).withOptimisticUpdate((store, { id, archived }) => {
+    const list = store.getQuery(api.categories.list, {});
+    if (list !== undefined) {
+      store.setQuery(api.categories.list, {}, list.map((c) => (c.id === id ? { ...c, archived } : c)));
+    }
+  });
+  return (id: string, archived: boolean) => withMessage(set({ id, archived }));
 }
 
 /** The account's display preferences, or null while they load. */

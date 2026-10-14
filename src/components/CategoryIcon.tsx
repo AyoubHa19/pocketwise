@@ -1,30 +1,55 @@
 import {
   ArrowLeftRight,
+  BriefcaseBusiness,
   BusFront,
+  Clapperboard,
+  CreditCard,
   Ellipsis,
+  Gift,
+  GraduationCap,
   HeartPulse,
   House,
+  Laptop,
+  Plane,
   Receipt,
+  Repeat,
   ShoppingBag,
+  Sparkles,
   Tag,
+  TrendingUp,
   UtensilsCrossed,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { TRANSFER_CATEGORY, type CATEGORIES } from "@/lib/transactions";
+import { sameName } from "@/lib/categories";
+import { TRANSFER_CATEGORY } from "@/lib/transactions";
 
-// Typed against CATEGORIES, so TypeScript complains if a category is added
-// there without an icon here.
-const icons: Record<(typeof CATEGORIES)[number], LucideIcon> = {
-  Salary: Wallet,
-  Food: UtensilsCrossed,
-  Rent: House,
-  Transport: BusFront,
-  Shopping: ShoppingBag,
-  Bills: Receipt,
-  Health: HeartPulse,
-  Other: Ellipsis,
-};
+// The default categories (src/lib/categories.ts) by name, plus "Rent" from
+// the first, fixed list. A category the user made, or renamed, gets the
+// general tag icon.
+const icons: [string, LucideIcon][] = [
+  ["Housing", House],
+  ["Rent", House],
+  ["Food", UtensilsCrossed],
+  ["Transport", BusFront],
+  ["Bills", Receipt],
+  ["Health", HeartPulse],
+  ["Shopping", ShoppingBag],
+  ["Entertainment", Clapperboard],
+  ["Education", GraduationCap],
+  ["Travel", Plane],
+  ["Personal Care", Sparkles],
+  ["Subscriptions", Repeat],
+  ["Debt Payments", CreditCard],
+  ["Other", Ellipsis],
+  ["Salary", Wallet],
+  ["Freelance", Laptop],
+  ["Business", BriefcaseBusiness],
+  ["Investments", TrendingUp],
+  ["Gifts", Gift],
+  ["Other Income", Ellipsis],
+  [TRANSFER_CATEGORY, ArrowLeftRight],
+];
 
 /**
  * The category's icon in a soft circle. It's decoration: the category's
@@ -38,12 +63,7 @@ export function CategoryIcon({
   /** 32px instead of 40px, for the charts. */
   small?: boolean;
 }) {
-  // A transfer has its own sign; saved data could also hold a category this
-  // version doesn't know.
-  const Icon =
-    category === TRANSFER_CATEGORY
-      ? ArrowLeftRight
-      : (icons[category as keyof typeof icons] ?? Tag);
+  const Icon = icons.find(([name]) => sameName(name, category))?.[1] ?? Tag;
   return (
     <span
       aria-hidden="true"
