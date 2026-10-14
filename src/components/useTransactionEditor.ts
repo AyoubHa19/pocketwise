@@ -13,7 +13,8 @@ import { signedAmount, type Transaction } from "@/lib/transactions";
  * opening and gives the form a fresh start each time.
  */
 type SheetState = { open: boolean; session: number } & (
-  | { kind: "add" }
+  // Adding, from scratch or from a filled-in draft (a recurring bill's).
+  | { kind: "add"; prefill?: Transaction }
   | { kind: "edit"; id: string }
 );
 
@@ -46,8 +47,14 @@ export function useTransactionEditor(
   const hasContent = sheet.kind === "add" || editing !== undefined;
   const sheetOpen = sheet.open && hasContent;
 
+  // No arguments, so it can be a button's onClick as it is.
   function openAdd() {
     setSheet((previous) => ({ kind: "add", open: true, session: previous.session + 1 }));
+  }
+
+  /** Adding, starting from a filled-in draft (a recurring bill's). */
+  function openPrefilled(prefill: Transaction) {
+    setSheet((previous) => ({ kind: "add", prefill, open: true, session: previous.session + 1 }));
   }
 
   function openEdit(transaction: Transaction) {
@@ -98,11 +105,14 @@ export function useTransactionEditor(
   return {
     sheet,
     editing,
+    /** The draft a new transaction starts from, if any. */
+    prefill: sheet.kind === "add" ? sheet.prefill : undefined,
     hasContent,
     sheetOpen,
     saveFailed,
     notice,
     openAdd,
+    openPrefilled,
     openEdit,
     closeSheet,
     report,

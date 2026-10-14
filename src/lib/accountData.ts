@@ -3,6 +3,7 @@ import { ConvexError } from "convex/values";
 import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
 import type { Budget } from "@/lib/budgets";
 import type { Contribution, Goal } from "@/lib/goals";
+import type { RecurringRule } from "@/lib/recurring";
 import type { Category, CategoryKind } from "@/lib/categories";
 import type { Preferences } from "@/lib/preferences";
 import type { Settings } from "@/lib/settingsStore";
@@ -321,6 +322,78 @@ export function useAddContribution() {
 /** Deletes one of a goal's entries. */
 export function useRemoveContribution() {
   const remove = useMutation(api.goals.removeContribution);
+  return (id: string) => withMessage(remove({ id }));
+}
+
+/** The user's recurring rules, or null while they load. */
+export function useRecurringRules(): RecurringRule[] | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.recurring.list, isAuthenticated ? {} : "skip") ?? null;
+}
+
+/** What a recurring rule is made of: everything the user chooses. */
+export type RuleFields = Omit<RecurringRule, "id" | "trackFrom" | "paused" | "skipped">;
+
+function ruleArgs({ name, type, amount, categoryId, accountId, frequency, startDate, endDate, remindDays }: RuleFields) {
+  return {
+    name,
+    type,
+    amountMinor: amount.amountMinor,
+    currency: amount.currency,
+    categoryId,
+    accountId,
+    frequency,
+    startDate,
+    endDate,
+    remindDays,
+  };
+}
+
+/** Adds a recurring rule. `today` is the user's own date. */
+export function useCreateRule() {
+  const create = useMutation(api.recurring.create);
+  return (fields: RuleFields, today: string) => withMessage(create({ ...ruleArgs(fields), today }));
+}
+
+/** Changes a recurring rule. */
+export function useUpdateRule() {
+  const update = useMutation(api.recurring.update);
+  return (id: string, fields: RuleFields, today: string) =>
+    withMessage(update({ id, ...ruleArgs(fields), today }));
+}
+
+/** Pauses a recurring rule, or resumes it. */
+export function useSetRulePaused() {
+  const set = useMutation(api.recurring.setPaused).withOptimisticUpdate((store, { id, paused }) => {
+    const list = store.getQuery(api.recurring.list, {});
+    if (list !== undefined) {
+      store.setQuery(api.recurring.list, {}, list.map((r) => (r.id === id ? { ...r, paused } : r)));
+    }
+  });
+  return (id: string, paused: boolean, today: string) => withMessage(set({ id, paused, today }));
+}
+
+/** Skips one occurrence of a rule, or brings it back. */
+export function useSetSkipped() {
+  const set = useMutation(api.recurring.setSkipped).withOptimisticUpdate((store, { id, date, skip }) => {
+    const list = store.getQuery(api.recurring.list, {});
+    if (list === undefined) return;
+    store.setQuery(
+      api.recurring.list,
+      {},
+      list.map((r) =>
+        r.id === id
+          ? { ...r, skipped: skip ? [...r.skipped.filter((d) => d !== date), date] : r.skipped.filter((d) => d !== date) }
+          : r,
+      ),
+    );
+  });
+  return (id: string, date: string, skip: boolean) => withMessage(set({ id, date, skip }));
+}
+
+/** Deletes a recurring rule; what it recorded stays. */
+export function useRemoveRule() {
+  const remove = useMutation(api.recurring.remove);
   return (id: string) => withMessage(remove({ id }));
 }
 

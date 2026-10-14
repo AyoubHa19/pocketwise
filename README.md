@@ -48,6 +48,13 @@ see it wherever you sign in.
   reach it on time, or says why it can't (no date, or the date passed).
   Neither way is income or spending, so nothing counts twice
   (`src/lib/goals.ts`).
+- Keep recurring items (rent, bills, subscriptions, salary) on the Bills
+  page: weekly to yearly, with an optional end date and a reminder some
+  days ahead. Each time one is due it's listed (and on the dashboard)
+  to record, which opens the transaction form filled in, or to skip;
+  it's never counted as paid until then, and can't be recorded twice
+  (`src/lib/recurring.ts`). Pausing, editing or deleting one never
+  changes what's already recorded.
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income

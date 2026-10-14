@@ -6,6 +6,7 @@ import * as m from "motion/react-m";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BudgetsCard } from "@/components/BudgetsCard";
+import { UpcomingCard } from "@/components/UpcomingCard";
 import { TotalBalanceCard } from "@/components/TotalBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
@@ -42,6 +43,7 @@ import {
   useAccountStatus,
   useAccountTransactions,
   useBudgets,
+  useRecurringRules,
 } from "@/lib/accountData";
 import {
   monthlyTotals,
@@ -62,6 +64,7 @@ export function TransactionTracker() {
   const accounts = useAccounts();
   const categories = useCategories();
   const budgets = useBudgets();
+  const rules = useRecurringRules();
   const preferences = useAccountPreferences();
   const transactions = useAccountTransactions();
   // What this browser saved before accounts, if it hasn't been moved yet.
@@ -82,6 +85,8 @@ export function TransactionTracker() {
     saveFailed,
     notice,
     openAdd,
+    openPrefilled,
+    prefill,
     openEdit,
     closeSheet,
     report,
@@ -125,6 +130,7 @@ export function TransactionTracker() {
     accounts === null ||
     categories === null ||
     budgets === null ||
+    rules === null ||
     localOffer === undefined
   ) {
     return <DashboardSkeleton />;
@@ -295,6 +301,14 @@ export function TransactionTracker() {
           viewport={{ once: true, amount: 0.15 }}
           className={`space-y-4 ${dashboardChartsArea}`}
         >
+          <UpcomingCard
+            rules={rules}
+            transactions={transactions}
+            categories={categories}
+            today={today}
+            dateOrder={preferences.dateOrder}
+            onRecord={openPrefilled}
+          />
           <BudgetsCard
             budgets={budgets}
             categories={categories}
@@ -332,7 +346,7 @@ export function TransactionTracker() {
 
       <Sheet
         open={sheetOpen}
-        title={sheet.kind === "edit" ? "Edit transaction" : "Add a transaction"}
+        title={sheet.kind === "edit" ? "Edit transaction" : prefill ? "Record it" : "Add a transaction"}
         onClose={closeSheet}
         fallbackFocusRef={listHeadingRef}
       >
@@ -343,6 +357,7 @@ export function TransactionTracker() {
           <TransactionForm
             key={sheet.session}
             transaction={editing}
+            prefill={prefill}
             accounts={accounts}
             categories={categories}
             defaultCurrency={settings.currency}

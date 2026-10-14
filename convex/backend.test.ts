@@ -1038,6 +1038,122 @@ describe("savings goals", () => {
   });
 });
 
+describe("recurring items", () => {
+  // The server checks "today" against its own clock, so use the real one.
+  const today = new Date().toISOString().slice(0, 10);
+  async function ids(user: ReturnType<typeof setup>["sarah"]) {
+    await user.mutation(api.categories.ensureCategories, {});
+    const list = await user.query(api.categories.list, {});
+    return {
+      housing: list.find((c) => c.name === "Housing")!.id,
+      salary: list.find((c) => c.name === "Salary")!.id,
+    };
+  }
+  const rule = (categoryId: string, over: Record<string, unknown> = {}) => ({
+    name: "Rent",
+    type: "expense" as "income" | "expense",
+    amountMinor: 500000,
+    currency: "MAD",
+    categoryId,
+    accountId: null as string | null,
+    frequency: "monthly" as const,
+    startDate: "2020-01-01",
+    endDate: null as string | null,
+    remindDays: 3,
+    today,
+    ...over,
+  });
+
+  it("are added, listed from today (not years of missed dates), changed, paused and deleted", async () => {
+    const { sarah } = setup();
+    const { housing } = await ids(sarah);
+    const id = await sarah.mutation(api.recurring.create, rule(housing, { name: " Rent " }));
+    const [saved] = await sarah.query(api.recurring.list, {});
+    expect(saved).toMatchObject({ id, name: "Rent", startDate: "2020-01-01", trackFrom: today, paused: false, skipped: [] });
+
+    await sarah.mutation(api.recurring.update, { id, ...rule(housing, { amountMinor: 550000 }) });
+    expect((await sarah.query(api.recurring.list, {}))[0]).toMatchObject({ amount: { amountMinor: 550000 }, trackFrom: today });
+
+    await sarah.mutation(api.recurring.setPaused, { id, paused: true, today });
+    expect((await sarah.query(api.recurring.list, {}))[0].paused).toBe(true);
+    await sarah.mutation(api.recurring.setPaused, { id, paused: false, today });
+    await sarah.mutation(api.recurring.remove, { id });
+    expect(await sarah.query(api.recurring.list, {})).toEqual([]);
+  });
+
+  it("refuse bad values, the wrong kind of category, and a far-off 'today'", async () => {
+    const { sarah } = setup();
+    const { housing, salary } = await ids(sarah);
+    const create = (over: Record<string, unknown>) => sarah.mutation(api.recurring.create, rule(housing, over));
+    await expect(create({ name: "" })).rejects.toThrow("Give it a name");
+    await expect(create({ amountMinor: -1 })).rejects.toThrow("greater than zero");
+    await expect(create({ endDate: "2019-12-31" })).rejects.toThrow("before the first date");
+    await expect(create({ remindDays: 99 })).rejects.toThrow("0 to 30 days");
+    await expect(create({ categoryId: salary })).rejects.toThrow("Salary is for income");
+    await expect(create({ today: "2001-01-01" })).rejects.toThrow("date looks wrong");
+    expect(await sarah.query(api.recurring.list, {})).toEqual([]);
+  });
+
+  it("skip only real dates of the rule, and can bring them back", async () => {
+    const { sarah } = setup();
+    const { housing } = await ids(sarah);
+    const start = today;
+    const id = await sarah.mutation(api.recurring.create, rule(housing, { startDate: start, frequency: "weekly" }));
+    await expect(sarah.mutation(api.recurring.setSkipped, { id, date: "2020-01-02", skip: true })).rejects.toThrow("isn't due on");
+    await sarah.mutation(api.recurring.setSkipped, { id, date: start, skip: true });
+    expect((await sarah.query(api.recurring.list, {}))[0].skipped).toEqual([start]);
+    await sarah.mutation(api.recurring.setSkipped, { id, date: start, skip: false });
+    expect((await sarah.query(api.recurring.list, {}))[0].skipped).toEqual([]);
+  });
+
+  it("record an occurrence once only, however many times it's saved", async () => {
+    const { sarah } = setup();
+    const { housing } = await ids(sarah);
+    const id = await sarah.mutation(api.recurring.create, rule(housing));
+    const occurrence = {
+      id: `recurring-${id}-${today}`,
+      type: "expense" as const,
+      amount: { amountMinor: 500000, currency: "MAD" },
+      category: "Housing",
+      categoryId: housing,
+      date: today,
+      description: "Rent",
+    };
+    await sarah.mutation(api.transactions.save, { transaction: occurrence });
+    await sarah.mutation(api.transactions.save, { transaction: { ...occurrence, amount: { amountMinor: 510000, currency: "MAD" } } });
+    const list = await sarah.query(api.transactions.list, {});
+    expect(list).toHaveLength(1);
+    expect(list[0].amount.amountMinor).toBe(510000);
+    // Deleting the rule leaves what it recorded.
+    await sarah.mutation(api.recurring.remove, { id });
+    expect(await sarah.query(api.transactions.list, {})).toHaveLength(1);
+  });
+
+  it("can't be seen or touched by someone else, nor use their account", async () => {
+    const { sarah, lee } = setup();
+    const { housing } = await ids(sarah);
+    const leeAccount = await lee.mutation(api.accounts.create, { name: "Lee's", type: "bank", currency: "MAD", opening: null });
+    await expect(sarah.mutation(api.recurring.create, rule(housing, { accountId: leeAccount }))).rejects.toThrow("isn't one of yours");
+    const id = await sarah.mutation(api.recurring.create, rule(housing));
+    expect(await lee.query(api.recurring.list, {})).toEqual([]);
+    await expect(lee.mutation(api.recurring.setPaused, { id, paused: true, today })).rejects.toThrow("isn't one of yours");
+    await expect(lee.mutation(api.recurring.remove, { id })).rejects.toThrow("isn't one of yours");
+  });
+
+  it("go when the user's data is deleted", async () => {
+    const { sarah } = setup();
+    const { housing } = await ids(sarah);
+    await sarah.mutation(api.recurring.create, rule(housing));
+    await sarah.mutation(api.account.deleteMyData, {});
+    expect(await sarah.query(api.recurring.list, {})).toEqual([]);
+  });
+
+  it("need a sign-in", async () => {
+    const { t } = setup();
+    await expect(t.query(api.recurring.list, {})).rejects.toThrow("You need to be signed in.");
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);

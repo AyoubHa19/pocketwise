@@ -85,6 +85,32 @@ export default defineSchema({
     .index("by_owner", ["ownerId"])
     .index("by_goal", ["goalId"]),
 
+  // Recurring transactions and bills (src/lib/recurring.ts). A rule never
+  // adds a transaction by itself: the user records each occurrence.
+  recurringRules: defineTable({
+    ownerId: v.string(),
+    name: v.string(),
+    type: v.union(v.literal("income"), v.literal("expense")),
+    amountMinor: v.number(),
+    currency: v.string(),
+    categoryId: v.id("categories"),
+    accountId: v.optional(v.id("accounts")),
+    frequency: v.union(
+      v.literal("weekly"),
+      v.literal("biweekly"),
+      v.literal("monthly"),
+      v.literal("quarterly"),
+      v.literal("yearly"),
+    ),
+    startDate: v.string(),
+    endDate: v.optional(v.string()),
+    trackFrom: v.string(),
+    paused: v.boolean(),
+    remindDays: v.number(),
+    skipped: v.array(v.string()),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
   // The user's money accounts (src/lib/accounts.ts).
   accounts: defineTable({
     ownerId: v.string(),

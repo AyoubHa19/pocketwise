@@ -33,6 +33,11 @@ import { useToday } from "@/lib/useToday";
 type Props = {
   /** The transaction to edit. Leave it out to add a new one. */
   transaction?: Transaction;
+  /**
+   * For adding: a new transaction to start from, filled in (a recurring
+   * bill's, say). Its id is kept, so saving it twice can't add two.
+   */
+  prefill?: Transaction;
   /** The user's accounts, archived ones too (an edited one may be in one). */
   accounts: Account[];
   /** The user's categories, archived ones too (an edited one may be in one). */
@@ -54,7 +59,8 @@ const NEW_ACCOUNT = "";
 // `transaction` only fills the fields when the form first appears. To load a
 // different transaction, give the form a new `key` so React starts it afresh.
 export function TransactionForm({
-  transaction,
+  transaction: editing,
+  prefill,
   accounts,
   categories,
   defaultCurrency,
@@ -62,7 +68,9 @@ export function TransactionForm({
   onCancel,
   onDelete,
 }: Props) {
-  const isEditing = transaction !== undefined;
+  const isEditing = editing !== undefined;
+  // Where the fields start from: what's edited, or the prefilled draft.
+  const transaction = editing ?? prefill;
   const open = accounts.filter((a) => !a.archived);
   const byId = new Map(accounts.map((a) => [a.id, a]));
   // Accounts you can pick: the open ones, plus the transaction's own if it

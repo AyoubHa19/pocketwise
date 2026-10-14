@@ -43,12 +43,17 @@ Done and live (see `git log` for the details of each):
 - 15: accounts and transfers. 16a: the user's own categories. 16b:
   descriptions and tags. 17: Transactions page (search, filters, sort).
   18: monthly budgets. 19: savings goals, and the header's "More" menu.
+  20: recurring transactions and bills (`/bills`, in "More"; a "Bills"
+  card on the dashboard). A rule never adds anything itself: each
+  occurrence is recorded with "Mark paid" (the transaction form, filled
+  in, via `openPrefilled`) or skipped. The recorded transaction's id is
+  `recurring-<ruleId>-<date>`, so it can't be recorded twice.
 
 Next, in order (PRD 29):
 
-- **20: recurring transactions and bills** (rules, upcoming occurrences,
-  expected vs paid, reminders, "add as transaction" in one tap).
-- 21: financial calendar (with a week-start setting).
+- **21: financial calendar** (with a week-start setting): show
+  transactions and upcoming recurring items (`src/lib/recurring.ts`,
+  `occurrences`) day by day.
 - 22: reports and insights. 23: currency conversion.
 - 24: AI receipt scanning. 25: safe-to-spend and salary day planner.
 - 26: what-if simulator and debt tracking. 27: final review.
@@ -78,12 +83,21 @@ they're used daily; the header only fits five items on a 320px phone.
   **Never use `--prod`**: that's an old, unused US deployment.
 - Clerk is still its development instance (hence the preview strip).
 
+## Test data kept on the dev deployment
+
+Everything named "(sample)": transactions (Coffee, ATM withdrawal,
+Supermarket, Bus ticket, Rent), budgets (All spending, Food, Pet food),
+goals (Trip, Emergency fund), recurring items (Rent, Internet, Salary).
+The live site's data is separate (production-eu).
+
 ## Gotchas
 
 - Many files have CRLF line endings: multi-line replacements in scripts
   can silently fail; the Edit tool works.
 - Card lists and grids need `grid-cols-[minmax(0,1fr)]` on phones, or long
   text pushes them wider than the screen.
+- Functions that need the user's own date take a `today` argument,
+  checked on the server to be within a day of its clock (time zones).
 - Convex refuses arguments it doesn't declare: hooks in
   `src/lib/accountData.ts` pass named fields only.
 - Rules shared by the app and the server live in `src/lib` and are
