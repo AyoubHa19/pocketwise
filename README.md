@@ -12,7 +12,7 @@ see it wherever you sign in.
 
 - Add, edit, and delete transactions (income or expense, with a category,
   date, and optional description, note and tags), grouped by day with
-  each day's total. The description ("Carrefour", "Netflix") becomes the
+  each day's total. The description ("Supermarket", "Phone bill") becomes the
   row's title; tags are free words typed with commas ("trip, family"),
   tidied up the same way in the app and on the server (`src/lib/tags.ts`).
 - Use your own categories, for spending and for income: everyone starts

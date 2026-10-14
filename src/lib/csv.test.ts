@@ -71,10 +71,10 @@ describe("transactionsToCsv", () => {
 
   it("writes the description and the tags, made safe like notes", () => {
     const csv = transactionsToCsv([
-      t({ description: "Carrefour, Maarif", tags: ["trip", "family"] }),
+      t({ description: "Supermarket, Maarif", tags: ["trip", "family"] }),
       t({ category: "=HYPERLINK()", description: "+1", tags: ["-x"] }),
     ]);
-    expect(csv).toContain('2026-10-13,expense,Food,"Carrefour, Maarif",-4.50,EUR,,,,trip; family\r\n');
+    expect(csv).toContain('2026-10-13,expense,Food,"Supermarket, Maarif",-4.50,EUR,,,,trip; family\r\n');
     expect(csv).toContain("2026-10-13,expense,'=HYPERLINK(),'+1,-4.50,EUR,,,,'-x\r\n");
   });
 });

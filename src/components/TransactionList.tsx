@@ -108,7 +108,7 @@ export function TransactionList({
                       : showAccounts && transaction.accountId
                         ? name(transaction.accountId)
                         : undefined;
-                    // With a description, it's the title ("Carrefour") and
+                    // With a description, it's the title ("Supermarket") and
                     // the category moves down with the details.
                     const title = transaction.description ?? transaction.category;
                     const details = [

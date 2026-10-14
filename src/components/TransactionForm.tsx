@@ -297,7 +297,7 @@ export function TransactionForm({
             type="text"
             maxLength={MAX_DESCRIPTION_LENGTH}
             autoComplete="off"
-            placeholder={isTransfer ? "Like: Savings for the trip" : "Like: Carrefour, Netflix, rent"}
+            placeholder={isTransfer ? "Like: Savings for the trip" : "Like: Supermarket, phone bill, rent"}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             className={fieldClass}

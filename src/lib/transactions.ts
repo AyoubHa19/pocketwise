@@ -33,7 +33,7 @@ export type Transaction = {
    * so the day never shifts when the user travels or changes time zone.
    */
   date: string;
-  /** Who was paid or paid you, or what it was: "Carrefour", "Netflix". */
+  /** Who was paid or paid you, or what it was: "Supermarket", "Phone bill". */
   description?: string;
   note?: string;
   /** Free words to group by, as src/lib/tags.ts parses them. */
