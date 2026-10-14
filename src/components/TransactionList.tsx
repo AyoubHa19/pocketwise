@@ -17,6 +17,8 @@ type Props = {
   emptyMessage: string;
   /** Today's date, for the "Today" and "Yesterday" headings. */
   today: string;
+  /** Writes the day headings in the user's order (Oct 13 or 13 Oct). */
+  dateLocale?: string;
   /** The transaction open in the sheet, highlighted in the list. */
   editingId: string | null;
   onEdit: (transaction: Transaction) => void;
@@ -34,6 +36,7 @@ export function TransactionList({
   transactions,
   emptyMessage,
   today,
+  dateLocale = "en-US",
   editingId,
   onEdit,
 }: Props) {
@@ -74,7 +77,7 @@ export function TransactionList({
             >
               <div className="mb-2 flex items-baseline justify-between gap-4 px-1">
                 <h3 id={headingId} className="text-sm font-semibold text-muted">
-                  {formatDayLabel(day.date, today)}
+                  {formatDayLabel(day.date, today, dateLocale)}
                 </h3>
                 <p className="text-sm tabular-nums text-muted">
                   <span className="sr-only">Total for the day: </span>

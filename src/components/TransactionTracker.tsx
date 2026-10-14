@@ -29,10 +29,12 @@ import { TransactionForm } from "@/components/TransactionForm";
 import { Toast, type Notice } from "@/components/Toast";
 import { TransactionList } from "@/components/TransactionList";
 import { formatMonth, monthOf } from "@/lib/dates";
+import { dateLocale } from "@/lib/preferences";
 import { formatMoney } from "@/lib/money";
 import { fadeRise, monthSlide } from "@/lib/motion";
 import { LocalDataImport, useLocalDataOffer } from "@/components/LocalDataImport";
 import {
+  useAccountPreferences,
   useAccountSettings,
   useAccountStatus,
   useAccountTransactions,
@@ -67,6 +69,7 @@ export function TransactionTracker() {
   // From the signed-in user's account.
   const status = useAccountStatus();
   const settings = useAccountSettings();
+  const preferences = useAccountPreferences();
   const transactions = useAccountTransactions();
   const saveTransaction = useSaveTransaction();
   const deleteTransaction = useRemoveTransaction();
@@ -178,7 +181,13 @@ export function TransactionTracker() {
     );
   }
   // Null while the account and the browser's own data are being read.
-  if (settings === null || transactions === null || localOffer === undefined) {
+  // (Preferences too, so dates don't switch order a moment after showing.)
+  if (
+    settings === null ||
+    transactions === null ||
+    preferences === null ||
+    localOffer === undefined
+  ) {
     return <DashboardSkeleton />;
   }
   const account = { settings, transactions };
@@ -241,6 +250,7 @@ export function TransactionTracker() {
               transactions={transactions}
               openingBalance={settings.openingBalance}
               today={today}
+              dateLocale={dateLocale(preferences.dateOrder)}
             />
           </m.div>
           <m.div {...appear(1)} className={summaryPickerArea}>
@@ -320,6 +330,7 @@ export function TransactionTracker() {
                   : `No transactions in ${monthName}.`
               }
               today={today}
+              dateLocale={dateLocale(preferences.dateOrder)}
               editingId={sheetOpen && editing ? editing.id : null}
               onEdit={openEdit}
             />

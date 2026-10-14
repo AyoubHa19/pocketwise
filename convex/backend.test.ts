@@ -307,6 +307,57 @@ describe("deleting your data", () => {
   });
 });
 
+describe("preferences", () => {
+  it("start as the device's theme and month-first dates", async () => {
+    const { sarah } = setup();
+    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "system", dateOrder: "month-first" });
+  });
+
+  it("save one at a time, keeping the other and the settings", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.settings.setCurrency, { currency: "MAD" });
+    await sarah.mutation(api.preferences.set, { theme: "dark" });
+    await sarah.mutation(api.preferences.set, { dateOrder: "day-first" });
+    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "dark", dateOrder: "day-first" });
+    expect((await sarah.query(api.settings.get, {})).currency).toBe("MAD");
+  });
+
+  it("don't erase preferences when the currency changes", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.preferences.set, { theme: "light" });
+    await sarah.mutation(api.settings.setCurrency, { currency: "EUR" });
+    expect((await sarah.query(api.preferences.get, {})).theme).toBe("light");
+  });
+
+  it("refuse unknown values", async () => {
+    const { sarah } = setup();
+    await expect(
+      // @ts-expect-error: not a theme, on purpose
+      sarah.mutation(api.preferences.set, { theme: "neon" }),
+    ).rejects.toThrow();
+    expect((await sarah.query(api.preferences.get, {})).theme).toBe("system");
+  });
+
+  it("are each user's own", async () => {
+    const { sarah, lee } = setup();
+    await sarah.mutation(api.preferences.set, { theme: "dark" });
+    expect((await lee.query(api.preferences.get, {})).theme).toBe("system");
+  });
+
+  it("need a sign-in", async () => {
+    const { t } = setup();
+    await expect(t.query(api.preferences.get, {})).rejects.toThrow("You need to be signed in.");
+    await expect(t.mutation(api.preferences.set, { theme: "dark" })).rejects.toThrow("You need to be signed in.");
+  });
+
+  it("go when the account's data is deleted", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.preferences.set, { theme: "dark" });
+    await sarah.mutation(api.account.deleteMyData, {});
+    expect((await sarah.query(api.preferences.get, {})).theme).toBe("system");
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);

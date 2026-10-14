@@ -25,8 +25,11 @@ see it wherever you sign in.
 - Download all your transactions as CSV (format described in
   `src/lib/csv.ts`), delete the browser's old copy, or delete your account
   and all its data, from Settings.
-- Light and dark themes (following your device), and gentle animations
-  that switch off when your device asks for reduced motion.
+- Choose the theme (same as the device, light or dark) and the date order
+  (Oct 13 or 13 Oct) in Settings; both are saved in your account. The theme
+  is also kept in a cookie, so the server draws the first paint in the
+  right colours. Gentle animations switch off when your device asks for
+  reduced motion.
 
 The full plan for the product, including what isn't built yet, is in
 [POCKETWISE_PRD.md](POCKETWISE_PRD.md).

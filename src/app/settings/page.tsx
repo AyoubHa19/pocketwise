@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import { AccountCard } from "@/components/AccountCard";
 import { OpeningBalanceForm } from "@/components/OpeningBalanceForm";
+import { PreferencesForm } from "@/components/PreferencesForm";
 import { SettingsForm } from "@/components/SettingsForm";
 import { YourDataCard } from "@/components/YourDataCard";
 
@@ -24,6 +25,7 @@ export default async function SettingsPage() {
       </h1>
       <div className="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-x-10">
         <AccountCard />
+        <PreferencesForm />
         <SettingsForm />
         <OpeningBalanceForm />
         <YourDataCard />

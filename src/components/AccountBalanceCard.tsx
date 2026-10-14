@@ -15,6 +15,8 @@ type Props = {
   transactions: Transaction[];
   openingBalance: OpeningBalance | null;
   today: string;
+  /** Writes the start date in the user's order (Oct 13 or 13 Oct). */
+  dateLocale?: string;
 };
 
 const linkClass = `inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline ${colorTransition}`;
@@ -25,7 +27,12 @@ const linkClass = `inline-flex min-h-11 items-center text-sm font-medium text-ac
  * add it. Both versions are the same height, so the page doesn't shift and
  * the loading skeleton matches either.
  */
-export function AccountBalanceCard({ transactions, openingBalance, today }: Props) {
+export function AccountBalanceCard({
+  transactions,
+  openingBalance,
+  today,
+  dateLocale = "en-US",
+}: Props) {
   return (
     <section
       aria-labelledby="account-balance-heading"
@@ -50,6 +57,7 @@ export function AccountBalanceCard({ transactions, openingBalance, today }: Prop
           leftOut={currenciesLeftOut(transactions, openingBalance, today)}
           openingBalance={openingBalance}
           today={today}
+          dateLocale={dateLocale}
         />
       ) : (
         <p className="mt-1 text-sm text-muted">
@@ -66,12 +74,14 @@ function BalanceAmount({
   leftOut,
   openingBalance,
   today,
+  dateLocale,
 }: {
   balanceMinor: number;
   /** Currencies of transactions the balance can't include. */
   leftOut: string[];
   openingBalance: OpeningBalance;
   today: string;
+  dateLocale: string;
 }) {
   const currency = openingBalance.currency;
   const balance = formatMoney({ amountMinor: balanceMinor, currency });
@@ -88,7 +98,7 @@ function BalanceAmount({
         <AnimatedNumber text={balance} value={balanceMinor} />
       </p>
       <p className="mt-1 truncate text-sm text-muted">
-        Started with {start} · {formatDayLabel(openingBalance.date, today)}
+        Started with {start} · {formatDayLabel(openingBalance.date, today, dateLocale)}
       </p>
       {/* Said out loud, so a missing amount never looks like a wrong total.
           Only shown when it happens, so the card is usually its fixed

@@ -7,48 +7,43 @@
  *
  * All text pairs meet WCAG AA contrast (4.5:1, or 3:1 for field borders and
  * the focus ring) in both modes. Check new colours before adding them.
+ *
+ * Each colour is light-dark(light value, dark value): the browser picks one
+ * from the page's color-scheme. By default that follows the device; the
+ * user's Theme preference fixes it with data-theme on <html> (set by the
+ * server from a cookie, so the first paint is already right). color-scheme
+ * also gives native parts, like the date picker, matching colours.
  */
 :root {
+  color-scheme: light dark;
+}
+:root[data-theme="light"] {
   color-scheme: light;
-
-  --canvas: #f6f7f9; /* The page behind everything */
-  --surface: #ffffff; /* Cards, fields, the header */
-  --surface-muted: #eef0f3; /* Hover, the current link, the row being edited */
-  --foreground: #0f1419; /* Main text */
-  --muted: #5b6472; /* Secondary text: labels, dates, notes */
-  --line: #e3e6ea; /* Card edges and dividers (decoration only) */
-  --line-strong: #868f9c; /* Field and button edges, which must be seen */
-  --accent: #047857; /* Brand green: main buttons, focus ring */
-  --accent-foreground: #ffffff; /* Text on accent */
-  --positive: #047857; /* Income amounts */
-  --danger: #b42318; /* Errors and Delete */
-  --danger-surface: #fef3f2; /* Background of error boxes */
-  --danger-line: #fecdca;
-
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
+:root {
+  --canvas: light-dark(#f6f7f9, #0b0d10); /* The page behind everything */
+  --surface: light-dark(#ffffff, #14171c); /* Cards, fields, the header */
+  --surface-muted: light-dark(#eef0f3, #1d2128); /* Hover, the current link, the row being edited */
+  --foreground: light-dark(#0f1419, #eceef1); /* Main text */
+  --muted: light-dark(#5b6472, #9aa3af); /* Secondary text: labels, dates, notes */
+  --line: light-dark(#e3e6ea, #262b33); /* Card edges and dividers (decoration only) */
+  --line-strong: light-dark(#868f9c, #6b7482); /* Field and button edges, which must be seen */
+  --accent: light-dark(#047857, #34d399); /* Brand green: main buttons, focus ring */
+  --accent-foreground: light-dark(#ffffff, #05291c); /* Text on accent */
+  --positive: light-dark(#047857, #34d399); /* Income amounts */
+  --danger: light-dark(#b42318, #f97066); /* Errors and Delete */
+  --danger-surface: light-dark(#fef3f2, #2a1215); /* Background of error boxes */
+  --danger-line: light-dark(#fecdca, #5c1d22);
 
-    --canvas: #0b0d10;
-    --surface: #14171c;
-    --surface-muted: #1d2128;
-    --foreground: #eceef1;
-    --muted: #9aa3af;
-    --line: #262b33;
-    --line-strong: #6b7482;
-    --accent: #34d399;
-    --accent-foreground: #05291c;
-    --positive: #34d399;
-    --danger: #f97066;
-    --danger-surface: #2a1215;
-    --danger-line: #5c1d22;
-
-    /* Shadows barely show on dark backgrounds; the card edge does the work. */
-    --shadow-card: none;
-  }
+  /* Shadows barely show on dark backgrounds, so there they're transparent
+     and the card edge does the work. */
+  --shadow-card:
+    0 1px 2px light-dark(rgb(16 24 40 / 0.04), transparent),
+    0 1px 3px light-dark(rgb(16 24 40 / 0.06), transparent);
 }
 
 /* Turns the variables above into Tailwind classes: bg-surface, text-muted,

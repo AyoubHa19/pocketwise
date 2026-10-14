@@ -1,10 +1,13 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { cookies } from "next/headers";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { MotionProvider } from "@/components/MotionProvider";
 import { PreviewBanner } from "@/components/PreviewBanner";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ThemeSync } from "@/components/ThemeSync";
+import { isTheme, THEME_COOKIE } from "@/lib/preferences";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,10 +22,17 @@ export const metadata: Metadata = {
   description: "Track your income and spending, month by month.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The theme chosen in Settings, remembered in a cookie so the very first
+  // paint is in the right colours. "system" (or none) leaves it to the
+  // device. ThemeSync keeps the cookie in step with the account.
+  const saved = (await cookies()).get(THEME_COOKIE)?.value;
+  const theme = isTheme(saved) && saved !== "system" ? saved : undefined;
+
   return (
     <html
       lang="en"
+      data-theme={theme}
       className={`${geistSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
@@ -30,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             sign-in along with every request for data. */}
         <ClerkProvider>
           <ConvexClientProvider>
+            <ThemeSync />
             <MotionProvider>
               <PreviewBanner />
               <SiteHeader />

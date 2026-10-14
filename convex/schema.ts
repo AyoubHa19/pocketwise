@@ -21,6 +21,10 @@ export default defineSchema({
       }),
       v.null(),
     ),
+    // Display preferences (src/lib/preferences.ts). Optional because rows
+    // saved before they existed don't have them; missing means the default.
+    theme: v.optional(v.union(v.literal("system"), v.literal("light"), v.literal("dark"))),
+    dateOrder: v.optional(v.union(v.literal("month-first"), v.literal("day-first"))),
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 

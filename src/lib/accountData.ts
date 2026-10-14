@@ -1,4 +1,5 @@
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import type { Preferences } from "@/lib/preferences";
 import type { Settings } from "@/lib/settingsStore";
 import type { OpeningBalance } from "@/lib/summary";
 import {
@@ -86,6 +87,21 @@ export function useSetCurrency() {
     },
   );
   return (currency: string) => succeeded(set({ currency }));
+}
+
+/** The account's display preferences, or null while they load. */
+export function useAccountPreferences(): Preferences | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.preferences.get, isAuthenticated ? {} : "skip") ?? null;
+}
+
+/** Saves one or both preferences. Resolves to whether they were saved. */
+export function useSetPreferences() {
+  const set = useMutation(api.preferences.set).withOptimisticUpdate((store, change) => {
+    const current = store.getQuery(api.preferences.get, {});
+    if (current !== undefined) store.setQuery(api.preferences.get, {}, { ...current, ...change });
+  });
+  return (change: Partial<Preferences>) => succeeded(set(change));
 }
 
 /** Saves the starting balance, or removes it with null. */
