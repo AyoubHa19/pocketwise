@@ -3,6 +3,7 @@ import { ConvexError } from "convex/values";
 import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
 import type { Budget } from "@/lib/budgets";
 import type { Contribution, Goal } from "@/lib/goals";
+import type { PlanSettings } from "@/lib/plan";
 import type { ExchangeRate } from "@/lib/rates";
 import type { ReceiptReading } from "@/lib/receipts";
 import type { RecurringRule } from "@/lib/recurring";
@@ -444,6 +445,21 @@ export function useScanReceipt() {
       return { ok: false, message: "The receipt couldn't be read just now. Check your connection and try again." };
     }
   };
+}
+
+/** The user's safe-to-spend plan settings, or null while they load. */
+export function usePlan(): PlanSettings | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.plan.get, isAuthenticated ? {} : "skip") ?? null;
+}
+
+/** Saves the plan settings. */
+export function useSetPlan() {
+  const set = useMutation(api.plan.set).withOptimisticUpdate((store, change) => {
+    if (store.getQuery(api.plan.get, {}) !== undefined) store.setQuery(api.plan.get, {}, change);
+  });
+  return ({ reserveMinor, savingsMinor, accountIds, salaryRuleId, payday }: PlanSettings) =>
+    withMessage(set({ reserveMinor, savingsMinor, accountIds, salaryRuleId, payday }));
 }
 
 /** The account's display preferences, or null while they load. */

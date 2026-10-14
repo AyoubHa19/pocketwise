@@ -6,8 +6,8 @@ const DELETE_BATCH_SIZE = 500;
 
 /**
  * Deletes the signed-in user's data: their transactions, then their
- * recurring items, goals, budgets, exchange rates, accounts, categories
- * and settings. Only ever their own, found by the owner from the sign-in
+ * plan, recurring items, goals, budgets, exchange rates, accounts,
+ * categories and settings. Only ever their own, found by the owner from the sign-in
  * token. A large account is deleted over several calls, so no single call
  * runs into Convex's per-request limits; `more` says whether to call again.
  */
@@ -23,11 +23,16 @@ export const deleteMyData = mutation({
     if (transactions.length === DELETE_BATCH_SIZE) {
       return { deleted: transactions.length, more: true };
     }
-    // Then exchange rates, recurring items, goals and their entries,
+    // Then the plan, exchange rates, recurring items, goals and their entries,
     // budgets, the money accounts and categories (the rest pointed to
     // them), and settings
     // last, so a half-finished deletion still shows the account as set up,
     // rather than as a new one with old transactions.
+    const plans = await ctx.db
+      .query("plans")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .collect();
+    for (const row of plans) await ctx.db.delete(row._id);
     const rates = await ctx.db
       .query("exchangeRates")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))

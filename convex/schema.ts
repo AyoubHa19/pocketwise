@@ -134,6 +134,18 @@ export default defineSchema({
     count: v.number(),
   }).index("by_owner_day", ["ownerId", "day"]),
 
+  // The safe-to-spend plan's settings (src/lib/plan.ts), one row per user.
+  plans: defineTable({
+    ownerId: v.string(),
+    reserveMinor: v.number(),
+    savingsMinor: v.number(),
+    // Missing means every open account in the main currency.
+    accountIds: v.optional(v.array(v.id("accounts"))),
+    salaryRuleId: v.optional(v.id("recurringRules")),
+    payday: v.optional(v.string()),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
   // The user's money accounts (src/lib/accounts.ts).
   accounts: defineTable({
     ownerId: v.string(),

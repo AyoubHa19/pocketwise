@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BudgetsCard } from "@/components/BudgetsCard";
 import { ReceiptScanner } from "@/components/ReceiptScanner";
+import { SafeToSpendCard } from "@/components/SafeToSpendCard";
 import { UpcomingCard } from "@/components/UpcomingCard";
 import { TotalBalanceCard } from "@/components/TotalBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
@@ -46,6 +47,7 @@ import {
   useBudgets,
   useRecurringRules,
   useRates,
+  usePlan,
 } from "@/lib/accountData";
 import {
   monthlyTotals,
@@ -68,6 +70,7 @@ export function TransactionTracker() {
   const budgets = useBudgets();
   const rules = useRecurringRules();
   const rates = useRates();
+  const plan = usePlan();
   const preferences = useAccountPreferences();
   const transactions = useAccountTransactions();
   // What this browser saved before accounts, if it hasn't been moved yet.
@@ -134,6 +137,7 @@ export function TransactionTracker() {
     categories === null ||
     budgets === null ||
     rules === null ||
+    plan === null ||
     localOffer === undefined
   ) {
     return <DashboardSkeleton />;
@@ -318,6 +322,15 @@ export function TransactionTracker() {
           viewport={{ once: true, amount: 0.15 }}
           className={`space-y-4 ${dashboardChartsArea}`}
         >
+          <SafeToSpendCard
+            plan={plan}
+            accounts={accounts}
+            transactions={transactions}
+            rules={rules}
+            mainCurrency={settings.currency}
+            today={today}
+            dateOrder={preferences.dateOrder}
+          />
           <UpcomingCard
             rules={rules}
             transactions={transactions}

@@ -1271,6 +1271,65 @@ describe("receipt scanning", () => {
   });
 });
 
+describe("the plan to payday", () => {
+  const settings = (over: Record<string, unknown> = {}) => ({
+    reserveMinor: 100000,
+    savingsMinor: 50000,
+    accountIds: null as string[] | null,
+    salaryRuleId: null as string | null,
+    payday: "2026-10-30" as string | null,
+    ...over,
+  });
+
+  it("starts empty, and saves and reads back the settings", async () => {
+    const { sarah } = setup();
+    expect(await sarah.query(api.plan.get, {})).toEqual({
+      reserveMinor: 0,
+      savingsMinor: 0,
+      accountIds: null,
+      salaryRuleId: null,
+      payday: null,
+    });
+    const bank = await sarah.mutation(api.accounts.create, { name: "Bank", type: "bank", currency: "AED", opening: null });
+    await sarah.mutation(api.plan.set, settings({ accountIds: [bank, bank] }));
+    expect(await sarah.query(api.plan.get, {})).toEqual(settings({ accountIds: [bank] }));
+    await sarah.mutation(api.plan.set, settings({ reserveMinor: 0 }));
+    expect((await sarah.query(api.plan.get, {})).reserveMinor).toBe(0);
+  });
+
+  it("takes only the user's own income rule as payday, and their own accounts", async () => {
+    const { sarah, lee } = setup();
+    await sarah.mutation(api.categories.ensureCategories, {});
+    const list = await sarah.query(api.categories.list, {});
+    const today = new Date().toISOString().slice(0, 10);
+    const base = { amountMinor: 500000, currency: "AED", accountId: null, frequency: "monthly" as const, startDate: today, endDate: null, remindDays: 3, today };
+    const salary = await sarah.mutation(api.recurring.create, { ...base, name: "Salary", type: "income", categoryId: list.find((c) => c.name === "Salary")!.id });
+    const rent = await sarah.mutation(api.recurring.create, { ...base, name: "Rent", type: "expense", categoryId: list.find((c) => c.name === "Housing")!.id });
+    await sarah.mutation(api.plan.set, settings({ salaryRuleId: salary, payday: null }));
+    expect((await sarah.query(api.plan.get, {})).salaryRuleId).toBe(salary);
+    await expect(sarah.mutation(api.plan.set, settings({ salaryRuleId: rent }))).rejects.toThrow("Rent isn't income");
+    await expect(lee.mutation(api.plan.set, settings({ salaryRuleId: salary }))).rejects.toThrow("isn't one of yours");
+    const leeAccount = await lee.mutation(api.accounts.create, { name: "Lee's", type: "bank", currency: "AED", opening: null });
+    await expect(sarah.mutation(api.plan.set, settings({ accountIds: [leeAccount] }))).rejects.toThrow("isn't one of yours");
+  });
+
+  it("refuses negative or fractional amounts and impossible dates", async () => {
+    const { sarah } = setup();
+    await expect(sarah.mutation(api.plan.set, settings({ reserveMinor: -5 }))).rejects.toThrow("zero or more");
+    await expect(sarah.mutation(api.plan.set, settings({ savingsMinor: 0.5 }))).rejects.toThrow("zero or more");
+    await expect(sarah.mutation(api.plan.set, settings({ payday: "2026-13-01" }))).rejects.toThrow("real payday");
+  });
+
+  it("is each user's own, goes with their data, and needs a sign-in", async () => {
+    const { t, sarah, lee } = setup();
+    await sarah.mutation(api.plan.set, settings());
+    expect((await lee.query(api.plan.get, {})).reserveMinor).toBe(0);
+    await sarah.mutation(api.account.deleteMyData, {});
+    expect((await sarah.query(api.plan.get, {})).payday).toBeNull();
+    await expect(t.query(api.plan.get, {})).rejects.toThrow("You need to be signed in.");
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);
