@@ -22,6 +22,10 @@ type Props = {
   /** The transaction open in the sheet, highlighted in the list. */
   editingId: string | null;
   onEdit: (transaction: Transaction) => void;
+  /** Account names by id, to say where each transaction happened. */
+  accountNames?: Map<string, string>;
+  /** Name the account on every row: worth it once there's more than one. */
+  showAccounts?: boolean;
 };
 
 /**
@@ -39,6 +43,8 @@ export function TransactionList({
   dateOrder = DEFAULT_PREFERENCES.dateOrder,
   editingId,
   onEdit,
+  accountNames,
+  showAccounts = false,
 }: Props) {
   const reduced = useReducedMotion() ?? false;
   const variants = collapse(reduced);
@@ -93,6 +99,16 @@ export function TransactionList({
                 <AnimatePresence initial={false}>
                   {day.transactions.map((transaction) => {
                     const amount = formatMoney(signedAmount(transaction));
+                    const isTransfer = transaction.type === "transfer";
+                    const name = (id?: string) => (id && accountNames?.get(id)) || "Another account";
+                    // Where it happened: a transfer's two ends, or the
+                    // account, when there's more than one to tell apart.
+                    const where = isTransfer
+                      ? `${name(transaction.accountId)} → ${name(transaction.toAccountId)}`
+                      : showAccounts && transaction.accountId
+                        ? name(transaction.accountId)
+                        : undefined;
+                    const details = [where, transaction.note].filter(Boolean).join(" · ");
                     // Spelled out, with commas for pauses, rather than left to
                     // each screen reader to piece together from the row's
                     // text, which some read as "FoodCoffee". It holds the
@@ -100,6 +116,7 @@ export function TransactionList({
                     // still works.
                     const label = [
                       `Edit ${transaction.category}`,
+                      where?.replace(" → ", " to "),
                       transaction.note,
                       amount,
                     ]
@@ -131,15 +148,21 @@ export function TransactionList({
                             <span className="block font-medium">
                               {transaction.category}
                             </span>
-                            {transaction.note && (
+                            {details && (
                               <span className="block truncate text-sm text-muted">
-                                {transaction.note}
+                                {details}
                               </span>
                             )}
                           </span>
                           <span
+                            // Income green; a transfer muted and unsigned, since
+                            // it doesn't change what you have overall.
                             className={`shrink-0 font-medium tabular-nums ${
-                              transaction.type === "income" ? "text-positive" : ""
+                              transaction.type === "income"
+                                ? "text-positive"
+                                : isTransfer
+                                  ? "text-muted"
+                                  : ""
                             }`}
                           >
                             <AnimatedNumber

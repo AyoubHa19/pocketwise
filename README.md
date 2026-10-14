@@ -201,9 +201,8 @@ recommend for fingers.
   the live site isn't for real data (see Deployment).
 - No exchange rates: amounts in other currencies are kept and shown apart,
   never added to the main ones.
-- Transactions go to the first account in their currency for now:
-  choosing an account, and transfers between accounts, come to the
-  transaction form next.
+- Transfers only between accounts in the same currency: one between
+  currencies needs an exchange rate, which comes with currency support.
 - English only, and the categories are a fixed list.
 - The tests cover money, dates, monthly totals, the account balance,
   transactions, the server's functions and their permissions, and moving

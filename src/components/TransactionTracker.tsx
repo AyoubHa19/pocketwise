@@ -157,25 +157,20 @@ export function TransactionTracker() {
     // Show the month the transaction is in, or it would seem to vanish when
     // its date is in a different month from the one on screen.
     changeMonth(monthOf(transaction.date));
-    // The form doesn't choose accounts yet: an edited transaction keeps its
-    // own, and a new one goes to the first open account in its currency
-    // (the server picks, or makes, one if there's none).
-    const previous = transactions?.find((t) => t.id === transaction.id);
-    const accountId =
-      previous?.accountId ??
-      accounts?.find((a) => !a.archived && a.currency === transaction.amount.currency)?.id;
-    const toSave: Transaction = {
-      ...transaction,
-      ...(accountId && { accountId }),
-      ...(previous?.toAccountId && { toAccountId: previous.toAccountId }),
-    };
-    report(await saveTransaction(toSave), isNew ? "Transaction added" : "Changes saved");
+    // The form names the account (and a transfer's destination); with no
+    // account yet, the server makes the Main account for its currency.
+    const isTransfer = transaction.type === "transfer";
+    report(
+      await saveTransaction(transaction),
+      isNew ? (isTransfer ? "Transfer added" : "Transaction added") : "Changes saved",
+    );
   }
 
   async function remove(transaction: Transaction) {
     const amount = formatMoney(signedAmount(transaction));
+    const what = transaction.type === "transfer" ? "this transfer" : transaction.category;
     const confirmed = window.confirm(
-      `Delete ${transaction.category}, ${amount} on ${transaction.date}? This can't be undone.`,
+      `Delete ${what}, ${amount} on ${transaction.date}? This can't be undone.`,
     );
     if (!confirmed) return;
 
@@ -347,6 +342,8 @@ export function TransactionTracker() {
               dateOrder={preferences.dateOrder}
               editingId={sheetOpen && editing ? editing.id : null}
               onEdit={openEdit}
+              accountNames={new Map(accounts.map((a) => [a.id, a.name]))}
+              showAccounts={accounts.filter((a) => !a.archived).length > 1}
             />
           </m.div>
 
@@ -406,6 +403,7 @@ export function TransactionTracker() {
           <TransactionForm
             key={sheet.session}
             transaction={editing}
+            accounts={accounts}
             defaultCurrency={settings.currency}
             onSave={save}
             onCancel={closeSheet}

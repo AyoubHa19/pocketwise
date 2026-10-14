@@ -150,8 +150,9 @@ export function AccountsManager() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="max-w-prose text-sm text-muted">
           Each account keeps its own balance: its starting balance plus what
-          happens in it. Moving money between your accounts will come with
-          transfers, which are never counted as income or spending.
+          happens in it. To move money between two of your accounts, add a
+          Transfer from the dashboard: it&apos;s never counted as income or
+          spending.
         </p>
         {editing !== "new" && (
           <button type="button" onClick={() => setEditing("new")} className={primaryButtonClass}>

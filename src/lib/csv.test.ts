@@ -21,10 +21,28 @@ describe("transactionsToCsv", () => {
     ]);
     expect(csv).toBe(
       BOM +
-        "Date,Type,Category,Amount,Currency,Note\r\n" +
-        "2026-10-13,expense,Food,-4.50,EUR,Coffee\r\n" +
-        "2026-10-01,income,Salary,5200.00,MAD,\r\n",
+        "Date,Type,Category,Amount,Currency,Account,To account,Note\r\n" +
+        "2026-10-13,expense,Food,-4.50,EUR,,,Coffee\r\n" +
+        "2026-10-01,income,Salary,5200.00,MAD,,,\r\n",
     );
+  });
+
+  it("names the account, and a transfer's two ends with an unsigned amount", () => {
+    const names = new Map([["bank", "CIH Bank"], ["cash", "Cash"]]);
+    const csv = transactionsToCsv(
+      [
+        t({ accountId: "cash", note: "Coffee" }),
+        t({ type: "transfer", category: "Transfer", accountId: "bank", toAccountId: "cash", amount: { amountMinor: 50000, currency: "EUR" } }),
+      ],
+      names,
+    );
+    expect(csv).toContain("2026-10-13,expense,Food,-4.50,EUR,Cash,,Coffee\r\n");
+    expect(csv).toContain("2026-10-13,transfer,Transfer,500.00,EUR,CIH Bank,Cash,\r\n");
+  });
+
+  it("defuses an account name that looks like a formula", () => {
+    const csv = transactionsToCsv([t({ accountId: "a" })], new Map([["a", "=cmd()"]]));
+    expect(csv).toContain(",'=cmd(),,");
   });
 
   it("uses each currency's own decimals", () => {
@@ -37,7 +55,7 @@ describe("transactionsToCsv", () => {
   });
 
   it("is just the header when there are no transactions", () => {
-    expect(transactionsToCsv([])).toBe(BOM + "Date,Type,Category,Amount,Currency,Note\r\n");
+    expect(transactionsToCsv([])).toBe(BOM + "Date,Type,Category,Amount,Currency,Account,To account,Note\r\n");
   });
 
   it("keeps notes with commas, quotes and line breaks in one field", () => {

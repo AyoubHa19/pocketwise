@@ -5,15 +5,27 @@ import { signedAmount, type Transaction } from "@/lib/transactions";
 // Google Sheets and Numbers all open. The format:
 //
 // - One row per transaction, newest day first, under a header row:
-//   Date, Type, Category, Amount, Currency, Note.
+//   Date, Type, Category, Amount, Currency, Account, To account, Note.
 // - Date is "YYYY-MM-DD". Amount is a plain number with a point for
 //   decimals and a minus for spending (-4.50), so a column can be summed;
 //   it has the currency's own number of decimals (2 for EUR, 0 for JPY).
+//   A transfer's amount has no sign (it moves money between your accounts,
+//   from Account to To account, and isn't income or spending); To account
+//   is empty for everything else.
 // - Lines end with CRLF and fields are quoted when they need it, as the
 //   CSV standard (RFC 4180) describes. The file starts with a UTF-8 byte
 //   order mark, which Excel needs to read accents and Arabic correctly.
 
-export const CSV_HEADER = ["Date", "Type", "Category", "Amount", "Currency", "Note"];
+export const CSV_HEADER = [
+  "Date",
+  "Type",
+  "Category",
+  "Amount",
+  "Currency",
+  "Account",
+  "To account",
+  "Note",
+];
 
 /** Quotes a field if it contains a comma, a quote or a line break. */
 function quote(value: string): string {
@@ -31,8 +43,16 @@ export function userText(value: string): string {
   return quote(/^[=+\-@\t\r]/.test(value) ? `'${value}` : value);
 }
 
-/** The CSV text for these transactions, header included. */
-export function transactionsToCsv(transactions: Transaction[]): string {
+/**
+ * The CSV text for these transactions, header included. `accountNames`
+ * turns account ids into the names the user gave them (typed text, so made
+ * safe like notes).
+ */
+export function transactionsToCsv(
+  transactions: Transaction[],
+  accountNames: Map<string, string> = new Map(),
+): string {
+  const name = (id?: string) => userText((id && accountNames.get(id)) || "");
   const rows = transactions.map((t) =>
     [
       t.date,
@@ -40,6 +60,8 @@ export function transactionsToCsv(transactions: Transaction[]): string {
       quote(t.category),
       amountToInputText(signedAmount(t)),
       t.amount.currency,
+      name(t.accountId),
+      name(t.toAccountId),
       userText(t.note ?? ""),
     ].join(","),
   );

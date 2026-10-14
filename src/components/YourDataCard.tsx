@@ -10,7 +10,7 @@ import {
   secondaryButtonClass,
 } from "@/components/formStyles";
 import { deleteMyAccount } from "@/app/settings/actions";
-import { useAccountTransactions } from "@/lib/accountData";
+import { useAccounts, useAccountTransactions } from "@/lib/accountData";
 import { csvFileName, transactionsToCsv } from "@/lib/csv";
 import { clearLocalData, hasLocalData } from "@/lib/localImport";
 import { useSettings } from "@/lib/settingsStore";
@@ -44,6 +44,7 @@ function download(text: string, fileName: string) {
  */
 export function YourDataCard() {
   const transactions = useAccountTransactions();
+  const accounts = useAccounts();
   const localSettings = useSettings();
   const localTransactions = useTransactions();
   const today = useToday();
@@ -113,7 +114,13 @@ export function YourDataCard() {
       <button
         type="button"
         disabled={transactions === null}
-        onClick={() => transactions && download(transactionsToCsv(transactions), csvFileName(today))}
+        onClick={() =>
+          transactions &&
+          download(
+            transactionsToCsv(transactions, new Map((accounts ?? []).map((a) => [a.id, a.name]))),
+            csvFileName(today),
+          )
+        }
         className={`mt-3 ${secondaryButtonClass}`}
       >
         {transactions === null

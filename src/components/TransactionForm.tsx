@@ -10,11 +10,13 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/formStyles";
+import type { Account } from "@/lib/accounts";
 import { amountToInputText, currencyDecimals, parseAmount } from "@/lib/money";
 import { fadeRise } from "@/lib/motion";
 import {
   CATEGORIES,
   newTransactionId,
+  TRANSFER_CATEGORY,
   type Transaction,
   type TransactionType,
 } from "@/lib/transactions";
@@ -23,7 +25,9 @@ import { useToday } from "@/lib/useToday";
 type Props = {
   /** The transaction to edit. Leave it out to add a new one. */
   transaction?: Transaction;
-  /** The currency for new transactions, from the settings. */
+  /** The user's accounts, archived ones too (an edited one may be in one). */
+  accounts: Account[];
+  /** The user's main currency, for a new transaction's first account. */
   defaultCurrency: string;
   onSave: (transaction: Transaction) => void;
   /** Shown as a Cancel button next to Save. */
@@ -32,44 +36,68 @@ type Props = {
   onDelete?: () => void;
 };
 
+type Field = "amount" | "date" | "account" | "to";
+
+/** The value of the "new Main account" choice, when the user has none yet. */
+const NEW_ACCOUNT = "";
+
 // `transaction` only fills the fields when the form first appears. To load a
 // different transaction, give the form a new `key` so React starts it afresh.
 export function TransactionForm({
   transaction,
+  accounts,
   defaultCurrency,
   onSave,
   onCancel,
   onDelete,
 }: Props) {
   const isEditing = transaction !== undefined;
-  // An edited transaction keeps its own currency, even if the setting has
-  // changed since, because there's no exchange rate to convert it with.
-  const currency = transaction?.amount.currency ?? defaultCurrency;
+  const open = accounts.filter((a) => !a.archived);
+  const byId = new Map(accounts.map((a) => [a.id, a]));
+  // Accounts you can pick: the open ones, plus the transaction's own if it
+  // has been archived since, so editing never silently moves it.
+  const choosable = (keep?: string) =>
+    accounts.filter((a) => !a.archived || a.id === keep);
+
+  const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense");
+  const [accountId, setAccountId] = useState<string>(
+    transaction?.accountId ??
+      (open.find((a) => a.currency === defaultCurrency) ?? open[0])?.id ??
+      NEW_ACCOUNT,
+  );
+  const account = byId.get(accountId);
+  // The amount is in the account's currency: balances never mix currencies.
+  // (Before any account exists, it's the main currency, for the new one.)
+  const currency = account?.currency ?? transaction?.amount.currency ?? defaultCurrency;
   const decimals = currencyDecimals(currency);
 
-  const [type, setType] = useState<TransactionType>(
-    transaction?.type ?? "expense",
+  // Where a transfer can go: another account in the same currency.
+  const destinations = choosable(transaction?.toAccountId).filter(
+    (a) => a.currency === currency && a.id !== accountId,
   );
+  const [pickedTo, setPickedTo] = useState<string | null>(transaction?.toAccountId ?? null);
+  const toAccountId =
+    pickedTo && destinations.some((a) => a.id === pickedTo) ? pickedTo : (destinations[0]?.id ?? null);
+  // A transfer needs two accounts in one currency.
+  const canTransfer = open.some((a) => open.some((b) => b.id !== a.id && b.currency === a.currency));
+
   const [category, setCategory] = useState<string>(
-    transaction?.category ?? "Food",
+    transaction && transaction.type !== "transfer" ? transaction.category : "Food",
   );
-  const [amount, setAmount] = useState(
-    transaction ? amountToInputText(transaction.amount) : "",
-  );
+  const [amount, setAmount] = useState(transaction ? amountToInputText(transaction.amount) : "");
   // null until the user picks a date themselves; until then, use today.
-  const [pickedDate, setPickedDate] = useState<string | null>(
-    transaction?.date ?? null,
-  );
+  const [pickedDate, setPickedDate] = useState<string | null>(transaction?.date ?? null);
   const [note, setNote] = useState(transaction?.note ?? "");
   // Which field the error is about, so that field can be marked invalid.
-  const [error, setError] = useState<{
-    field: "amount" | "date";
-    message: string;
-  } | null>(null);
+  const [error, setError] = useState<{ field: Field; message: string } | null>(null);
   const errorId = useId();
 
   const today = useToday();
   const date = pickedDate ?? today;
+  const isTransfer = type === "transfer";
+
+  const invalid = (field: Field) =>
+    error?.field === field ? { "aria-invalid": true as const, "aria-describedby": errorId } : {};
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,17 +117,42 @@ export function TransactionForm({
       setError({ field: "date", message: "Pick a date." });
       return;
     }
+    if (isTransfer && accountId === NEW_ACCOUNT) {
+      setError({ field: "account", message: "Pick the account the money left." });
+      return;
+    }
+    if (isTransfer && !toAccountId) {
+      setError({
+        field: "to",
+        message: `A transfer needs another ${currency} account to go to. Add one on the Accounts page.`,
+      });
+      return;
+    }
 
     onSave({
       // Editing keeps the same id, so the saved one is replaced, not copied.
       id: transaction?.id ?? newTransactionId(),
       type,
       amount: { amountMinor, currency },
-      category,
+      category: isTransfer ? TRANSFER_CATEGORY : category,
       date,
       note: note.trim() || undefined,
+      ...(accountId !== NEW_ACCOUNT && { accountId }),
+      ...(isTransfer && toAccountId && { toAccountId }),
     });
   }
+
+  const accountOptions = (keep?: string) => {
+    const list = choosable(keep);
+    if (list.length === 0) {
+      return <option value={NEW_ACCOUNT}>Main account (new, {defaultCurrency})</option>;
+    }
+    return list.map((a) => (
+      <option key={a.id} value={a.id}>
+        {a.name} ({a.currency}){a.archived ? ", archived" : ""}
+      </option>
+    ));
+  };
 
   // The card and the title come from the Sheet this form is shown in.
   return (
@@ -117,9 +170,8 @@ export function TransactionForm({
             placeholder={decimals === 0 ? "0" : `0.${"0".repeat(decimals)}`}
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
-            aria-invalid={error?.field === "amount" ? true : undefined}
-            aria-describedby={error?.field === "amount" ? errorId : undefined}
             className={amountFieldClass}
+            {...invalid("amount")}
           />
         </label>
 
@@ -132,23 +184,68 @@ export function TransactionForm({
           >
             <option value="expense">Expense</option>
             <option value="income">Income</option>
+            <option value="transfer" disabled={!canTransfer && !isTransfer}>
+              {canTransfer || isTransfer ? "Transfer" : "Transfer (needs two accounts in one currency)"}
+            </option>
           </select>
         </label>
 
-        <label className="block text-sm font-medium">
-          Category
+        {isTransfer ? (
+          <p className="flex min-h-11 items-end pb-2 text-sm text-muted">
+            Between your accounts: not income or spending.
+          </p>
+        ) : (
+          <label className="block text-sm font-medium">
+            Category
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className={fieldClass}
+            >
+              {CATEGORIES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <label className={`block text-sm font-medium ${isTransfer ? "" : "sm:col-span-2"}`}>
+          {isTransfer ? "From" : "Account"}
           <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
+            value={accountId}
+            onChange={(event) => setAccountId(event.target.value)}
             className={fieldClass}
+            {...invalid("account")}
           >
-            {CATEGORIES.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
+            {accountOptions(transaction?.accountId)}
           </select>
         </label>
+
+        {isTransfer && (
+          <label className="block text-sm font-medium">
+            To
+            <select
+              value={toAccountId ?? ""}
+              onChange={(event) => setPickedTo(event.target.value)}
+              disabled={destinations.length === 0}
+              className={fieldClass}
+              {...invalid("to")}
+            >
+              {destinations.length === 0 ? (
+                <option value="">No other {currency} account</option>
+              ) : (
+                destinations.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                    {a.archived ? ", archived" : ""}
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+        )}
 
         <label className="block text-sm font-medium sm:col-span-2">
           Date
@@ -156,9 +253,8 @@ export function TransactionForm({
             type="date"
             value={date}
             onChange={(event) => setPickedDate(event.target.value)}
-            aria-invalid={error?.field === "date" ? true : undefined}
-            aria-describedby={error?.field === "date" ? errorId : undefined}
             className={fieldClass}
+            {...invalid("date")}
           />
         </label>
 
@@ -195,23 +291,15 @@ export function TransactionForm({
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <button type="submit" className={primaryButtonClass}>
-          {isEditing ? "Save changes" : "Add transaction"}
+          {isEditing ? "Save changes" : isTransfer ? "Add transfer" : "Add transaction"}
         </button>
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className={secondaryButtonClass}
-          >
+          <button type="button" onClick={onCancel} className={secondaryButtonClass}>
             Cancel
           </button>
         )}
         {isEditing && onDelete && (
-          <button
-            type="button"
-            onClick={onDelete}
-            className={dangerButtonClass}
-          >
+          <button type="button" onClick={onDelete} className={dangerButtonClass}>
             Delete
           </button>
         )}

@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   BusFront,
   Ellipsis,
   HeartPulse,
@@ -10,7 +11,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import type { CATEGORIES } from "@/lib/transactions";
+import { TRANSFER_CATEGORY, type CATEGORIES } from "@/lib/transactions";
 
 // Typed against CATEGORIES, so TypeScript complains if a category is added
 // there without an icon here.
@@ -37,8 +38,12 @@ export function CategoryIcon({
   /** 32px instead of 40px, for the charts. */
   small?: boolean;
 }) {
-  // Saved data could hold a category this version doesn't know.
-  const Icon = icons[category as keyof typeof icons] ?? Tag;
+  // A transfer has its own sign; saved data could also hold a category this
+  // version doesn't know.
+  const Icon =
+    category === TRANSFER_CATEGORY
+      ? ArrowLeftRight
+      : (icons[category as keyof typeof icons] ?? Tag);
   return (
     <span
       aria-hidden="true"
