@@ -55,6 +55,36 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
+  // Savings goals (src/lib/goals.ts). A goal follows an account's balance
+  // (accountId) or adds up its own entries in goalContributions.
+  goals: defineTable({
+    ownerId: v.string(),
+    name: v.string(),
+    targetMinor: v.number(),
+    // Fixed once the goal is made: its entries are in this currency.
+    currency: v.string(),
+    targetDate: v.optional(v.string()),
+    accountId: v.optional(v.id("accounts")),
+    archived: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner", ["ownerId"])
+    // Finds the goals that follow an account, when it's deleted.
+    .index("by_owner_account", ["ownerId", "accountId"]),
+
+  // A goal's own record: money noted as put aside (above zero) or taken
+  // back out (below). Not transactions, so never income or spending.
+  goalContributions: defineTable({
+    ownerId: v.string(),
+    goalId: v.id("goals"),
+    amountMinor: v.number(),
+    date: v.string(),
+    note: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_goal", ["goalId"]),
+
   // The user's money accounts (src/lib/accounts.ts).
   accounts: defineTable({
     ownerId: v.string(),

@@ -217,7 +217,7 @@ export function BudgetsManager() {
           what you planned.
         </p>
       ) : (
-        <ul className="mt-6 grid gap-4 lg:grid-cols-2">{budgets.map(card)}</ul>
+        <ul className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">{budgets.map(card)}</ul>
       )}
 
       <Toast notice={notice} />

@@ -1,6 +1,7 @@
 import { Show, UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, ListFilter, PiggyBank, Settings, Wallet } from "lucide-react";
+import { LayoutDashboard, ListFilter, PiggyBank, Settings, Target, Wallet } from "lucide-react";
 import Link from "next/link";
+import { MoreMenu } from "@/components/MoreMenu";
 import { NavLink } from "@/components/NavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -38,15 +39,20 @@ export function SiteHeader() {
               <NavLink href="/budgets" icon={<PiggyBank size={20} />}>
                 Budgets
               </NavLink>
-              <NavLink href="/accounts" icon={<Wallet size={20} />}>
-                Accounts
+              <NavLink href="/goals" icon={<Target size={20} />}>
+                Goals
               </NavLink>
-              <NavLink href="/settings" icon={<Settings size={20} />}>
-                Settings
-              </NavLink>
+              {/* The pages used less often, so the header keeps fitting as
+                  Pocketwise grows. */}
+              <MoreMenu
+                items={[
+                  { href: "/accounts", label: "Accounts", icon: <Wallet size={18} /> },
+                  { href: "/settings", label: "Settings", icon: <Settings size={18} /> },
+                ]}
+              />
             </nav>
-            {/* Under 400px, five links, this and the account button don't
-                fit at a finger's 44px each; the theme is also in Settings. */}
+            {/* Under 400px, the five, this and the account button don't fit
+                at a finger's 44px each; the theme is also in Settings. */}
             <div className="hidden min-[400px]:block">
               <ThemeToggle />
             </div>

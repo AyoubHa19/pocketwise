@@ -934,6 +934,110 @@ describe("budgets", () => {
   });
 });
 
+describe("savings goals", () => {
+  const goal = (over: Record<string, unknown> = {}) => ({
+    name: "Trip",
+    targetMinor: 1000000,
+    currency: "MAD",
+    targetDate: "2027-06-30" as string | null,
+    accountId: null as string | null,
+    ...over,
+  });
+  const withoutCurrency = ({ name, targetMinor, targetDate, accountId }: ReturnType<typeof goal>) => ({
+    name,
+    targetMinor,
+    targetDate,
+    accountId,
+  });
+
+  it("are added, changed (never their currency), archived and listed", async () => {
+    const { sarah } = setup();
+    const id = await sarah.mutation(api.goals.create, goal({ name: "  Trip " }));
+    // update takes no currency: Convex would refuse one.
+    await sarah.mutation(api.goals.update, { id, ...withoutCurrency(goal({ targetMinor: 800000, targetDate: null })) });
+    await sarah.mutation(api.goals.setArchived, { id, archived: true });
+    expect(await sarah.query(api.goals.list, {})).toEqual([
+      { id, name: "Trip", target: { amountMinor: 800000, currency: "MAD" }, targetDate: null, accountId: null, archived: true },
+    ]);
+  });
+
+  it("refuse a missing name, a bad target, date or currency", async () => {
+    const { sarah } = setup();
+    const create = (over: Record<string, unknown>) => sarah.mutation(api.goals.create, goal(over));
+    await expect(create({ name: " " })).rejects.toThrow("Give the goal a name");
+    await expect(create({ targetMinor: 0 })).rejects.toThrow("greater than zero");
+    await expect(create({ targetDate: "2027-02-30" })).rejects.toThrow("real target date");
+    await expect(create({ currency: "XYZ" })).rejects.toThrow("isn't a known currency");
+    expect(await sarah.query(api.goals.list, {})).toEqual([]);
+  });
+
+  it("note money in and out, never more out than in", async () => {
+    const { sarah } = setup();
+    const goalId = await sarah.mutation(api.goals.create, goal());
+    const add = (amountMinor: number) =>
+      sarah.mutation(api.goals.addContribution, { goalId, amountMinor, date: "2026-10-14", note: " first " });
+    const first = await add(300000);
+    await add(-50000);
+    await expect(add(-250001)).rejects.toThrow("more than this goal has saved");
+    await expect(add(0)).rejects.toThrow("greater than zero");
+    const entries = await sarah.query(api.goals.contributions, {});
+    expect(entries.map((e) => e.amountMinor)).toEqual([300000, -50000]);
+    expect(entries[0].note).toBe("first");
+    // Deleting the money put in would leave more out than in.
+    await expect(sarah.mutation(api.goals.removeContribution, { id: first })).rejects.toThrow("Delete the money taken out first");
+    await sarah.mutation(api.goals.removeContribution, { id: entries[1].id });
+    await sarah.mutation(api.goals.removeContribution, { id: first });
+    expect(await sarah.query(api.goals.contributions, {})).toEqual([]);
+  });
+
+  it("follow one of the user's accounts in their currency, and take no entries then", async () => {
+    const { sarah, lee } = setup();
+    const savings = await sarah.mutation(api.accounts.create, { name: "Savings", type: "savings", currency: "MAD", opening: null });
+    const euros = await sarah.mutation(api.accounts.create, { name: "Euros", type: "bank", currency: "EUR", opening: null });
+    const leeAccount = await lee.mutation(api.accounts.create, { name: "Lee's", type: "bank", currency: "MAD", opening: null });
+    await expect(sarah.mutation(api.goals.create, goal({ accountId: euros }))).rejects.toThrow("is in EUR, not MAD");
+    await expect(sarah.mutation(api.goals.create, goal({ accountId: leeAccount }))).rejects.toThrow("isn't one of yours");
+    const goalId = await sarah.mutation(api.goals.create, goal({ accountId: savings }));
+    await expect(
+      sarah.mutation(api.goals.addContribution, { goalId, amountMinor: 100, date: "2026-10-14" }),
+    ).rejects.toThrow("follows an account");
+    // Deleting the account (never used) sends the goal back to its own entries.
+    await sarah.mutation(api.accounts.remove, { id: savings });
+    expect((await sarah.query(api.goals.list, {}))[0].accountId).toBeNull();
+  });
+
+  it("delete with their entries, and go with the user's data", async () => {
+    const { sarah } = setup();
+    const a = await sarah.mutation(api.goals.create, goal());
+    const b = await sarah.mutation(api.goals.create, goal({ name: "Car" }));
+    await sarah.mutation(api.goals.addContribution, { goalId: a, amountMinor: 100, date: "2026-10-14" });
+    await sarah.mutation(api.goals.addContribution, { goalId: b, amountMinor: 200, date: "2026-10-14" });
+    await sarah.mutation(api.goals.remove, { id: a });
+    expect((await sarah.query(api.goals.contributions, {})).map((e) => e.amountMinor)).toEqual([200]);
+    await sarah.mutation(api.account.deleteMyData, {});
+    expect(await sarah.query(api.goals.list, {})).toEqual([]);
+    expect(await sarah.query(api.goals.contributions, {})).toEqual([]);
+  });
+
+  it("can't be seen or touched by someone else", async () => {
+    const { sarah, lee } = setup();
+    const id = await sarah.mutation(api.goals.create, goal());
+    const entry = await sarah.mutation(api.goals.addContribution, { goalId: id, amountMinor: 100, date: "2026-10-14" });
+    expect(await lee.query(api.goals.list, {})).toEqual([]);
+    expect(await lee.query(api.goals.contributions, {})).toEqual([]);
+    await expect(lee.mutation(api.goals.update, { id, ...withoutCurrency(goal()) })).rejects.toThrow("isn't one of yours");
+    await expect(lee.mutation(api.goals.remove, { id })).rejects.toThrow("isn't one of yours");
+    await expect(lee.mutation(api.goals.addContribution, { goalId: id, amountMinor: 1, date: "2026-10-14" })).rejects.toThrow("isn't one of yours");
+    await expect(lee.mutation(api.goals.removeContribution, { id: entry })).rejects.toThrow("isn't one of yours");
+  });
+
+  it("need a sign-in", async () => {
+    const { t } = setup();
+    await expect(t.query(api.goals.list, {})).rejects.toThrow("You need to be signed in.");
+    await expect(t.mutation(api.goals.create, goal())).rejects.toThrow("You need to be signed in.");
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);

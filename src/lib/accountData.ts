@@ -2,6 +2,7 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
 import type { Budget } from "@/lib/budgets";
+import type { Contribution, Goal } from "@/lib/goals";
 import type { Category, CategoryKind } from "@/lib/categories";
 import type { Preferences } from "@/lib/preferences";
 import type { Settings } from "@/lib/settingsStore";
@@ -262,6 +263,64 @@ export function useRemoveBudget() {
     const list = store.getQuery(api.budgets.list, {});
     if (list !== undefined) store.setQuery(api.budgets.list, {}, list.filter((b) => b.id !== id));
   });
+  return (id: string) => withMessage(remove({ id }));
+}
+
+/** The user's savings goals (archived ones too), or null while they load. */
+export function useGoals(): Goal[] | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.goals.list, isAuthenticated ? {} : "skip") ?? null;
+}
+
+/** Every entry in the user's goals, or null while they load. */
+export function useGoalContributions(): Contribution[] | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.goals.contributions, isAuthenticated ? {} : "skip") ?? null;
+}
+
+export type GoalFields = Pick<Goal, "name" | "targetDate" | "accountId"> & { targetMinor: number };
+
+/** Adds a goal, in `currency` for good. */
+export function useCreateGoal() {
+  const create = useMutation(api.goals.create);
+  return ({ name, targetMinor, targetDate, accountId }: GoalFields, currency: string) =>
+    withMessage(create({ name, targetMinor, targetDate, accountId, currency }));
+}
+
+/** Changes a goal's name, target, date and what it follows. */
+export function useUpdateGoal() {
+  const update = useMutation(api.goals.update);
+  return (id: string, { name, targetMinor, targetDate, accountId }: GoalFields) =>
+    withMessage(update({ id, name, targetMinor, targetDate, accountId }));
+}
+
+/** Archives a goal, or brings it back. */
+export function useSetGoalArchived() {
+  const set = useMutation(api.goals.setArchived).withOptimisticUpdate((store, { id, archived }) => {
+    const list = store.getQuery(api.goals.list, {});
+    if (list !== undefined) {
+      store.setQuery(api.goals.list, {}, list.map((g) => (g.id === id ? { ...g, archived } : g)));
+    }
+  });
+  return (id: string, archived: boolean) => withMessage(set({ id, archived }));
+}
+
+/** Deletes a goal and its entries. */
+export function useRemoveGoal() {
+  const remove = useMutation(api.goals.remove);
+  return (id: string) => withMessage(remove({ id }));
+}
+
+/** Notes money put aside for a goal (above zero) or taken out (below). */
+export function useAddContribution() {
+  const add = useMutation(api.goals.addContribution);
+  return (goalId: string, amountMinor: number, date: string, note?: string) =>
+    withMessage(add({ goalId, amountMinor, date, ...(note && { note }) }));
+}
+
+/** Deletes one of a goal's entries. */
+export function useRemoveContribution() {
+  const remove = useMutation(api.goals.removeContribution);
   return (id: string) => withMessage(remove({ id }));
 }
 

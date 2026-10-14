@@ -192,7 +192,7 @@ export function AccountsManager() {
           makes a Main account for its currency.
         </p>
       ) : (
-        <ul className="mt-6 grid gap-4 lg:grid-cols-2">{open.map(row)}</ul>
+        <ul className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">{open.map(row)}</ul>
       )}
 
       {archived.length > 0 && (
@@ -201,7 +201,7 @@ export function AccountsManager() {
           <p className="mt-1 text-sm text-muted">
             Hidden from your choices and your total; their history stays.
           </p>
-          <ul className="mt-4 grid gap-4 lg:grid-cols-2">{archived.map(row)}</ul>
+          <ul className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">{archived.map(row)}</ul>
         </section>
       )}
 

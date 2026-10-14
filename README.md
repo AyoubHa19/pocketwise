@@ -41,6 +41,13 @@ see it wherever you sign in.
   dashboard too. Only expenses in the budget's currency count: income,
   refunds included, never lowers what a budget has used, and transfers
   never count (the rules are in `src/lib/budgets.ts`).
+- Save toward goals on the Goals page: a target, an optional date, and
+  what's saved, counted either from the goal's own entries (money noted
+  as put aside or taken out, with a history) or from an account's
+  balance. It shows what's left and how much to put aside each month to
+  reach it on time, or says why it can't (no date, or the date passed).
+  Neither way is income or spending, so nothing counts twice
+  (`src/lib/goals.ts`).
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income

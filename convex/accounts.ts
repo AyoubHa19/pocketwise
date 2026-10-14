@@ -140,6 +140,12 @@ export const remove = mutation({
     if (used) {
       throw new ConvexError(`${account.name} has transactions, so it can only be archived.`);
     }
+    // A goal that followed it goes back to counting its own entries.
+    const goals = await ctx.db
+      .query("goals")
+      .withIndex("by_owner_account", (q) => q.eq("ownerId", ownerId).eq("accountId", account._id))
+      .collect();
+    for (const goal of goals) await ctx.db.patch(goal._id, { accountId: undefined, updatedAt: Date.now() });
     await ctx.db.delete(account._id);
   },
 });

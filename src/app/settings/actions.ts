@@ -44,8 +44,10 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
       const { more } = await fetchMutation(api.account.deleteMyData, {}, { token });
       if (!more) break;
     }
-    const [left, budgets, accounts, categories, settings] = await Promise.all([
+    const [left, goals, entries, budgets, accounts, categories, settings] = await Promise.all([
       fetchQuery(api.transactions.list, {}, { token }),
+      fetchQuery(api.goals.list, {}, { token }),
+      fetchQuery(api.goals.contributions, {}, { token }),
       fetchQuery(api.budgets.list, {}, { token }),
       fetchQuery(api.accounts.list, {}, { token }),
       fetchQuery(api.categories.list, {}, { token }),
@@ -53,6 +55,8 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
     ]);
     if (
       left.length > 0 ||
+      goals.length > 0 ||
+      entries.length > 0 ||
       budgets.length > 0 ||
       accounts.length > 0 ||
       categories.length > 0 ||
