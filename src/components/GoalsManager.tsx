@@ -397,6 +397,7 @@ export function GoalsManager() {
         </section>
       )}
 
+      <h2 className="sr-only">Your goals</h2>
       {active.length === 0 && open?.kind !== "new" ? (
         <p className="mt-6 rounded-card border border-dashed border-line-strong px-4 py-8 text-center text-sm text-muted">
           No goals yet. Add one to see how close you are and how much to

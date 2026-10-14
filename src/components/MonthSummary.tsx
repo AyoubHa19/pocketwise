@@ -31,6 +31,8 @@ export function MonthSummary({ totals }: Props) {
 
   return (
     <div className={`${cardClass} p-5 sm:p-6`}>
+      {/* Two lists, so each label and value sits in a div right inside its
+          <dl>, as screen readers expect. */}
       <dl className="@container">
         {/* @container makes this box the one that 100cqi measures. */}
         <div className="@container">
@@ -50,11 +52,13 @@ export function MonthSummary({ totals }: Props) {
             <AnimatedNumber text={balance} value={main.balanceMinor} />
           </dd>
         </div>
+      </dl>
 
-        {/* Side by side once the card is at least 18rem wide inside;
-            stacked on the smallest phones, where half a card is too narrow
-            for a long amount. */}
-        <div className="mt-5 grid gap-4 border-t border-line pt-4 @2xs:grid-cols-2">
+      {/* Side by side once the card is at least 18rem wide inside;
+          stacked on the smallest phones, where half a card is too narrow
+          for a long amount. */}
+      <div className="@container">
+        <dl className="mt-5 grid gap-4 border-t border-line pt-4 @2xs:grid-cols-2">
           <div className="min-w-0 @container">
             <dt className="text-sm text-muted">Income</dt>
             <dd
@@ -73,8 +77,8 @@ export function MonthSummary({ totals }: Props) {
               <AnimatedNumber text={spending} value={main.spendingMinor} />
             </dd>
           </div>
-        </div>
-      </dl>
+        </dl>
+      </div>
 
       {/* With no income yet, what's "left" is just minus the spending,
           which alarms people who haven't entered their pay. Say why. */}

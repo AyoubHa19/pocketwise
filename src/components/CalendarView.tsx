@@ -226,7 +226,9 @@ export function CalendarView() {
           </table>
         </section>
 
-        <section aria-labelledby="day-heading" className="lg:sticky lg:top-6">
+        {/* Named apart from the day's own list inside it, which has the
+            same date as its heading. */}
+        <section aria-label={`Selected day: ${formatDay(selected, today, dateOrder)}`} className="lg:sticky lg:top-6">
           <h2 id="day-heading" ref={detailsRef} tabIndex={-1} className="text-lg font-semibold">
             {formatDay(selected, today, dateOrder)}
           </h2>

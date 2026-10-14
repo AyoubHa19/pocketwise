@@ -61,12 +61,14 @@ function sniffType(bytes: Uint8Array): (typeof RECEIPT_TYPES)[number] | null {
 export const scan = action({
   args: { storageId: v.id("_storage") },
   handler: async (ctx, { storageId }): Promise<ScanResult> => {
+    // Checked before anything else, so someone who isn't signed in can't
+    // read or delete a file, even with its id.
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity === null) throw new ConvexError("You need to be signed in.");
     try {
-      const identity = await ctx.auth.getUserIdentity();
-      if (identity === null) throw new ConvexError("You need to be signed in.");
       return { ok: true, reading: await read(ctx, storageId, identity.tokenIdentifier) };
     } catch (error) {
-      if (error instanceof ConvexError && typeof error.data === "string" && error.data !== "You need to be signed in.") {
+      if (error instanceof ConvexError && typeof error.data === "string") {
         return { ok: false, message: error.data };
       }
       throw error;

@@ -294,7 +294,7 @@ export function ReportsView() {
             Month by month
           </h2>
           {/* Focusable, so a keyboard can scroll it sideways on a phone. */}
-          <div tabIndex={0} role="region" aria-labelledby="months-heading" className={`${cardClass} mt-3 overflow-x-auto`}>
+          <div tabIndex={0} role="region" aria-label="Month by month table" className={`${cardClass} mt-3 overflow-x-auto`}>
             <table className="w-full min-w-[22rem] text-sm tabular-nums">
               <thead>
                 <tr className="text-left text-muted">
@@ -338,7 +338,7 @@ export function ReportsView() {
         {categoryRows.length === 0 ? (
           <p className="mt-2 text-sm text-muted">No spending in {currency} in this period or the one before.</p>
         ) : (
-          <div tabIndex={0} role="region" aria-labelledby="categories-heading-r" className={`${cardClass} mt-3 overflow-x-auto`}>
+          <div tabIndex={0} role="region" aria-label="Spending by category table" className={`${cardClass} mt-3 overflow-x-auto`}>
             <table className="w-full min-w-[26rem] text-sm tabular-nums">
               <thead>
                 <tr className="text-left text-muted">

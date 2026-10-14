@@ -186,6 +186,7 @@ export function AccountsManager() {
         </section>
       )}
 
+      <h2 className="sr-only">Your accounts</h2>
       {open.length === 0 && editing !== "new" ? (
         <p className="mt-6 text-sm text-muted">
           No accounts yet. Add one, or just add a transaction: Pocketwise

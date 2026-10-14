@@ -1264,10 +1264,11 @@ describe("receipt scanning", () => {
     }
   });
 
-  it("needs a sign-in to scan", async () => {
+  it("needs a sign-in to scan, and then leaves the file alone", async () => {
     const { t } = setup();
     const storageId = await t.run((ctx) => ctx.storage.store(new Blob([new Uint8Array([0xff, 0xd8, 0xff])])));
     await expect(t.action(api.receiptsNode.scan, { storageId })).rejects.toThrow("You need to be signed in.");
+    expect(await t.run(async (ctx) => (await ctx.storage.get(storageId)) !== null)).toBe(true);
   });
 });
 
