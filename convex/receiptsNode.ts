@@ -8,9 +8,11 @@ import {
   readingSchema,
   RECEIPT_TYPES,
   type ReceiptReading,
+  type ScanResult,
 } from "../src/lib/receipts";
 import { api, internal } from "./_generated/api";
-import { action } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { action, type ActionCtx } from "./_generated/server";
 
 // Reads a receipt image with Claude, on the server only: the API key
 // (ANTHROPIC_API_KEY, a Convex environment variable) never reaches the
@@ -51,100 +53,111 @@ function sniffType(bytes: Uint8Array): (typeof RECEIPT_TYPES)[number] | null {
 
 /**
  * Reads the uploaded receipt image `storageId` and returns what's on it,
- * for the user to review. Refuses when scanning isn't set up, when the
- * image isn't a usable picture, or past the daily limit.
+ * for the user to review, or why it couldn't: scanning not set up, an
+ * unusable picture, the daily limit. Those come back as a reply, not an
+ * error: Convex logs every thrown error in the browser's console, which
+ * would make an expected "not set up yet" look like a crash.
  */
 export const scan = action({
   args: { storageId: v.id("_storage") },
-  handler: async (ctx, { storageId }): Promise<ReceiptReading> => {
+  handler: async (ctx, { storageId }): Promise<ScanResult> => {
     try {
       const identity = await ctx.auth.getUserIdentity();
       if (identity === null) throw new ConvexError("You need to be signed in.");
-
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) {
-        throw new ConvexError("Receipt scanning isn't set up yet. You can still add the transaction by hand.");
+      return { ok: true, reading: await read(ctx, storageId, identity.tokenIdentifier) };
+    } catch (error) {
+      if (error instanceof ConvexError && typeof error.data === "string" && error.data !== "You need to be signed in.") {
+        return { ok: false, message: error.data };
       }
-
-      const blob = await ctx.storage.get(storageId);
-      if (blob === null) throw new ConvexError("The image didn't arrive. Try again.");
-      if (blob.size > MAX_RECEIPT_BYTES) throw new ConvexError("That image is too large. Try a smaller photo.");
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      const mediaType = sniffType(bytes);
-      if (mediaType === null) throw new ConvexError("That file isn't a photo Pocketwise can read (JPEG, PNG, WebP or GIF).");
-
-      // Counted before the call, so a refused scan never costs anything.
-      await ctx.runMutation(internal.receipts.countScan, {
-        ownerId: identity.tokenIdentifier,
-        day: new Date().toISOString().slice(0, 10),
-      });
-
-      // The user's own spending categories, for the model to choose from.
-      const categories = (await ctx.runQuery(api.categories.list, {}))
-        .filter((c) => c.kind === "expense" && !c.archived)
-        .map((c) => c.name);
-
-      const client = new Anthropic({ apiKey });
-      let response;
-      try {
-        response = await client.beta.messages.create({
-          model: MODEL,
-          max_tokens: 16000,
-          betas: ["server-side-fallback-2026-07-01"],
-          fallbacks: "default",
-          system: INSTRUCTIONS,
-          output_config: {
-            effort: "low",
-            format: { type: "json_schema", schema: readingSchema(categories) },
-          },
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image",
-                  source: { type: "base64", media_type: mediaType, data: Buffer.from(bytes).toString("base64") },
-                },
-                { type: "text", text: `Read this receipt. The categories to choose from: ${categories.join(", ")}.` },
-              ],
-            },
-          ],
-        });
-      } catch (error) {
-        // The SDK's typed errors, most specific first; the details are
-        // logged for us, the user gets a plain sentence.
-        console.error("Receipt scan failed", error);
-        if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
-          throw new ConvexError("Receipt scanning isn't set up correctly (the API key was refused).");
-        }
-        if (error instanceof Anthropic.RateLimitError) {
-          throw new ConvexError("Receipt scanning is busy right now. Try again in a minute.");
-        }
-        if (error instanceof Anthropic.BadRequestError) {
-          throw new ConvexError("That image couldn't be read. Try a clearer photo.");
-        }
-        throw new ConvexError("Receipt scanning isn't available right now. Try again, or add it by hand.");
-      }
-
-      if (response.stop_reason === "refusal") {
-        throw new ConvexError("This image couldn't be read. Add the transaction by hand.");
-      }
-      if (response.stop_reason === "max_tokens") {
-        throw new ConvexError("The receipt was too long to read. Add the transaction by hand.");
-      }
-      const textBlock = response.content.find((block) => block.type === "text");
-      let parsed: unknown = null;
-      try {
-        parsed = textBlock && textBlock.type === "text" ? JSON.parse(textBlock.text) : null;
-      } catch {
-        parsed = null;
-      }
-      const reading = checkReading(parsed);
-      if (reading === null) throw new ConvexError("The receipt couldn't be read. Try a clearer photo.");
-      return reading;
+      throw error;
     } finally {
       // Never keep the photo: it's read once, then gone.
       await ctx.storage.delete(storageId).catch(() => {});
     }
   },
 });
+
+/** The reading itself; every expected refusal is a ConvexError with a sentence for the user. */
+async function read(ctx: ActionCtx, storageId: Id<"_storage">, ownerId: string): Promise<ReceiptReading> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new ConvexError("Receipt scanning isn't set up yet. You can still add the transaction by hand.");
+  }
+
+  const blob = await ctx.storage.get(storageId);
+  if (blob === null) throw new ConvexError("The image didn't arrive. Try again.");
+  if (blob.size > MAX_RECEIPT_BYTES) throw new ConvexError("That image is too large. Try a smaller photo.");
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const mediaType = sniffType(bytes);
+  if (mediaType === null) throw new ConvexError("That file isn't a photo Pocketwise can read (JPEG, PNG, WebP or GIF).");
+
+  // Counted before the call, so a refused scan never costs anything.
+  await ctx.runMutation(internal.receipts.countScan, {
+    ownerId,
+    day: new Date().toISOString().slice(0, 10),
+  });
+
+  // The user's own spending categories, for the model to choose from.
+  const categories = (await ctx.runQuery(api.categories.list, {}))
+    .filter((c) => c.kind === "expense" && !c.archived)
+    .map((c) => c.name);
+
+  const client = new Anthropic({ apiKey });
+  let response;
+  try {
+    response = await client.beta.messages.create({
+      model: MODEL,
+      max_tokens: 16000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      system: INSTRUCTIONS,
+      output_config: {
+        effort: "low",
+        format: { type: "json_schema", schema: readingSchema(categories) },
+      },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: mediaType, data: Buffer.from(bytes).toString("base64") },
+            },
+            { type: "text", text: `Read this receipt. The categories to choose from: ${categories.join(", ")}.` },
+          ],
+        },
+      ],
+    });
+  } catch (error) {
+    // The SDK's typed errors, most specific first; the details are
+    // logged for us, the user gets a plain sentence.
+    console.error("Receipt scan failed", error);
+    if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
+      throw new ConvexError("Receipt scanning isn't set up correctly (the API key was refused).");
+    }
+    if (error instanceof Anthropic.RateLimitError) {
+      throw new ConvexError("Receipt scanning is busy right now. Try again in a minute.");
+    }
+    if (error instanceof Anthropic.BadRequestError) {
+      throw new ConvexError("That image couldn't be read. Try a clearer photo.");
+    }
+    throw new ConvexError("Receipt scanning isn't available right now. Try again, or add it by hand.");
+  }
+
+  if (response.stop_reason === "refusal") {
+    throw new ConvexError("This image couldn't be read. Add the transaction by hand.");
+  }
+  if (response.stop_reason === "max_tokens") {
+    throw new ConvexError("The receipt was too long to read. Add the transaction by hand.");
+  }
+  const textBlock = response.content.find((block) => block.type === "text");
+  let parsed: unknown = null;
+  try {
+    parsed = textBlock && textBlock.type === "text" ? JSON.parse(textBlock.text) : null;
+  } catch {
+    parsed = null;
+  }
+  const reading = checkReading(parsed);
+  if (reading === null) throw new ConvexError("The receipt couldn't be read. Try a clearer photo.");
+  return reading;
+}

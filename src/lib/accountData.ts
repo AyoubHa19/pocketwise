@@ -437,7 +437,8 @@ export function useScanReceipt() {
       if (!upload.ok) return { ok: false, message: "The photo couldn't be uploaded. Check your connection and try again." };
       // The upload hands back the stored file's id; the server checks it.
       const { storageId } = (await upload.json()) as { storageId: Id<"_storage"> };
-      return { ok: true, reading: await scan({ storageId }) };
+      // The server's answer: the reading, or why it couldn't, in words.
+      return await scan({ storageId });
     } catch (error) {
       if (error instanceof ConvexError && typeof error.data === "string") return { ok: false, message: error.data };
       return { ok: false, message: "The receipt couldn't be read just now. Check your connection and try again." };

@@ -21,6 +21,12 @@ export const RECEIPT_MAX_SIDE = 1568;
 /** Scans one user can run per day, so a mistake or misuse can't run up costs. */
 export const DAILY_SCAN_LIMIT = 30;
 
+/**
+ * What a scan comes back with: the reading, or why there's none, in words
+ * for the user (not set up yet, the daily limit, an unreadable image…).
+ */
+export type ScanResult = { ok: true; reading: ReceiptReading } | { ok: false; message: string };
+
 /** What the model is asked to return: every field, empty text when unreadable. */
 export type ReceiptReading = {
   isReceipt: boolean;

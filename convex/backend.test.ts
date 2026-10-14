@@ -1231,13 +1231,16 @@ describe("receipt scanning", () => {
     expect(await count("test|sarah", "2026-10-15")).toBe(1);
   });
 
-  it("says it isn't set up without an API key, and deletes the image anyway", async () => {
+  it("answers that it isn't set up without an API key (a reply, not an error), and deletes the image anyway", async () => {
     const { t, sarah } = setup();
     const previous = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
     try {
       const storageId = await t.run((ctx) => ctx.storage.store(new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], { type: "image/jpeg" })));
-      await expect(sarah.action(api.receiptsNode.scan, { storageId })).rejects.toThrow("Receipt scanning isn't set up yet");
+      expect(await sarah.action(api.receiptsNode.scan, { storageId })).toEqual({
+        ok: false,
+        message: "Receipt scanning isn't set up yet. You can still add the transaction by hand.",
+      });
       expect(await t.run((ctx) => ctx.storage.get(storageId))).toBeNull();
     } finally {
       if (previous !== undefined) process.env.ANTHROPIC_API_KEY = previous;
@@ -1250,7 +1253,10 @@ describe("receipt scanning", () => {
     process.env.ANTHROPIC_API_KEY = "test-key-never-used";
     try {
       const storageId = await t.run((ctx) => ctx.storage.store(new Blob(["%PDF-1.7 not a photo"], { type: "image/jpeg" })));
-      await expect(sarah.action(api.receiptsNode.scan, { storageId })).rejects.toThrow("isn't a photo Pocketwise can read");
+      expect(await sarah.action(api.receiptsNode.scan, { storageId })).toMatchObject({
+        ok: false,
+        message: expect.stringContaining("isn't a photo Pocketwise can read"),
+      });
       expect(await t.run((ctx) => ctx.db.query("receiptScans").collect())).toEqual([]);
     } finally {
       if (previous === undefined) delete process.env.ANTHROPIC_API_KEY;
