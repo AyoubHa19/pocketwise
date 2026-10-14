@@ -5,6 +5,7 @@
 import * as m from "motion/react-m";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { BudgetsCard } from "@/components/BudgetsCard";
 import { TotalBalanceCard } from "@/components/TotalBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
@@ -40,6 +41,7 @@ import {
   useAccountSettings,
   useAccountStatus,
   useAccountTransactions,
+  useBudgets,
 } from "@/lib/accountData";
 import {
   monthlyTotals,
@@ -59,6 +61,7 @@ export function TransactionTracker() {
   const settings = useAccountSettings();
   const accounts = useAccounts();
   const categories = useCategories();
+  const budgets = useBudgets();
   const preferences = useAccountPreferences();
   const transactions = useAccountTransactions();
   // What this browser saved before accounts, if it hasn't been moved yet.
@@ -121,6 +124,7 @@ export function TransactionTracker() {
     preferences === null ||
     accounts === null ||
     categories === null ||
+    budgets === null ||
     localOffer === undefined
   ) {
     return <DashboardSkeleton />;
@@ -291,6 +295,13 @@ export function TransactionTracker() {
           viewport={{ once: true, amount: 0.15 }}
           className={`space-y-4 ${dashboardChartsArea}`}
         >
+          <BudgetsCard
+            budgets={budgets}
+            categories={categories}
+            transactions={transactions}
+            month={month}
+            monthName={monthName}
+          />
           <SpendingByCategory
             categories={spendingByCategory(monthTransactions, settings.currency)}
             currency={settings.currency}

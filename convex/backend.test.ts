@@ -859,6 +859,81 @@ describe("descriptions and tags", () => {
   });
 });
 
+describe("budgets", () => {
+  async function food(user: ReturnType<typeof setup>["sarah"]) {
+    await user.mutation(api.categories.ensureCategories, {});
+    const list = await user.query(api.categories.list, {});
+    return {
+      food: list.find((c) => c.name === "Food")!.id,
+      salary: list.find((c) => c.name === "Salary")!.id,
+    };
+  }
+  const budget = (over: Record<string, unknown> = {}) => ({
+    categoryId: null as string | null,
+    limitMinor: 150000,
+    currency: "EUR",
+    warnPercent: 80,
+    ...over,
+  });
+
+  it("are added, listed, changed and deleted", async () => {
+    const { sarah } = setup();
+    const { food: foodId } = await food(sarah);
+    const id = await sarah.mutation(api.budgets.create, budget({ categoryId: foodId, name: "  Eating " }));
+    expect(await sarah.query(api.budgets.list, {})).toEqual([
+      { id, name: "Eating", categoryId: foodId, limit: { amountMinor: 150000, currency: "EUR" }, warnPercent: 80 },
+    ]);
+    // Changing it can also remove the name and the category.
+    await sarah.mutation(api.budgets.update, { id, ...budget({ limitMinor: 90000, warnPercent: 50 }) });
+    expect(await sarah.query(api.budgets.list, {})).toEqual([
+      { id, categoryId: null, limit: { amountMinor: 90000, currency: "EUR" }, warnPercent: 50 },
+    ]);
+    await sarah.mutation(api.budgets.remove, { id });
+    expect(await sarah.query(api.budgets.list, {})).toEqual([]);
+  });
+
+  it("refuse bad values, an income category, and a second budget for the same thing", async () => {
+    const { sarah } = setup();
+    const { food: foodId, salary } = await food(sarah);
+    const create = (over: Record<string, unknown>) => sarah.mutation(api.budgets.create, budget(over));
+    await expect(create({ limitMinor: 0 })).rejects.toThrow("greater than zero");
+    await expect(create({ limitMinor: 12.5 })).rejects.toThrow("greater than zero");
+    await expect(create({ warnPercent: 0 })).rejects.toThrow("warning level");
+    await expect(create({ currency: "XYZ" })).rejects.toThrow("isn't a known currency");
+    await expect(create({ categoryId: salary })).rejects.toThrow("is for income");
+    await expect(create({ categoryId: "nonsense" })).rejects.toThrow("isn't one of yours");
+    await create({ categoryId: foodId });
+    await expect(create({ categoryId: foodId })).rejects.toThrow("already a budget for this category in EUR");
+    // The same category in another currency is a different budget.
+    await create({ categoryId: foodId, currency: "MAD" });
+    expect(await sarah.query(api.budgets.list, {})).toHaveLength(2);
+  });
+
+  it("can't be seen, changed or deleted by someone else, nor use their categories", async () => {
+    const { sarah, lee } = setup();
+    const { food: foodId } = await food(sarah);
+    const id = await sarah.mutation(api.budgets.create, budget());
+    expect(await lee.query(api.budgets.list, {})).toEqual([]);
+    await expect(lee.mutation(api.budgets.update, { id, ...budget() })).rejects.toThrow("isn't one of yours");
+    await expect(lee.mutation(api.budgets.remove, { id })).rejects.toThrow("isn't one of yours");
+    await expect(lee.mutation(api.budgets.create, budget({ categoryId: foodId }))).rejects.toThrow("isn't one of yours");
+    expect(await sarah.query(api.budgets.list, {})).toHaveLength(1);
+  });
+
+  it("go when the user's data is deleted", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.budgets.create, budget());
+    await sarah.mutation(api.account.deleteMyData, {});
+    expect(await sarah.query(api.budgets.list, {})).toEqual([]);
+  });
+
+  it("need a sign-in", async () => {
+    const { t } = setup();
+    await expect(t.query(api.budgets.list, {})).rejects.toThrow("You need to be signed in.");
+    await expect(t.mutation(api.budgets.create, budget())).rejects.toThrow("You need to be signed in.");
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);

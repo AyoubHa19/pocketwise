@@ -38,6 +38,7 @@
   --danger: light-dark(#b42318, #f97066); /* Errors and Delete */
   --danger-surface: light-dark(#fef3f2, #2a1215); /* Background of error boxes */
   --danger-line: light-dark(#fecdca, #5c1d22);
+  --warning: light-dark(#b45309, #fbbf24); /* A budget close to its limit */
 
   /* Shadows barely show on dark backgrounds, so there they're transparent
      and the card edge does the work. */
@@ -62,6 +63,7 @@
   --color-danger: var(--danger);
   --color-danger-surface: var(--danger-surface);
   --color-danger-line: var(--danger-line);
+  --color-warning: var(--warning);
 
   --shadow-card: var(--shadow-card);
 

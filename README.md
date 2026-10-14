@@ -35,6 +35,12 @@ see it wherever you sign in.
   largest or smallest first; with the count, income and spending of what
   matches, 50 at a time. The filters live in the address bar, so a reload
   keeps them (`src/lib/transactionFilters.ts`).
+- Set monthly budgets, for all spending or one category, on the Budgets
+  page: what's spent, what's left (or over, in full), and a warning from a
+  level you choose (80% to start with); the most urgent show on the
+  dashboard too. Only expenses in the budget's currency count: income,
+  refunds included, never lowers what a budget has used, and transfers
+  never count (the rules are in `src/lib/budgets.ts`).
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income

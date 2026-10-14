@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   BriefcaseBusiness,
   BusFront,
+  ChartPie,
   Clapperboard,
   CreditCard,
   Ellipsis,
@@ -25,8 +26,8 @@ import { sameName } from "@/lib/categories";
 import { TRANSFER_CATEGORY } from "@/lib/transactions";
 
 // The default categories (src/lib/categories.ts) by name, plus "Rent" from
-// the first, fixed list. A category the user made, or renamed, gets the
-// general tag icon.
+// the first, fixed list, and "All spending" for budgets. A category the
+// user made, or renamed, gets the general tag icon.
 const icons: [string, LucideIcon][] = [
   ["Housing", House],
   ["Rent", House],
@@ -49,6 +50,8 @@ const icons: [string, LucideIcon][] = [
   ["Gifts", Gift],
   ["Other Income", Ellipsis],
   [TRANSFER_CATEGORY, ArrowLeftRight],
+  // Not a category: the budget for all spending.
+  ["All spending", ChartPie],
 ];
 
 /**

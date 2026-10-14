@@ -1,6 +1,7 @@
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
+import type { Budget } from "@/lib/budgets";
 import type { Category, CategoryKind } from "@/lib/categories";
 import type { Preferences } from "@/lib/preferences";
 import type { Settings } from "@/lib/settingsStore";
@@ -206,6 +207,62 @@ export function useSetCategoryArchived() {
     }
   });
   return (id: string, archived: boolean) => withMessage(set({ id, archived }));
+}
+
+/** The user's budgets, oldest first, or null while they load. */
+export function useBudgets(): Budget[] | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.budgets.list, isAuthenticated ? {} : "skip") ?? null;
+}
+
+/** The fields the budget functions take: named, since Convex refuses extras. */
+function budgetArgs({ name, categoryId, limit, warnPercent }: Omit<Budget, "id">) {
+  return {
+    ...(name !== undefined && { name }),
+    categoryId,
+    limitMinor: limit.amountMinor,
+    currency: limit.currency,
+    warnPercent,
+  };
+}
+
+/** Adds a budget. */
+export function useCreateBudget() {
+  const create = useMutation(api.budgets.create);
+  return (values: Omit<Budget, "id">) => withMessage(create(budgetArgs(values)));
+}
+
+/** Changes a budget. */
+export function useUpdateBudget() {
+  const update = useMutation(api.budgets.update).withOptimisticUpdate((store, change) => {
+    const list = store.getQuery(api.budgets.list, {});
+    if (list === undefined) return;
+    store.setQuery(
+      api.budgets.list,
+      {},
+      list.map((b) =>
+        b.id === change.id
+          ? {
+              id: b.id,
+              ...(change.name?.trim() && { name: change.name.trim() }),
+              categoryId: change.categoryId,
+              limit: { amountMinor: change.limitMinor, currency: change.currency },
+              warnPercent: change.warnPercent,
+            }
+          : b,
+      ),
+    );
+  });
+  return (id: string, values: Omit<Budget, "id">) => withMessage(update({ id, ...budgetArgs(values) }));
+}
+
+/** Deletes a budget. */
+export function useRemoveBudget() {
+  const remove = useMutation(api.budgets.remove).withOptimisticUpdate((store, { id }) => {
+    const list = store.getQuery(api.budgets.list, {});
+    if (list !== undefined) store.setQuery(api.budgets.list, {}, list.filter((b) => b.id !== id));
+  });
+  return (id: string) => withMessage(remove({ id }));
 }
 
 /** The account's display preferences, or null while they load. */

@@ -10,6 +10,7 @@
 
 import type * as account from "../account.js";
 import type * as accounts from "../accounts.js";
+import type * as budgets from "../budgets.js";
 import type * as categories from "../categories.js";
 import type * as ownership from "../ownership.js";
 import type * as preferences from "../preferences.js";
@@ -27,6 +28,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   account: typeof account;
   accounts: typeof accounts;
+  budgets: typeof budgets;
   categories: typeof categories;
   ownership: typeof ownership;
   preferences: typeof preferences;

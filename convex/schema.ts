@@ -43,6 +43,18 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
+  // Monthly spending limits (src/lib/budgets.ts has the rules). At most one
+  // per category, or for all spending (no categoryId), in each currency.
+  budgets: defineTable({
+    ownerId: v.string(),
+    name: v.optional(v.string()),
+    categoryId: v.optional(v.id("categories")),
+    limitMinor: v.number(),
+    currency: v.string(),
+    warnPercent: v.number(),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
   // The user's money accounts (src/lib/accounts.ts).
   accounts: defineTable({
     ownerId: v.string(),
