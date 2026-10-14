@@ -3,6 +3,7 @@
 // Motion's own entry point for the light `m` components, which keeps the
 // bundle smaller than importing them from "motion/react".
 import * as m from "motion/react-m";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { TotalBalanceCard } from "@/components/TotalBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
@@ -26,10 +27,10 @@ import { MonthSummary } from "@/components/MonthSummary";
 import { Sheet } from "@/components/Sheet";
 import { SpendingByCategory } from "@/components/SpendingByCategory";
 import { TransactionForm } from "@/components/TransactionForm";
-import { Toast, type Notice } from "@/components/Toast";
+import { Toast } from "@/components/Toast";
+import { useTransactionEditor } from "@/components/useTransactionEditor";
 import { TransactionList } from "@/components/TransactionList";
 import { formatMonth, monthOf } from "@/lib/dates";
-import { formatMoney } from "@/lib/money";
 import { fadeRise, monthSlide } from "@/lib/motion";
 import { LocalDataImport, useLocalDataOffer } from "@/components/LocalDataImport";
 import {
@@ -39,8 +40,6 @@ import {
   useAccountSettings,
   useAccountStatus,
   useAccountTransactions,
-  useRemoveTransaction,
-  useSaveTransaction,
 } from "@/lib/accountData";
 import {
   monthlyTotals,
@@ -48,23 +47,11 @@ import {
   totalsByCurrency,
   transactionsInMonth,
 } from "@/lib/summary";
-import { signedAmount, type Transaction } from "@/lib/transactions";
 import { useToday } from "@/lib/useToday";
 
 // The dashboard's entrance plays once per visit to the site, not again each
 // time you come back from Settings, which would get tiresome.
 let entrancePlayed = false;
-
-/**
- * What the add/edit sheet shows: adding, or editing one transaction. It
- * keeps that after `open` turns false, so the sheet can slide out still
- * showing what it showed, not an empty or different form. `session` goes
- * up with every opening and gives the form a fresh start each time.
- */
-type SheetState = { open: boolean; session: number } & (
-  | { kind: "add" }
-  | { kind: "edit"; id: string }
-);
 
 export function TransactionTracker() {
   // From the signed-in user's account.
@@ -74,8 +61,6 @@ export function TransactionTracker() {
   const categories = useCategories();
   const preferences = useAccountPreferences();
   const transactions = useAccountTransactions();
-  const saveTransaction = useSaveTransaction();
-  const deleteTransaction = useRemoveTransaction();
   // What this browser saved before accounts, if it hasn't been moved yet.
   const localOffer = useLocalDataOffer();
   const today = useToday();
@@ -84,19 +69,22 @@ export function TransactionTracker() {
   // Which way the last month change went: 1 later, -1 earlier, 0 not yet.
   // The new month's content slides in from that side.
   const [monthDirection, setMonthDirection] = useState(0);
-  const [sheet, setSheet] = useState<SheetState>({
-    kind: "add",
-    open: false,
-    session: 0,
-  });
-  const [saveFailed, setSaveFailed] = useState(false);
-  const [notice, setNotice] = useState<Notice | null>(null);
-  // A confirmation stays for 4 seconds; a newer one restarts the clock.
-  useEffect(() => {
-    if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), 4000);
-    return () => clearTimeout(timer);
-  }, [notice]);
+  // Show the month a saved transaction is in, or it would seem to vanish
+  // when its date is in a different month from the one on screen.
+  const {
+    sheet,
+    editing,
+    hasContent,
+    sheetOpen,
+    saveFailed,
+    notice,
+    openAdd,
+    openEdit,
+    closeSheet,
+    report,
+    save,
+    remove,
+  } = useTransactionEditor(transactions, (transaction) => changeMonth(monthOf(transaction.date)));
   // Where focus goes after deleting, when the row that opened the sheet is
   // gone: the list's heading, right where the row was.
   const listHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -113,72 +101,6 @@ export function TransactionTracker() {
     // "YYYY-MM" months compare correctly as text.
     if (next !== month) setMonthDirection(next > month ? 1 : -1);
     setPickedMonth(next);
-  }
-
-  // Looked up by id, so if the transaction disappears while its sheet is
-  // open (say, deleted in another tab), the sheet simply closes.
-  const editing =
-    sheet.kind === "edit"
-      ? transactions?.find((t) => t.id === sheet.id)
-      : undefined;
-  const hasContent = sheet.kind === "add" || editing !== undefined;
-  const sheetOpen = sheet.open && hasContent;
-
-  function openAdd() {
-    setSheet((previous) => ({
-      kind: "add",
-      open: true,
-      session: previous.session + 1,
-    }));
-  }
-
-  function openEdit(transaction: Transaction) {
-    setSheet((previous) => ({
-      kind: "edit",
-      id: transaction.id,
-      open: true,
-      session: previous.session + 1,
-    }));
-  }
-
-  function closeSheet() {
-    setSheet((previous) => ({ ...previous, open: false }));
-  }
-
-  // Only once the account really saved: otherwise the warning says so.
-  function report(saved: boolean, text: string) {
-    setSaveFailed(!saved);
-    setNotice(saved ? { id: Date.now(), text } : null);
-  }
-
-  async function save(transaction: Transaction) {
-    const isNew = !transactions?.some((t) => t.id === transaction.id);
-    // The change is on screen straight away; the message waits for the
-    // server to confirm it.
-    closeSheet();
-    // Show the month the transaction is in, or it would seem to vanish when
-    // its date is in a different month from the one on screen.
-    changeMonth(monthOf(transaction.date));
-    // The form names the account (and a transfer's destination); with no
-    // account yet, the server makes the Main account for its currency.
-    const isTransfer = transaction.type === "transfer";
-    report(
-      await saveTransaction(transaction),
-      isNew ? (isTransfer ? "Transfer added" : "Transaction added") : "Changes saved",
-    );
-  }
-
-  async function remove(transaction: Transaction) {
-    const amount = formatMoney(signedAmount(transaction));
-    const what =
-      transaction.type === "transfer" ? "this transfer" : (transaction.description ?? transaction.category);
-    const confirmed = window.confirm(
-      `Delete ${what}, ${amount} on ${transaction.date}? This can't be undone.`,
-    );
-    if (!confirmed) return;
-
-    closeSheet();
-    report(await deleteTransaction(transaction.id), "Transaction deleted");
   }
 
   // Signed in with Clerk, but the server didn't accept it: say so instead
@@ -352,7 +274,10 @@ export function TransactionTracker() {
           </m.div>
 
           <p className="mt-3 text-sm text-muted">
-            Saved in your account, so you see them wherever you sign in.
+            Saved in your account, so you see them wherever you sign in.{" "}
+            <Link href="/transactions" className="font-medium text-foreground underline underline-offset-2">
+              Search all transactions
+            </Link>
           </p>
         </m.section>
 

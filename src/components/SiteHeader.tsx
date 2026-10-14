@@ -1,5 +1,5 @@
 import { Show, UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Settings, Wallet } from "lucide-react";
+import { LayoutDashboard, ListFilter, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { NavLink } from "@/components/NavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -31,6 +31,9 @@ export function SiteHeader() {
             <nav aria-label="Main" className="flex gap-1">
               <NavLink href="/" icon={<LayoutDashboard size={20} />}>
                 Dashboard
+              </NavLink>
+              <NavLink href="/transactions" icon={<ListFilter size={20} />}>
+                Transactions
               </NavLink>
               <NavLink href="/accounts" icon={<Wallet size={20} />}>
                 Accounts

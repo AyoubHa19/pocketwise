@@ -29,6 +29,12 @@ see it wherever you sign in.
   starting balance plus income, minus spending, plus transfers in, minus
   transfers out (`accountBalances` in `src/lib/summary.ts`); transfers are
   never counted as income or spending.
+- Search and filter every transaction on the Transactions page: words
+  in the description, note, category, tags or amount (ignoring case and
+  accents); type, account, category, tag and dates; newest, oldest,
+  largest or smallest first; with the count, income and spending of what
+  matches, 50 at a time. The filters live in the address bar, so a reload
+  keeps them (`src/lib/transactionFilters.ts`).
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income

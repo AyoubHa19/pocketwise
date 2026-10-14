@@ -26,10 +26,17 @@ type Props = {
   accountNames?: Map<string, string>;
   /** Name the account on every row: worth it once there's more than one. */
   showAccounts?: boolean;
+  /**
+   * Grouped by day, newest day first (the default) or oldest first, or
+   * "flat": in the order given, with no day headings, each row saying its
+   * day (for sorting by amount).
+   */
+  order?: "newest" | "oldest" | "flat";
 };
 
 /**
- * The transactions, grouped by day, newest first. Tap a row to edit it.
+ * The transactions, grouped by day, newest first (or as `order` says). Tap
+ * a row to edit it.
  *
  * Rows and days that are added or removed grow in or shrink away, so the
  * rest of the list makes room smoothly. Only those move: what's already
@@ -45,6 +52,7 @@ export function TransactionList({
   onEdit,
   accountNames,
   showAccounts = false,
+  order = "newest",
 }: Props) {
   const reduced = useReducedMotion() ?? false;
   const variants = collapse(reduced);
@@ -57,13 +65,136 @@ export function TransactionList({
     );
   }
 
+  /** One transaction's row; `showDates` adds its day, for the list without day headings. */
+  function row(transaction: Transaction, showDates: boolean) {
+    const amount = formatMoney(signedAmount(transaction));
+    const isTransfer = transaction.type === "transfer";
+    const name = (id?: string) => (id && accountNames?.get(id)) || "Another account";
+    // Where it happened: a transfer's two ends, or the
+    // account, when there's more than one to tell apart.
+    const where = isTransfer
+      ? `${name(transaction.accountId)} → ${name(transaction.toAccountId)}`
+      : showAccounts && transaction.accountId
+        ? name(transaction.accountId)
+        : undefined;
+    // With a description, it's the title ("Supermarket") and
+    // the category moves down with the details.
+    const title = transaction.description ?? transaction.category;
+    const details = [
+      // Without day headings, each row says its day.
+      showDates && formatDay(transaction.date, today, dateOrder),
+      transaction.description && transaction.category,
+      where,
+      transaction.note,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const tags = transaction.tags ?? [];
+    // Spelled out, with commas for pauses, rather than left to
+    // each screen reader to piece together from the row's
+    // text, which some read as "FoodCoffee". It holds the
+    // visible words in order, so voice control ("click Food")
+    // still works.
+    const label = [
+      `Edit ${title}`,
+      showDates && formatDay(transaction.date, today, dateOrder),
+      transaction.description && transaction.category,
+      where?.replace(" → ", " to "),
+      transaction.note,
+      tags.length > 0 && `tags: ${tags.join(", ")}`,
+      amount,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    return (
+      <m.li
+        key={transaction.id}
+        variants={variants}
+        initial="collapsed"
+        animate="open"
+        exit="collapsed"
+        className="overflow-hidden"
+      >
+        {/* The whole row is the button: a big target, and
+            what people expect from a finance app. The focus
+            outline is drawn inside it, because the rounded
+            card clips anything outside. */}
+        <button
+          type="button"
+          aria-label={label}
+          onClick={() => onEdit(transaction)}
+          className={`flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-muted focus-visible:outline-offset-[-3px] ${colorTransition} ${
+            transaction.id === editingId ? "bg-surface-muted" : ""
+          }`}
+        >
+          <CategoryIcon category={transaction.category} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">
+              {title}
+            </span>
+            {details && (
+              <span className="block truncate text-sm text-muted">
+                {details}
+              </span>
+            )}
+            {tags.length > 0 && (
+              // One line, so a row never grows tall on a phone;
+              // tags that don't fit are cut off at the edge (all
+              // of them are in the row's label, and in the form).
+              <span className="mt-1 flex gap-1 overflow-hidden">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="max-w-full shrink-0 truncate rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-muted"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </span>
+            )}
+          </span>
+          <span
+            // Income green; a transfer muted and unsigned, since
+            // it doesn't change what you have overall.
+            className={`shrink-0 font-medium tabular-nums ${
+              transaction.type === "income"
+                ? "text-positive"
+                : isTransfer
+                  ? "text-muted"
+                  : ""
+            }`}
+          >
+            <AnimatedNumber
+              text={amount}
+              value={signedAmount(transaction).amountMinor}
+            />
+          </span>
+        </button>
+      </m.li>
+    );
+  }
+
+  if (order === "flat") {
+    return (
+      <ul className={`${cardClass} divide-y divide-line overflow-hidden`}>
+        <AnimatePresence initial={false}>
+          {transactions.map((transaction) => row(transaction, true))}
+        </AnimatePresence>
+      </ul>
+    );
+  }
+
+  // Oldest first: the days, and each day's transactions, turned round.
+  const days =
+    order === "oldest" ? groupByDay([...transactions].reverse()).reverse() : groupByDay(transactions);
+
   return (
     // Each day keeps its own space below (pb-6) instead of the list putting
     // gaps between days, so a day can shrink to nothing without a gap
     // snapping shut afterwards. -mb-6 takes back the last day's space.
     <div className="-mb-6">
       <AnimatePresence initial={false}>
-        {groupByDay(transactions).map((day) => {
+        {days.map((day) => {
           const headingId = `day-${day.date}`;
           const dayNet = day.netByCurrency
             .map(({ currency, netMinor }) =>
@@ -97,110 +228,7 @@ export function TransactionList({
               {/* overflow-hidden keeps the row highlight inside the corners. */}
               <ul className={`${cardClass} divide-y divide-line overflow-hidden`}>
                 <AnimatePresence initial={false}>
-                  {day.transactions.map((transaction) => {
-                    const amount = formatMoney(signedAmount(transaction));
-                    const isTransfer = transaction.type === "transfer";
-                    const name = (id?: string) => (id && accountNames?.get(id)) || "Another account";
-                    // Where it happened: a transfer's two ends, or the
-                    // account, when there's more than one to tell apart.
-                    const where = isTransfer
-                      ? `${name(transaction.accountId)} → ${name(transaction.toAccountId)}`
-                      : showAccounts && transaction.accountId
-                        ? name(transaction.accountId)
-                        : undefined;
-                    // With a description, it's the title ("Supermarket") and
-                    // the category moves down with the details.
-                    const title = transaction.description ?? transaction.category;
-                    const details = [
-                      transaction.description && transaction.category,
-                      where,
-                      transaction.note,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ");
-                    const tags = transaction.tags ?? [];
-                    // Spelled out, with commas for pauses, rather than left to
-                    // each screen reader to piece together from the row's
-                    // text, which some read as "FoodCoffee". It holds the
-                    // visible words in order, so voice control ("click Food")
-                    // still works.
-                    const label = [
-                      `Edit ${title}`,
-                      transaction.description && transaction.category,
-                      where?.replace(" → ", " to "),
-                      transaction.note,
-                      tags.length > 0 && `tags: ${tags.join(", ")}`,
-                      amount,
-                    ]
-                      .filter(Boolean)
-                      .join(", ");
-                    return (
-                      <m.li
-                        key={transaction.id}
-                        variants={variants}
-                        initial="collapsed"
-                        animate="open"
-                        exit="collapsed"
-                        className="overflow-hidden"
-                      >
-                        {/* The whole row is the button: a big target, and
-                            what people expect from a finance app. The focus
-                            outline is drawn inside it, because the rounded
-                            card clips anything outside. */}
-                        <button
-                          type="button"
-                          aria-label={label}
-                          onClick={() => onEdit(transaction)}
-                          className={`flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-muted focus-visible:outline-offset-[-3px] ${colorTransition} ${
-                            transaction.id === editingId ? "bg-surface-muted" : ""
-                          }`}
-                        >
-                          <CategoryIcon category={transaction.category} />
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate font-medium">
-                              {title}
-                            </span>
-                            {details && (
-                              <span className="block truncate text-sm text-muted">
-                                {details}
-                              </span>
-                            )}
-                            {tags.length > 0 && (
-                              // One line, so a row never grows tall on a phone;
-                              // tags that don't fit are cut off at the edge (all
-                              // of them are in the row's label, and in the form).
-                              <span className="mt-1 flex gap-1 overflow-hidden">
-                                {tags.map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="max-w-full shrink-0 truncate rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-muted"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </span>
-                            )}
-                          </span>
-                          <span
-                            // Income green; a transfer muted and unsigned, since
-                            // it doesn't change what you have overall.
-                            className={`shrink-0 font-medium tabular-nums ${
-                              transaction.type === "income"
-                                ? "text-positive"
-                                : isTransfer
-                                  ? "text-muted"
-                                  : ""
-                            }`}
-                          >
-                            <AnimatedNumber
-                              text={amount}
-                              value={signedAmount(transaction).amountMinor}
-                            />
-                          </span>
-                        </button>
-                      </m.li>
-                    );
-                  })}
+                  {day.transactions.map((transaction) => row(transaction, false))}
                 </AnimatePresence>
               </ul>
             </m.section>
