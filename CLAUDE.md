@@ -88,7 +88,15 @@ Next, in order (PRD 29):
 
 - **When the user adds the API key**: test a real receipt end to end on
   localhost (review card, warnings, duplicates, saving), then production.
-- **27: final review** (security, accessibility, performance, docs).
+- 27: final review: done (2026-10-14). Every Convex function checks the
+  owner; no secrets in client code; `npm audit` clean; security headers
+  in `next.config.ts`; axe-core clean on all 12 pages, light and dark,
+  plus the dialog and the More menu; keyboard focus visible and returned
+  after dialogs. axe can't run in an iframe any more (X-Frame-Options):
+  run it page by page. Known limits are in the README. Speed on the live
+  site: dashboard ready in ~1.9 s on a first visit, ~0.4 s after; about
+  280 KB of app JavaScript (compressed) plus 240 KB for Clerk's dev
+  script; layout shift 0.007.
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
 - Later: a domain of our own, Clerk's production instance (then remove

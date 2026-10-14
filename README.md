@@ -257,6 +257,13 @@ then deletes their Clerk account (which needs the secret key, so it never
 happens in the browser). If a step fails it stops there, so there's never
 data left behind that no one can sign in to.
 
+**Secrets stay on the server, and pages can't be framed.** The only
+values the browser gets are public ones (the Convex address and Clerk's
+publishable key); the Clerk secret key lives in Vercel and the Anthropic
+key in Convex. Every page is sent with security headers
+(`next.config.ts`): no showing it inside another site (clickjacking), no
+guessing file types, and no browser features the app doesn't use.
+
 **Exported notes can't run as spreadsheet formulas.** Text the user typed
 that starts with `=`, `+`, `-` or `@` gets a leading apostrophe in the CSV
 (`src/lib/csv.ts`), which blocks "CSV injection".
@@ -285,6 +292,16 @@ recommend for fingers.
   currencies needs an exchange rate, which comes with currency support.
 - English only. Categories have no custom icon or colour yet: the default
   ones have their own icon, others share a tag icon.
-- The tests cover money, dates, monthly totals, the account balance,
-  transactions, the server's functions and their permissions, and moving
-  browser data. The screens were checked by hand.
+- The tests (`npm test`) cover the money, date and planning rules, and
+  every server function with its permissions. There are no automated
+  end-to-end browser tests: the screens were checked by hand in a
+  browser, from 320px phones to 1920px screens, in light and dark, by
+  keyboard, and with axe-core (no violations on any page at the final
+  review).
+- Receipt scanning has only been tested without a real API key: its
+  checks and refusals are tested, a real receipt hasn't been read yet.
+- No error reporting service: server errors are in the Convex and Vercel
+  logs only.
+- Debts: what's left is an estimate (interest since the balance you
+  entered isn't added), and payoff dates assume the same installment and
+  rate throughout.
