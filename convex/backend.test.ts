@@ -346,9 +346,19 @@ describe("deleting your data", () => {
 });
 
 describe("preferences", () => {
-  it("start as the device's theme and day-first dates", async () => {
+  it("start as the device's theme, day-first dates and weeks from Monday", async () => {
     const { sarah } = setup();
-    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "system", dateOrder: "day-first" });
+    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "system", dateOrder: "day-first", weekStart: "monday" });
+  });
+
+  it("save the day weeks start on", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.preferences.set, { weekStart: "saturday" });
+    expect((await sarah.query(api.preferences.get, {})).weekStart).toBe("saturday");
+    await expect(
+      // @ts-expect-error: not a week start, on purpose
+      sarah.mutation(api.preferences.set, { weekStart: "friday" }),
+    ).rejects.toThrow();
   });
 
   it("accept dates as numbers", async () => {
@@ -362,7 +372,7 @@ describe("preferences", () => {
     await sarah.mutation(api.settings.setCurrency, { currency: "MAD" });
     await sarah.mutation(api.preferences.set, { theme: "dark" });
     await sarah.mutation(api.preferences.set, { dateOrder: "month-first" });
-    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "dark", dateOrder: "month-first" });
+    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "dark", dateOrder: "month-first", weekStart: "monday" });
     expect((await sarah.query(api.settings.get, {})).currency).toBe("MAD");
   });
 

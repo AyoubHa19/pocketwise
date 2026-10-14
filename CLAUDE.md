@@ -48,13 +48,15 @@ Done and live (see `git log` for the details of each):
   occurrence is recorded with "Mark paid" (the transaction form, filled
   in, via `openPrefilled`) or skipped. The recorded transaction's id is
   `recurring-<ruleId>-<date>`, so it can't be recorded twice.
+  21: financial calendar (`/calendar`, in "More"): what happened apart
+  from what's expected (unrecorded recurring items, goal dates), and a
+  "Weeks start on" preference (Monday, Sunday or Saturday).
 
 Next, in order (PRD 29):
 
-- **21: financial calendar** (with a week-start setting): show
-  transactions and upcoming recurring items (`src/lib/recurring.ts`,
-  `occurrences`) day by day.
-- 22: reports and insights. 23: currency conversion.
+- **22: reports and insights** (PRD 21): month and period comparisons,
+  category analysis, cash-flow summaries, useful insights.
+- 23: currency conversion.
 - 24: AI receipt scanning. 25: safe-to-spend and salary day planner.
 - 26: what-if simulator and debt tracking. 27: final review.
 - Later: a domain of our own, Clerk's production instance (then remove

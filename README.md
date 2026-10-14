@@ -55,6 +55,11 @@ see it wherever you sign in.
   it's never counted as paid until then, and can't be recorded twice
   (`src/lib/recurring.ts`). Pausing, editing or deleting one never
   changes what's already recorded.
+- See a month as a calendar, weeks starting on the day you choose
+  (Monday, Sunday or Saturday, in Settings): each day's income and
+  spending, kept apart from what's only expected (recurring items not
+  recorded yet, goal dates); a day opens its transactions to edit and
+  its expected items to record or skip (`src/lib/calendar.ts`).
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income

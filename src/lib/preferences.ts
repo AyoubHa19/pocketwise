@@ -13,12 +13,17 @@ export type Theme = (typeof THEMES)[number];
 export const DATE_ORDERS = ["day-first", "month-first", "numeric"] as const;
 export type DateOrder = (typeof DATE_ORDERS)[number];
 
-export type Preferences = { theme: Theme; dateOrder: DateOrder };
+/** The day weeks start on, in the calendar (PRD 3: it must be configurable). */
+export const WEEK_STARTS = ["monday", "sunday", "saturday"] as const;
+export type WeekStart = (typeof WEEK_STARTS)[number];
 
-/** What a user who never chose gets: the device's theme, and 13 Oct. */
+export type Preferences = { theme: Theme; dateOrder: DateOrder; weekStart: WeekStart };
+
+/** What a user who never chose gets: the device's theme, 13 Oct, and Monday. */
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
   dateOrder: "day-first",
+  weekStart: "monday",
 };
 
 /**

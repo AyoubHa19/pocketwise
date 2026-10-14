@@ -19,23 +19,26 @@ export const get = query({
     return {
       theme: row?.theme ?? DEFAULT_PREFERENCES.theme,
       dateOrder: row?.dateOrder ?? DEFAULT_PREFERENCES.dateOrder,
+      weekStart: row?.weekStart ?? DEFAULT_PREFERENCES.weekStart,
     };
   },
 });
 
-/** Saves one or both preferences. The argument validators allow only known values. */
+/** Saves one or more preferences. The argument validators allow only known values. */
 export const set = mutation({
   args: {
     theme: v.optional(v.union(v.literal("system"), v.literal("light"), v.literal("dark"))),
     dateOrder: v.optional(
       v.union(v.literal("day-first"), v.literal("month-first"), v.literal("numeric")),
     ),
+    weekStart: v.optional(v.union(v.literal("monday"), v.literal("sunday"), v.literal("saturday"))),
   },
   handler: async (ctx, args) => {
     const ownerId = await requireOwner(ctx);
     const change: Partial<Preferences> = {};
     if (args.theme !== undefined) change.theme = args.theme;
     if (args.dateOrder !== undefined) change.dateOrder = args.dateOrder;
+    if (args.weekStart !== undefined) change.weekStart = args.weekStart;
     const row = await ctx.db
       .query("settings")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))

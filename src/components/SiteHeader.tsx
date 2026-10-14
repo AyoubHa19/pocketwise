@@ -1,5 +1,5 @@
 import { Show, UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, ListFilter, PiggyBank, Repeat, Settings, Target, Wallet } from "lucide-react";
+import { CalendarDays, LayoutDashboard, ListFilter, PiggyBank, Repeat, Settings, Target, Wallet } from "lucide-react";
 import Link from "next/link";
 import { MoreMenu } from "@/components/MoreMenu";
 import { NavLink } from "@/components/NavLink";
@@ -47,6 +47,7 @@ export function SiteHeader() {
               <MoreMenu
                 items={[
                   { href: "/bills", label: "Bills", icon: <Repeat size={18} /> },
+                  { href: "/calendar", label: "Calendar", icon: <CalendarDays size={18} /> },
                   { href: "/accounts", label: "Accounts", icon: <Wallet size={18} /> },
                   { href: "/settings", label: "Settings", icon: <Settings size={18} /> },
                 ]}

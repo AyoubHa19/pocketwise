@@ -27,6 +27,7 @@ export default defineSchema({
     dateOrder: v.optional(
       v.union(v.literal("day-first"), v.literal("month-first"), v.literal("numeric")),
     ),
+    weekStart: v.optional(v.union(v.literal("monday"), v.literal("sunday"), v.literal("saturday"))),
     // Set once openingBalance has been copied into an account (accounts.ts
     // ensureAccounts), so it's never copied twice.
     openingMoved: v.optional(v.boolean()),

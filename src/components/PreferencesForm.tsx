@@ -10,6 +10,8 @@ import {
   type DateOrder,
   type Preferences,
   type Theme,
+  type WeekStart,
+  WEEK_STARTS,
 } from "@/lib/preferences";
 import { useToday } from "@/lib/useToday";
 
@@ -17,6 +19,12 @@ const THEME_LABELS: Record<Theme, string> = {
   system: "Same as this device",
   light: "Light",
   dark: "Dark",
+};
+
+const WEEK_START_LABELS: Record<WeekStart, string> = {
+  monday: "Monday",
+  sunday: "Sunday",
+  saturday: "Saturday",
 };
 
 const DATE_LABELS: Record<DateOrder, string> = {
@@ -97,6 +105,25 @@ export function PreferencesForm() {
                 {DATE_LABELS[order]}{" "}
                 <span className="text-muted">({formatDay(example, today, order)})</span>
               </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="mt-4">
+        <legend className="text-sm font-medium">Weeks start on</legend>
+        <div className="mt-1 space-y-1">
+          {WEEK_STARTS.map((start) => (
+            <label key={start} className={optionClass}>
+              <input
+                type="radio"
+                name="weekStart"
+                value={start}
+                checked={preferences.weekStart === start}
+                onChange={() => change({ weekStart: start })}
+                className="h-4 w-4 accent-accent"
+              />
+              <span className="text-sm">{WEEK_START_LABELS[start]}</span>
             </label>
           ))}
         </div>
