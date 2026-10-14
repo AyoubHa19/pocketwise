@@ -59,6 +59,12 @@ describe("findRate and convert", () => {
     expect(convert({ amountMinor: 500, currency: "AED" }, "AED", [])).toEqual({ amountMinor: 500, used: null });
     expect(convert({ amountMinor: 500, currency: "USD" }, "AED", [eur])).toBeNull();
   });
+
+  it("never chains two rates into one it wasn't given", () => {
+    // EUR → AED and AED → JPY exist, but no EUR ↔ JPY rate was entered.
+    expect(findRate([eur, jpy], "EUR", "JPY")).toBeNull();
+    expect(convert({ amountMinor: 10000, currency: "AED" }, "JPY", [eur, jpy])).toEqual({ amountMinor: 4050, used: jpy });
+  });
 });
 
 describe("convertedTotal", () => {
