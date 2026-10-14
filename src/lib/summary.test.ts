@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   accountBalance,
+  accountBalances,
   currenciesLeftOut,
   groupByDay,
   isOpeningBalance,
   monthlyTotals,
   percentOfIncomeSpent,
   spendingByCategory,
+  totalBalanceByCurrency,
   totalsByCurrency,
   transactionsInMonth,
 } from "@/lib/summary";
+import type { Account } from "@/lib/accounts";
 import type { Transaction, TransactionType } from "@/lib/transactions";
 
 function transaction(
@@ -311,6 +314,144 @@ describe("monthlyTotals", () => {
       "2025-12",
       "2026-01",
       "2026-02",
+    ]);
+  });
+});
+
+describe("transfers between your own accounts", () => {
+  const cashToBank: Transaction = {
+    id: "t1",
+    type: "transfer",
+    amount: { amountMinor: 50000, currency: "MAD" },
+    category: "Transfer",
+    date: "2026-10-05",
+    accountId: "cash",
+    toAccountId: "bank",
+  };
+  const coffee: Transaction = { ...transaction("c", "expense", 1500, "MAD", "2026-10-05"), accountId: "cash" };
+  const salary: Transaction = { ...transaction("s", "income", 900000, "MAD", "2026-10-01"), accountId: "bank" };
+  const list = [cashToBank, coffee, salary];
+
+  it("aren't income or spending in the month's totals", () => {
+    expect(totalsByCurrency(list, "MAD")).toEqual([
+      { currency: "MAD", incomeMinor: 900000, spendingMinor: 1500, balanceMinor: 898500 },
+    ]);
+  });
+
+  it("don't change a day's total", () => {
+    const day = groupByDay(list).find((d) => d.date === "2026-10-05")!;
+    expect(day.netByCurrency).toEqual([{ currency: "MAD", netMinor: -1500 }]);
+    expect(day.transactions).toHaveLength(2); // still listed, just not counted
+  });
+
+  it("aren't spending by category", () => {
+    expect(spendingByCategory(list, "MAD").map((c) => c.category)).toEqual(["Other"]);
+  });
+
+  it("aren't in the monthly chart", () => {
+    const [october] = monthlyTotals(list, "2026-10", 1, "MAD");
+    expect(october).toEqual({ month: "2026-10", incomeMinor: 900000, spendingMinor: 1500 });
+  });
+
+  it("leave the overall balance unchanged", () => {
+    const opening = { amountMinor: 0, currency: "MAD", date: "2026-10-01" };
+    expect(accountBalance(list, opening, "2026-10-13")).toBe(900000 - 1500);
+  });
+});
+
+describe("accountBalances", () => {
+  const account = (id: string, opening: Account["opening"], currency = "MAD"): Account => ({
+    id,
+    name: id,
+    type: "bank",
+    currency,
+    opening,
+    archived: false,
+  });
+  const today = "2026-10-13";
+  const cash = account("cash", { amountMinor: 20000, date: "2026-10-01" });
+  const bank = account("bank", { amountMinor: 100000, date: "2026-10-01" });
+  const overdrawn = account("overdrawn", { amountMinor: -5000, date: "2026-10-01" });
+  const unset = account("unset", null);
+  const t = (over: Partial<Transaction>): Transaction => ({
+    id: Math.random().toString(36),
+    type: "expense",
+    amount: { amountMinor: 1000, currency: "MAD" },
+    category: "Food",
+    date: "2026-10-05",
+    ...over,
+  });
+
+  it("adds income and takes away spending in each account", () => {
+    const balances = accountBalances(
+      [cash, bank],
+      [
+        t({ accountId: "cash", amount: { amountMinor: 3000, currency: "MAD" } }),
+        t({ accountId: "bank", type: "income", amount: { amountMinor: 50000, currency: "MAD" } }),
+      ],
+      today,
+    );
+    expect(balances.get("cash")).toBe(20000 - 3000);
+    expect(balances.get("bank")).toBe(100000 + 50000);
+  });
+
+  it("moves a transfer out of one account and into the other", () => {
+    const balances = accountBalances(
+      [cash, bank],
+      [t({ type: "transfer", category: "Transfer", accountId: "bank", toAccountId: "cash", amount: { amountMinor: 40000, currency: "MAD" } })],
+      today,
+    );
+    expect(balances.get("bank")).toBe(100000 - 40000);
+    expect(balances.get("cash")).toBe(20000 + 40000);
+  });
+
+  it("can start below zero and go further below (an overdraft)", () => {
+    const balances = accountBalances([overdrawn], [t({ accountId: "overdrawn", amount: { amountMinor: 2500, currency: "MAD" } })], today);
+    expect(balances.get("overdrawn")).toBe(-7500);
+  });
+
+  it("counts only from the starting day up to today", () => {
+    const balances = accountBalances(
+      [cash],
+      [
+        t({ accountId: "cash", date: "2026-09-30" }), // already in the starting balance
+        t({ accountId: "cash", date: "2026-10-01" }), // the starting day counts
+        t({ accountId: "cash", date: "2026-10-14" }), // not happened yet
+      ],
+      today,
+    );
+    expect(balances.get("cash")).toBe(20000 - 1000);
+  });
+
+  it("has no balance for an account without a starting balance", () => {
+    const balances = accountBalances([unset], [t({ accountId: "unset" })], today);
+    expect(balances.get("unset")).toBeNull();
+  });
+
+  it("ignores transactions of other accounts and in another currency", () => {
+    const balances = accountBalances(
+      [cash],
+      [t({ accountId: "bank" }), t({ accountId: "cash", amount: { amountMinor: 1000, currency: "EUR" } }), t({})],
+      today,
+    );
+    expect(balances.get("cash")).toBe(20000);
+  });
+});
+
+describe("totalBalanceByCurrency", () => {
+  const base = { type: "bank" as const, archived: false };
+  it("adds up accounts per currency, skipping archived ones and those without a balance", () => {
+    const accounts: Account[] = [
+      { ...base, id: "a", name: "a", currency: "MAD", opening: { amountMinor: 0, date: "2026-10-01" } },
+      { ...base, id: "b", name: "b", currency: "MAD", opening: { amountMinor: 0, date: "2026-10-01" } },
+      { ...base, id: "c", name: "c", currency: "EUR", opening: { amountMinor: 0, date: "2026-10-01" } },
+      { ...base, id: "d", name: "d", currency: "MAD", opening: { amountMinor: 0, date: "2026-10-01" }, archived: true },
+      { ...base, id: "e", name: "e", currency: "MAD", opening: null },
+    ];
+    const balances = new Map<string, number | null>([["a", 100], ["b", -30], ["c", 500], ["d", 999], ["e", null]]);
+    expect(totalBalanceByCurrency(accounts, balances)).toEqual([
+      { currency: "EUR", amountMinor: 500 },
+      { currency: "MAD", amountMinor: 70 },
     ]);
   });
 });

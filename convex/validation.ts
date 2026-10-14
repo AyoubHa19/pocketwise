@@ -38,7 +38,8 @@ export function checkTransaction(value: unknown): Transaction {
   if (!isSupportedCurrency(value.amount.currency)) {
     throw new ConvexError(`${value.amount.currency} isn't a known currency.`);
   }
-  if (!(CATEGORIES as readonly string[]).includes(value.category)) {
+  // A transfer's category is always "Transfer" (isTransaction checks that).
+  if (value.type !== "transfer" && !(CATEGORIES as readonly string[]).includes(value.category)) {
     throw new ConvexError(`${value.category} isn't one of the categories.`);
   }
   if (!isCalendarDate(value.date)) {

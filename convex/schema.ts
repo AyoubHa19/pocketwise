@@ -27,6 +27,27 @@ export default defineSchema({
     dateOrder: v.optional(
       v.union(v.literal("day-first"), v.literal("month-first"), v.literal("numeric")),
     ),
+    // Set once openingBalance has been copied into an account (accounts.ts
+    // ensureAccounts), so it's never copied twice.
+    openingMoved: v.optional(v.boolean()),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
+  // The user's money accounts (src/lib/accounts.ts).
+  accounts: defineTable({
+    ownerId: v.string(),
+    name: v.string(),
+    type: v.union(
+      v.literal("cash"),
+      v.literal("bank"),
+      v.literal("savings"),
+      v.literal("wallet"),
+      v.literal("other"),
+    ),
+    currency: v.string(),
+    // null until the user gives a starting balance.
+    opening: v.union(v.object({ amountMinor: v.number(), date: v.string() }), v.null()),
+    archived: v.boolean(),
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
@@ -36,7 +57,14 @@ export default defineSchema({
     // with the same clientId again updates it instead of adding a copy,
     // which also makes uploading local data safe to retry.
     clientId: v.string(),
-    type: v.union(v.literal("income"), v.literal("expense")),
+    // A transfer moves money between two of the user's own accounts.
+    type: v.union(v.literal("income"), v.literal("expense"), v.literal("transfer")),
+    // Where it happened (for a transfer, where the money left). Optional
+    // only for transactions from before accounts, until ensureAccounts
+    // assigns them.
+    accountId: v.optional(v.id("accounts")),
+    // A transfer's destination.
+    toAccountId: v.optional(v.id("accounts")),
     // Whole minor units (cents), always positive; `type` gives the sign.
     amountMinor: v.number(),
     currency: v.string(),
@@ -47,5 +75,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_owner_date", ["ownerId", "date"])
-    .index("by_owner_clientId", ["ownerId", "clientId"]),
+    .index("by_owner_clientId", ["ownerId", "clientId"])
+    // Finds what's left to assign to an account.
+    .index("by_owner_account", ["ownerId", "accountId"]),
 });

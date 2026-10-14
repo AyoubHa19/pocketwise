@@ -1,6 +1,14 @@
 import type { Money } from "@/lib/money";
 
-export type TransactionType = "income" | "expense";
+/**
+ * Income and expenses change what you have; a transfer only moves money
+ * between two of your own accounts, so it's never counted as income or
+ * spending (PRD 7.1, 10.1, 10.2).
+ */
+export type TransactionType = "income" | "expense" | "transfer";
+
+/** The category every transfer has: it isn't spending on anything. */
+export const TRANSFER_CATEGORY = "Transfer";
 
 export const CATEGORIES = [
   "Salary",
@@ -26,6 +34,14 @@ export type Transaction = {
    */
   date: string;
   note?: string;
+  /**
+   * The account it happened in; for a transfer, the one the money left.
+   * Missing only on transactions from before accounts existed, until
+   * they're assigned to one.
+   */
+  accountId?: string;
+  /** For a transfer: the account the money went to. */
+  toAccountId?: string;
 };
 
 /**
@@ -35,16 +51,24 @@ export type Transaction = {
  */
 export function isTransaction(value: unknown): value is Transaction {
   if (typeof value !== "object" || value === null) return false;
-  const { id, type, amount, category, date, note } = value as Record<
-    string,
-    unknown
-  >;
+  const { id, type, amount, category, date, note, accountId, toAccountId } =
+    value as Record<string, unknown>;
   if (typeof amount !== "object" || amount === null) return false;
   const { amountMinor, currency } = amount as Record<string, unknown>;
+  // A transfer needs both ends, and they must differ; others have no "to".
+  const accountsOk =
+    type === "transfer"
+      ? typeof accountId === "string" &&
+        typeof toAccountId === "string" &&
+        accountId !== toAccountId &&
+        category === TRANSFER_CATEGORY
+      : (accountId === undefined || typeof accountId === "string") &&
+        toAccountId === undefined;
 
   return (
     typeof id === "string" &&
-    (type === "income" || type === "expense") &&
+    (type === "income" || type === "expense" || type === "transfer") &&
+    accountsOk &&
     Number.isSafeInteger(amountMinor) &&
     (amountMinor as number) > 0 &&
     typeof currency === "string" &&
@@ -85,7 +109,11 @@ export function removeTransaction(
   return transactions.filter((t) => t.id !== id);
 }
 
-/** The amount with a minus sign for expenses, for display and totals. */
+/**
+ * The amount with a minus sign for expenses, for display and totals. A
+ * transfer has no sign (it neither adds nor takes away overall); totals
+ * skip transfers themselves.
+ */
 export function signedAmount(transaction: Transaction): Money {
   const { amountMinor, currency } = transaction.amount;
   return {

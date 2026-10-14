@@ -1,8 +1,9 @@
 import { ConvexError, v } from "convex/values";
 import { IMPORT_BATCH_SIZE } from "../src/lib/localImport";
 import type { Transaction } from "../src/lib/transactions";
+import { ownedAccount } from "./accounts";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
 import { requireOwner } from "./ownership";
 import { checkTransaction } from "./validation";
 
@@ -11,11 +12,13 @@ import { checkTransaction } from "./validation";
 // values.
 const transactionArg = v.object({
   id: v.string(),
-  type: v.union(v.literal("income"), v.literal("expense")),
+  type: v.union(v.literal("income"), v.literal("expense"), v.literal("transfer")),
   amount: v.object({ amountMinor: v.number(), currency: v.string() }),
   category: v.string(),
   date: v.string(),
   note: v.optional(v.string()),
+  accountId: v.optional(v.string()),
+  toAccountId: v.optional(v.string()),
 });
 
 /** A stored row back in the shape the app uses, without server-only fields. */
@@ -27,7 +30,22 @@ function toTransaction(row: Doc<"transactions">): Transaction {
     category: row.category,
     date: row.date,
     ...(row.note !== undefined && { note: row.note }),
+    ...(row.accountId !== undefined && { accountId: row.accountId }),
+    ...(row.toAccountId !== undefined && { toAccountId: row.toAccountId }),
   };
+}
+
+/**
+ * The accounts a transaction names, checked: each must be the user's own
+ * and in the transaction's currency (a transfer between currencies needs an
+ * exchange rate, which comes later). checkTransaction has already made sure
+ * a transfer names two different accounts.
+ */
+async function checkedAccounts(ctx: QueryCtx, ownerId: string, t: Transaction) {
+  const currency = t.amount.currency;
+  const from = t.accountId ? await ownedAccount(ctx, ownerId, t.accountId, currency) : undefined;
+  const to = t.toAccountId ? await ownedAccount(ctx, ownerId, t.toAccountId, currency) : undefined;
+  return { accountId: from?._id, toAccountId: to?._id };
 }
 
 /** The signed-in user's transactions: newest day first, newest first within a day. */
@@ -61,6 +79,7 @@ export const save = mutation({
       category: t.category,
       date: t.date,
       note: t.note?.trim() || undefined,
+      ...(await checkedAccounts(ctx, ownerId, t)),
       updatedAt: Date.now(),
     };
     const existing = await ctx.db
@@ -94,6 +113,11 @@ export const importLocal = mutation({
       throw new ConvexError(`Send at most ${IMPORT_BATCH_SIZE} transactions at a time.`);
     }
     const checked = args.transactions.map(checkTransaction);
+    // The browser's old data is from before accounts: it has none, and so
+    // no transfers. ensureAccounts gives these an account afterwards.
+    if (checked.some((t) => t.type === "transfer" || t.accountId !== undefined)) {
+      throw new ConvexError("Browser data from before accounts can't name accounts.");
+    }
     let added = 0;
     let skipped = 0;
     for (const t of checked) {

@@ -22,8 +22,14 @@ export const deleteMyData = mutation({
     if (transactions.length === DELETE_BATCH_SIZE) {
       return { deleted: transactions.length, more: true };
     }
-    // Settings last, so a half-finished deletion still shows the account
+    // Then the money accounts (the transactions pointed to them), and
+    // settings last, so a half-finished deletion still shows the account
     // as set up, rather than as a new one with old transactions.
+    const accounts = await ctx.db
+      .query("accounts")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .collect();
+    for (const row of accounts) await ctx.db.delete(row._id);
     const settings = await ctx.db
       .query("settings")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))

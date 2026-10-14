@@ -271,9 +271,11 @@ describe("deleting your data", () => {
     await lee.mutation(api.transactions.save, { transaction: coffee });
     await lee.mutation(api.settings.setCurrency, { currency: "MAD" });
 
+    await sarah.mutation(api.accounts.create, { name: "Cash", type: "cash", currency: "EUR", opening: null });
     expect(await sarah.mutation(api.account.deleteMyData, {})).toEqual({ deleted: 1, more: false });
 
     expect(await sarah.query(api.transactions.list, {})).toEqual([]);
+    expect(await sarah.query(api.accounts.list, {})).toEqual([]);
     expect(await sarah.query(api.settings.get, {})).toEqual({ currency: null, openingBalance: null });
     // Lee's data is untouched.
     expect(await lee.query(api.transactions.list, {})).toEqual([coffee]);
@@ -361,6 +363,183 @@ describe("preferences", () => {
     await sarah.mutation(api.preferences.set, { theme: "dark" });
     await sarah.mutation(api.account.deleteMyData, {});
     expect((await sarah.query(api.preferences.get, {})).theme).toBe("system");
+  });
+});
+
+describe("accounts", () => {
+  const newAccount = { name: "Cash", type: "cash" as const, currency: "EUR", opening: null };
+
+  it("are listed for their owner only", async () => {
+    const { sarah, lee } = setup();
+    await sarah.mutation(api.accounts.create, newAccount);
+    expect((await sarah.query(api.accounts.list, {})).map((a) => a.name)).toEqual(["Cash"]);
+    expect(await lee.query(api.accounts.list, {})).toEqual([]);
+  });
+
+  it.each([
+    ["an empty name", { name: "   " }],
+    ["a name over 40 characters", { name: "x".repeat(41) }],
+    ["an unknown currency", { currency: "XYZ" }],
+    ["a starting balance on an impossible day", { opening: { amountMinor: 0, date: "2026-02-30" } }],
+    ["a fractional starting balance", { opening: { amountMinor: 1.5, date: "2026-10-01" } }],
+  ])("refuse %s", async (_, change) => {
+    const { sarah } = setup();
+    await expect(sarah.mutation(api.accounts.create, { ...newAccount, ...change })).rejects.toThrow();
+    expect(await sarah.query(api.accounts.list, {})).toEqual([]);
+  });
+
+  it("keep a transaction in the account it was saved in", async () => {
+    const { sarah } = setup();
+    const cash = await sarah.mutation(api.accounts.create, newAccount);
+    await sarah.mutation(api.transactions.save, { transaction: { ...coffee, accountId: cash } });
+    expect((await sarah.query(api.transactions.list, {}))[0].accountId).toBe(cash);
+  });
+
+  it("refuse someone else's account, and one in another currency", async () => {
+    const { sarah, lee } = setup();
+    const leesCash = await lee.mutation(api.accounts.create, newAccount);
+    const madAccount = await sarah.mutation(api.accounts.create, { ...newAccount, currency: "MAD" });
+    await expect(
+      sarah.mutation(api.transactions.save, { transaction: { ...coffee, accountId: leesCash } }),
+    ).rejects.toThrow("isn't one of yours");
+    await expect(
+      sarah.mutation(api.transactions.save, { transaction: { ...coffee, accountId: madAccount } }),
+    ).rejects.toThrow("is in MAD");
+    await expect(
+      sarah.mutation(api.transactions.save, { transaction: { ...coffee, accountId: "not-an-id" } }),
+    ).rejects.toThrow("isn't one of yours");
+    expect(await sarah.query(api.transactions.list, {})).toEqual([]);
+  });
+});
+
+describe("transfers", () => {
+  async function twoAccounts(user: ReturnType<typeof setup>["sarah"]) {
+    const cash = await user.mutation(api.accounts.create, { name: "Cash", type: "cash", currency: "EUR", opening: null });
+    const bank = await user.mutation(api.accounts.create, { name: "Bank", type: "bank", currency: "EUR", opening: null });
+    return { cash, bank };
+  }
+  const transfer = (accountId: string, toAccountId: string) => ({
+    id: "move-1",
+    type: "transfer" as const,
+    amount: { amountMinor: 20000, currency: "EUR" },
+    category: "Transfer",
+    date: "2026-10-13",
+    accountId,
+    toAccountId,
+  });
+
+  it("are saved between two of the user's accounts", async () => {
+    const { sarah } = setup();
+    const { cash, bank } = await twoAccounts(sarah);
+    await sarah.mutation(api.transactions.save, { transaction: transfer(bank, cash) });
+    expect(await sarah.query(api.transactions.list, {})).toEqual([transfer(bank, cash)]);
+  });
+
+  it("need two different accounts, both given", async () => {
+    const { sarah } = setup();
+    const { cash } = await twoAccounts(sarah);
+    await expect(sarah.mutation(api.transactions.save, { transaction: transfer(cash, cash) })).rejects.toThrow();
+    const oneEnded = { ...transfer(cash, cash), toAccountId: undefined };
+    await expect(sarah.mutation(api.transactions.save, { transaction: oneEnded })).rejects.toThrow();
+  });
+
+  it("can't reach into someone else's account", async () => {
+    const { sarah, lee } = setup();
+    const { cash } = await twoAccounts(sarah);
+    const leesBank = await lee.mutation(api.accounts.create, { name: "Bank", type: "bank", currency: "EUR", opening: null });
+    await expect(sarah.mutation(api.transactions.save, { transaction: transfer(cash, leesBank) })).rejects.toThrow(
+      "isn't one of yours",
+    );
+  });
+
+  it("can't go between currencies yet", async () => {
+    const { sarah } = setup();
+    const { cash } = await twoAccounts(sarah);
+    const mad = await sarah.mutation(api.accounts.create, { name: "MAD", type: "bank", currency: "MAD", opening: null });
+    await expect(sarah.mutation(api.transactions.save, { transaction: transfer(cash, mad) })).rejects.toThrow("is in MAD");
+  });
+
+  it("aren't accepted from old browser data", async () => {
+    const { sarah } = setup();
+    const { cash, bank } = await twoAccounts(sarah);
+    await expect(
+      sarah.mutation(api.transactions.importLocal, { transactions: [transfer(cash, bank)] }),
+    ).rejects.toThrow("can't name accounts");
+  });
+});
+
+describe("moving to accounts (ensureAccounts)", () => {
+  const balance = { amountMinor: 300000, currency: "EUR", date: "2026-05-01" };
+
+  it("makes a Main account with the starting balance and gives it every transaction", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.settings.setOpeningBalance, { openingBalance: balance });
+    await sarah.mutation(api.transactions.importLocal, { transactions: [coffee, { ...coffee, id: "c2" }] });
+
+    expect(await sarah.mutation(api.accounts.ensureAccounts, {})).toEqual({ movedOpening: true, assigned: 2, more: false });
+    const [main] = await sarah.query(api.accounts.list, {});
+    expect(main).toMatchObject({ name: "Main account", currency: "EUR", opening: { amountMinor: 300000, date: "2026-05-01" } });
+    for (const t of await sarah.query(api.transactions.list, {})) expect(t.accountId).toBe(main.id);
+  });
+
+  it("does nothing new when run again", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.settings.setOpeningBalance, { openingBalance: balance });
+    await sarah.mutation(api.transactions.importLocal, { transactions: [coffee] });
+    await sarah.mutation(api.accounts.ensureAccounts, {});
+    expect(await sarah.mutation(api.accounts.ensureAccounts, {})).toEqual({ movedOpening: false, assigned: 0, more: false });
+    expect(await sarah.query(api.accounts.list, {})).toHaveLength(1);
+  });
+
+  it("makes one account per currency, named apart", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.transactions.importLocal, {
+      transactions: [coffee, { ...coffee, id: "m1", amount: { amountMinor: 100, currency: "MAD" } }],
+    });
+    await sarah.mutation(api.accounts.ensureAccounts, {});
+    const names = (await sarah.query(api.accounts.list, {})).map((a) => `${a.name}|${a.currency}`).sort();
+    expect(names).toEqual(["Main account (EUR)|EUR", "Main account (MAD)|MAD"]);
+  });
+
+  it("gives transactions saved later their account on the next run", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.transactions.importLocal, { transactions: [coffee] });
+    await sarah.mutation(api.accounts.ensureAccounts, {});
+    await sarah.mutation(api.transactions.save, { transaction: { ...coffee, id: "later" } });
+    expect((await sarah.mutation(api.accounts.ensureAccounts, {})).assigned).toBe(1);
+  });
+
+  it("keeps a starting balance the account already has", async () => {
+    const { sarah } = setup();
+    await sarah.mutation(api.accounts.create, {
+      name: "Main account", type: "bank", currency: "EUR", opening: { amountMinor: 5, date: "2026-01-01" },
+    });
+    await sarah.mutation(api.settings.setOpeningBalance, { openingBalance: balance });
+    expect((await sarah.mutation(api.accounts.ensureAccounts, {})).movedOpening).toBe(false);
+    expect((await sarah.query(api.accounts.list, {}))[0].opening).toEqual({ amountMinor: 5, date: "2026-01-01" });
+  });
+
+  it("works in batches for a large history", async () => {
+    const { sarah } = setup();
+    const many = Array.from({ length: 250 }, (_, i) => ({ ...coffee, id: `c-${i}` }));
+    await sarah.mutation(api.transactions.importLocal, { transactions: many.slice(0, 200) });
+    await sarah.mutation(api.transactions.importLocal, { transactions: many.slice(200) });
+    expect(await sarah.mutation(api.accounts.ensureAccounts, {})).toMatchObject({ assigned: 200, more: true });
+    expect(await sarah.mutation(api.accounts.ensureAccounts, {})).toMatchObject({ assigned: 50, more: false });
+  });
+
+  it("touches only the signed-in user's data", async () => {
+    const { sarah, lee } = setup();
+    await lee.mutation(api.transactions.importLocal, { transactions: [coffee] });
+    await sarah.mutation(api.accounts.ensureAccounts, {});
+    expect(await lee.query(api.accounts.list, {})).toEqual([]);
+    expect((await lee.query(api.transactions.list, {}))[0].accountId).toBeUndefined();
+  });
+
+  it("needs a sign-in", async () => {
+    const { t } = setup();
+    await expect(t.mutation(api.accounts.ensureAccounts, {})).rejects.toThrow("You need to be signed in.");
+    await expect(t.query(api.accounts.list, {})).rejects.toThrow("You need to be signed in.");
   });
 });
 

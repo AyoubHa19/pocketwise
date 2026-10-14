@@ -1,3 +1,4 @@
+import type { Account } from "@/lib/accounts";
 import { addMonths, monthOf } from "@/lib/dates";
 import { signedAmount, type Transaction } from "@/lib/transactions";
 
@@ -53,6 +54,8 @@ export function totalsByCurrency(
 
   totalsFor(mainCurrency);
   for (const transaction of transactions) {
+    // A transfer only moves your own money: it's neither (PRD 10.1, 10.2).
+    if (transaction.type === "transfer") continue;
     const entry = totalsFor(transaction.amount.currency);
     if (transaction.type === "income") {
       entry.incomeMinor += transaction.amount.amountMinor;
@@ -97,6 +100,8 @@ export function groupByDay(transactions: Transaction[]): DayGroup[] {
     .map(([date, dayTransactions]) => {
       const net = new Map<string, number>();
       for (const transaction of dayTransactions) {
+        // Listed that day, but a transfer doesn't change the day's total.
+        if (transaction.type === "transfer") continue;
         const { amountMinor, currency } = signedAmount(transaction);
         net.set(currency, (net.get(currency) ?? 0) + amountMinor);
       }
@@ -148,6 +153,8 @@ export function accountBalance(
 ): number {
   let balance = opening.amountMinor;
   for (const transaction of transactions) {
+    // Across all of your money together, a transfer changes nothing.
+    if (transaction.type === "transfer") continue;
     const { amountMinor, currency } = signedAmount(transaction);
     if (
       currency === opening.currency &&
@@ -178,6 +185,69 @@ export function currenciesLeftOut(
     }
   }
   return [...left].sort();
+}
+
+/**
+ * Each account's balance on `today`, by account id (PRD 10.4):
+ *
+ *   starting balance + income − spending + transfers in − transfers out
+ *
+ * counting entries from the starting day up to and including today (earlier
+ * ones are already in the starting balance; later ones haven't happened).
+ * Only entries in the account's own currency count: the server refuses
+ * others, and this never adds currencies together. null for an account
+ * without a starting balance, which has no balance to show.
+ */
+export function accountBalances(
+  accounts: Account[],
+  transactions: Transaction[],
+  today: string,
+): Map<string, number | null> {
+  const balances = new Map<string, number | null>();
+  for (const account of accounts) {
+    balances.set(account.id, account.opening?.amountMinor ?? null);
+  }
+  const byId = new Map(accounts.map((account) => [account.id, account]));
+
+  function add(accountId: string | undefined, transaction: Transaction, sign: 1 | -1) {
+    if (accountId === undefined) return;
+    const account = byId.get(accountId);
+    const current = balances.get(accountId);
+    if (!account?.opening || current === null || current === undefined) return;
+    if (transaction.amount.currency !== account.currency) return;
+    if (transaction.date < account.opening.date || transaction.date > today) return;
+    balances.set(accountId, current + sign * transaction.amount.amountMinor);
+  }
+
+  for (const transaction of transactions) {
+    if (transaction.type === "income") add(transaction.accountId, transaction, 1);
+    else if (transaction.type === "expense") add(transaction.accountId, transaction, -1);
+    else {
+      add(transaction.accountId, transaction, -1);
+      add(transaction.toAccountId, transaction, 1);
+    }
+  }
+  return balances;
+}
+
+/**
+ * The total of every account's balance, one per currency (sorted by code),
+ * since currencies aren't added together. Archived accounts and those with
+ * no starting balance are left out.
+ */
+export function totalBalanceByCurrency(
+  accounts: Account[],
+  balances: Map<string, number | null>,
+): { currency: string; amountMinor: number }[] {
+  const totals = new Map<string, number>();
+  for (const account of accounts) {
+    const balance = balances.get(account.id);
+    if (account.archived || balance === null || balance === undefined) continue;
+    totals.set(account.currency, (totals.get(account.currency) ?? 0) + balance);
+  }
+  return [...totals]
+    .map(([currency, amountMinor]) => ({ currency, amountMinor }))
+    .sort((a, b) => a.currency.localeCompare(b.currency));
 }
 
 /** One category's spending, for the "Spending by category" chart. */
@@ -241,6 +311,7 @@ export function monthlyTotals(
   );
   for (const transaction of transactions) {
     if (transaction.amount.currency !== currency) continue;
+    if (transaction.type === "transfer") continue;
     const entry = byMonth.get(monthOf(transaction.date));
     if (!entry) continue;
     if (transaction.type === "income") {
