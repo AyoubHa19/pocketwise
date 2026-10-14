@@ -51,12 +51,15 @@ Done and live (see `git log` for the details of each):
   21: financial calendar (`/calendar`, in "More"): what happened apart
   from what's expected (unrecorded recurring items, goal dates), and a
   "Weeks start on" preference (Monday, Sunday or Saturday).
+  22: reports and insights (`/reports`, in "More"): a 1–12 month period
+  beside the one before it; insights each carry "how" (their calculation)
+  and appear only when the data allows (`src/lib/reports.ts`).
 
 Next, in order (PRD 29):
 
-- **22: reports and insights** (PRD 21): month and period comparisons,
-  category analysis, cash-flow summaries, useful insights.
-- 23: currency conversion.
+- **23: currency conversion** (PRD 11): explicit exchange rates (their
+  source and date), converted totals shown as such, never silently mixing
+  currencies; until now amounts in other currencies are shown apart.
 - 24: AI receipt scanning. 25: safe-to-spend and salary day planner.
 - 26: what-if simulator and debt tracking. 27: final review.
 - Later: a domain of our own, Clerk's production instance (then remove

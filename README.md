@@ -60,6 +60,13 @@ see it wherever you sign in.
   spending, kept apart from what's only expected (recurring items not
   recorded yet, goal dates); a day opens its transactions to edit and
   its expected items to record or skip (`src/lib/calendar.ts`).
+- See reports for 1 to 12 months beside the period before: income,
+  spending, what's left over and the share spent, month by month, by
+  category, recurring costs per month, budgets and goals. Insights (a
+  category that moved a lot, a budget gone over, a bill coming up, a goal
+  falling behind, spending far from the recent average) each say how
+  they're worked out, and appear only when the data allows it
+  (`src/lib/reports.ts`).
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income
