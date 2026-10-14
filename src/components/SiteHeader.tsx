@@ -1,26 +1,42 @@
 import { Show, UserButton } from "@clerk/nextjs";
+import { LayoutDashboard, Settings } from "lucide-react";
 import Link from "next/link";
 import { NavLink } from "@/components/NavLink";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
+const logoClass = "min-h-11 items-center text-lg font-semibold tracking-tight";
 
 export function SiteHeader() {
   return (
     <header className="border-b border-line bg-surface">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link
-          href="/"
-          className="flex min-h-11 items-center text-lg font-semibold tracking-tight"
-        >
-          Pocketwise
-        </Link>
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
+        {/* Signed in, on the narrowest phones (under 360px), the name makes
+            way for the links; the Dashboard link leads home just the same.
+            Signed out there are no links, so it always shows. */}
+        <Show when="signed-in">
+          <Link href="/" className={`hidden min-[360px]:flex ${logoClass}`}>
+            Pocketwise
+          </Link>
+        </Show>
+        <Show when="signed-out">
+          <Link href="/" className={`flex ${logoClass}`}>
+            Pocketwise
+          </Link>
+        </Show>
         {/* Only once signed in: on the sign-in page, these would just lead
             back to it. The account button holds "Manage account" and
             "Sign out". */}
         <Show when="signed-in">
-          <div className="flex items-center gap-1 sm:gap-3">
+          <div className="ml-auto flex items-center gap-1 sm:gap-3">
             <nav aria-label="Main" className="flex gap-1">
-              <NavLink href="/">Dashboard</NavLink>
-              <NavLink href="/settings">Settings</NavLink>
+              <NavLink href="/" icon={<LayoutDashboard size={20} />}>
+                Dashboard
+              </NavLink>
+              <NavLink href="/settings" icon={<Settings size={20} />}>
+                Settings
+              </NavLink>
             </nav>
+            <ThemeToggle />
             <div className="flex h-11 w-11 items-center justify-center">
               <UserButton />
             </div>
