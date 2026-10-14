@@ -1330,6 +1330,72 @@ describe("the plan to payday", () => {
   });
 });
 
+describe("debts", () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const debt = (over: Record<string, unknown> = {}) => ({
+    name: "Car loan",
+    currency: "AED",
+    balanceMinor: 1000000,
+    balanceDate: today,
+    paymentMinor: 100000,
+    frequency: "monthly" as const,
+    nextDue: null as string | null,
+    annualRate: "12" as string | null,
+    originalMinor: null as number | null,
+    ruleId: null as string | null,
+    today,
+    ...over,
+  });
+
+  it("are added as entered, updated, archived and deleted", async () => {
+    const { sarah } = setup();
+    const id = await sarah.mutation(api.debts.create, debt({ name: " Car loan ", annualRate: " 12.5 " }));
+    expect(await sarah.query(api.debts.list, {})).toMatchObject([{ id, name: "Car loan", annualRate: "12.5", archived: false }]);
+    await sarah.mutation(api.debts.update, { id, ...debt({ balanceMinor: 900000, annualRate: null }) });
+    expect((await sarah.query(api.debts.list, {}))[0]).toMatchObject({ balanceMinor: 900000, annualRate: null });
+    await sarah.mutation(api.debts.setArchived, { id, archived: true });
+    expect((await sarah.query(api.debts.list, {}))[0].archived).toBe(true);
+    await sarah.mutation(api.debts.remove, { id });
+    expect(await sarah.query(api.debts.list, {})).toEqual([]);
+  });
+
+  it("refuse bad values, never guessing a rate", async () => {
+    const { sarah } = setup();
+    const create = (over: Record<string, unknown>) => sarah.mutation(api.debts.create, debt(over));
+    await expect(create({ balanceMinor: 0 })).rejects.toThrow("still owed");
+    await expect(create({ paymentMinor: 1.5 })).rejects.toThrow("installment");
+    await expect(create({ annualRate: "abc" })).rejects.toThrow("0 to 100");
+    await expect(create({ currency: "XYZ" })).rejects.toThrow("isn't a known currency");
+    await expect(create({ balanceDate: "2999-01-01" })).rejects.toThrow("today or earlier");
+    expect(await sarah.query(api.debts.list, {})).toEqual([]);
+  });
+
+  it("can be paid through the user's own expense item in the same currency", async () => {
+    const { sarah, lee } = setup();
+    await sarah.mutation(api.categories.ensureCategories, {});
+    const list = await sarah.query(api.categories.list, {});
+    const base = { amountMinor: 100000, accountId: null, frequency: "monthly" as const, startDate: today, endDate: null, remindDays: 3, today };
+    const debtCategory = list.find((c) => c.name === "Debt Payments")!.id;
+    const loanRule = await sarah.mutation(api.recurring.create, { ...base, name: "Loan", type: "expense", currency: "AED", categoryId: debtCategory });
+    const euroRule = await sarah.mutation(api.recurring.create, { ...base, name: "Euro loan", type: "expense", currency: "EUR", categoryId: debtCategory });
+    const salary = await sarah.mutation(api.recurring.create, { ...base, name: "Salary", type: "income", currency: "AED", categoryId: list.find((c) => c.name === "Salary")!.id });
+    await sarah.mutation(api.debts.create, debt({ ruleId: loanRule }));
+    await expect(sarah.mutation(api.debts.create, debt({ ruleId: salary }))).rejects.toThrow("is income");
+    await expect(sarah.mutation(api.debts.create, debt({ ruleId: euroRule }))).rejects.toThrow("is in EUR, not AED");
+    await expect(lee.mutation(api.debts.create, debt({ ruleId: loanRule }))).rejects.toThrow("isn't one of yours");
+  });
+
+  it("are each user's own, go with their data, and need a sign-in", async () => {
+    const { t, sarah, lee } = setup();
+    const id = await sarah.mutation(api.debts.create, debt());
+    expect(await lee.query(api.debts.list, {})).toEqual([]);
+    await expect(lee.mutation(api.debts.remove, { id })).rejects.toThrow("isn't one of yours");
+    await sarah.mutation(api.account.deleteMyData, {});
+    expect(await sarah.query(api.debts.list, {})).toEqual([]);
+    await expect(t.query(api.debts.list, {})).rejects.toThrow("You need to be signed in.");
+  });
+});
+
 describe("isCalendarDate", () => {
   it.each(["2026-10-13", "2028-02-29", "2026-12-31", "2026-01-01"])("accepts %s", (date) => {
     expect(isCalendarDate(date)).toBe(true);

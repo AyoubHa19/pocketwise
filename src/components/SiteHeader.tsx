@@ -1,5 +1,5 @@
 import { Show, UserButton } from "@clerk/nextjs";
-import { CalendarDays, ChartColumn, Gauge, LayoutDashboard, ListFilter, PiggyBank, Repeat, Settings, Target, Wallet } from "lucide-react";
+import { CalendarDays, ChartColumn, FlaskConical, Gauge, Landmark, LayoutDashboard, ListFilter, PiggyBank, Repeat, Settings, Target, Wallet } from "lucide-react";
 import Link from "next/link";
 import { MoreMenu } from "@/components/MoreMenu";
 import { NavLink } from "@/components/NavLink";
@@ -48,6 +48,8 @@ export function SiteHeader() {
                 items={[
                   { href: "/plan", label: "Plan to payday", icon: <Gauge size={18} /> },
                   { href: "/bills", label: "Bills", icon: <Repeat size={18} /> },
+                  { href: "/debts", label: "Debts", icon: <Landmark size={18} /> },
+                  { href: "/what-if", label: "What if", icon: <FlaskConical size={18} /> },
                   { href: "/calendar", label: "Calendar", icon: <CalendarDays size={18} /> },
                   { href: "/reports", label: "Reports", icon: <ChartColumn size={18} /> },
                   { href: "/accounts", label: "Accounts", icon: <Wallet size={18} /> },

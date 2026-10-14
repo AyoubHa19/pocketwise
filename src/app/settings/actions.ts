@@ -44,10 +44,11 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
       const { more } = await fetchMutation(api.account.deleteMyData, {}, { token });
       if (!more) break;
     }
-    const [left, rates, plan, rules, goals, entries, budgets, accounts, categories, settings] = await Promise.all([
+    const [left, rates, plan, debts, rules, goals, entries, budgets, accounts, categories, settings] = await Promise.all([
       fetchQuery(api.transactions.list, {}, { token }),
       fetchQuery(api.rates.list, {}, { token }),
       fetchQuery(api.plan.get, {}, { token }),
+      fetchQuery(api.debts.list, {}, { token }),
       fetchQuery(api.recurring.list, {}, { token }),
       fetchQuery(api.goals.list, {}, { token }),
       fetchQuery(api.goals.contributions, {}, { token }),
@@ -59,6 +60,7 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
     if (
       left.length > 0 ||
       rates.length > 0 ||
+      debts.length > 0 ||
       plan.reserveMinor > 0 ||
       plan.savingsMinor > 0 ||
       plan.accountIds !== null ||

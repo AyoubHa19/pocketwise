@@ -73,17 +73,24 @@ Done and live (see `git log` for the details of each):
   payday − spending recorded with a later date − planned savings −
   reserve; expected income is listed, never counted. Payday is a
   recurring income (any frequency) or a chosen date (`src/lib/plan.ts`).
+  26: debts (`/debts`, in "More"; `src/lib/debts.ts`) and the what-if
+  simulator (`/what-if`, in "More"; `src/lib/whatif.ts`). A debt keeps the
+  balance the user entered and its date; what's left = that balance −
+  payments recorded on or after it (an estimate, said so: interest since
+  isn't added). "Record payment" opens the form as a "Debt Payments"
+  expense with id `debt-<debtId>-<uuid>`; a linked recurring item's
+  occurrences count too. Payoff: each period, interest = balance × rate ÷
+  periods a year (rounded), then the installment; "never" if it doesn't
+  cover the interest. What-if results are never saved and sit in a dashed
+  "Simulation, not your real data" box with their assumptions.
 
 Next, in order (PRD 29):
 
 - **When the user adds the API key**: test a real receipt end to end on
   localhost (review card, warnings, duplicates, saving), then production.
-- **26: what-if simulator and debt tracking** (PRD 17, 18): debts and
-  installments (balance, payments, interest stated plainly), and "what if
-  I spend/save/earn X" against the plan, clearly marked as simulations.
+- **27: final review** (security, accessibility, performance, docs).
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
-- 27: final review (security, accessibility, performance, docs).
 - Later: a domain of our own, Clerk's production instance (then remove
   the preview strip), and the mobile app (Expo).
 
@@ -132,7 +139,9 @@ Supermarket, Bus ticket, Rent, Croissant in EUR), the "Euro wallet"
 account, budgets (All spending, Food, Pet food), goals (Trip, Emergency
 fund), recurring items (Rent, Internet, Salary), the rate
 1 EUR = 4.2815 AED ("My bank (sample)"), and the plan (payday = Salary
-(sample), savings 888.89, reserve 1,000).
+(sample), savings 888.89, reserve 1,000), and the debt "Car loan
+(sample)" (10,000 AED on 2026-10-14, 1,000 a month at 12%, 20,000
+borrowed) with one 1,000 payment recorded the same day.
 The live site's data is separate (production-eu).
 
 ## Gotchas

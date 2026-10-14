@@ -3,6 +3,7 @@ import { ConvexError } from "convex/values";
 import type { Account, AccountOpening, AccountType } from "@/lib/accounts";
 import type { Budget } from "@/lib/budgets";
 import type { Contribution, Goal } from "@/lib/goals";
+import type { Debt } from "@/lib/debts";
 import type { PlanSettings } from "@/lib/plan";
 import type { ExchangeRate } from "@/lib/rates";
 import type { ReceiptReading } from "@/lib/receipts";
@@ -460,6 +461,56 @@ export function useSetPlan() {
   });
   return ({ reserveMinor, savingsMinor, accountIds, salaryRuleId, payday }: PlanSettings) =>
     withMessage(set({ reserveMinor, savingsMinor, accountIds, salaryRuleId, payday }));
+}
+
+/** The user's debts (archived ones too), or null while they load. */
+export function useDebts(): Debt[] | null {
+  const { isAuthenticated } = useConvexAuth();
+  return useQuery(api.debts.list, isAuthenticated ? {} : "skip") ?? null;
+}
+
+export type DebtFields = Omit<Debt, "id" | "archived">;
+
+function debtArgs(d: DebtFields) {
+  return {
+    name: d.name,
+    currency: d.currency,
+    balanceMinor: d.balanceMinor,
+    balanceDate: d.balanceDate,
+    paymentMinor: d.paymentMinor,
+    frequency: d.frequency,
+    nextDue: d.nextDue,
+    annualRate: d.annualRate,
+    originalMinor: d.originalMinor,
+    ruleId: d.ruleId,
+  };
+}
+
+/** Adds a debt. `today` is the user's own date. */
+export function useCreateDebt() {
+  const create = useMutation(api.debts.create);
+  return (fields: DebtFields, today: string) => withMessage(create({ ...debtArgs(fields), today }));
+}
+
+/** Changes a debt. */
+export function useUpdateDebt() {
+  const update = useMutation(api.debts.update);
+  return (id: string, fields: DebtFields, today: string) => withMessage(update({ id, ...debtArgs(fields), today }));
+}
+
+/** Archives a debt, or brings it back. */
+export function useSetDebtArchived() {
+  const set = useMutation(api.debts.setArchived).withOptimisticUpdate((store, { id, archived }) => {
+    const list = store.getQuery(api.debts.list, {});
+    if (list !== undefined) store.setQuery(api.debts.list, {}, list.map((d) => (d.id === id ? { ...d, archived } : d)));
+  });
+  return (id: string, archived: boolean) => withMessage(set({ id, archived }));
+}
+
+/** Deletes a debt; its payments stay as transactions. */
+export function useRemoveDebt() {
+  const remove = useMutation(api.debts.remove);
+  return (id: string) => withMessage(remove({ id }));
 }
 
 /** The account's display preferences, or null while they load. */

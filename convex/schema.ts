@@ -146,6 +146,31 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
+  // Debts and installments, tracked by hand (src/lib/debts.ts). Payments
+  // are ordinary transactions, found by id; the balance is the user's own.
+  debts: defineTable({
+    ownerId: v.string(),
+    name: v.string(),
+    currency: v.string(),
+    balanceMinor: v.number(),
+    balanceDate: v.string(),
+    paymentMinor: v.number(),
+    frequency: v.union(
+      v.literal("weekly"),
+      v.literal("biweekly"),
+      v.literal("monthly"),
+      v.literal("quarterly"),
+      v.literal("yearly"),
+    ),
+    nextDue: v.optional(v.string()),
+    // As typed ("12.5"); missing when the user doesn't know it.
+    annualRate: v.optional(v.string()),
+    originalMinor: v.optional(v.number()),
+    ruleId: v.optional(v.id("recurringRules")),
+    archived: v.boolean(),
+    updatedAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
   // The user's money accounts (src/lib/accounts.ts).
   accounts: defineTable({
     ownerId: v.string(),

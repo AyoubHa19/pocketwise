@@ -90,6 +90,17 @@ see it wherever you sign in.
   income of any frequency, or a date you choose; the pay period shows
   what you've spent so far against what's safe per day, and what's
   coming before payday (`src/lib/plan.ts`).
+- Debts and installments: what you still owe (the balance you entered,
+  minus the payments recorded since, said to be an estimate since
+  interest isn't added), the installment, the rate if you know it, and
+  roughly when it'll be paid off and the interest on the way. A payment is
+  recorded as a "Debt Payments" expense, so it counts once as spending
+  and brings the debt down; a debt can be linked to its recurring item
+  (`src/lib/debts.ts`).
+- What if…: try saving a fixed amount each month, a recurring bill
+  changing, spending less in a category, a change in income, or paying
+  more on a debt. Each result is marked as a simulation, says what it
+  assumes, and is never saved (`src/lib/whatif.ts`).
 - See one month at a time on the dashboard, with ‹ and › to move between
   months: income, spending, what's left, and how much of the income went.
 - See the month's spending by category, and the last 6 months of income
