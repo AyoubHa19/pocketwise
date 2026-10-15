@@ -72,7 +72,7 @@ export function TransactionList({
   const { count, button: showMore } = useShowMore(transactions.length, { initial: limit, step, noun: "transactions" });
   const listClass = inCard
     ? "-mx-4 divide-y divide-line border-y border-line sm:-mx-6"
-    : `${cardClass} divide-y divide-line overflow-hidden`;
+    : `${cardClass} divide-y divide-line overflow-clip`;
   const reduced = useReducedMotion() ?? false;
   const variants = collapse(reduced);
 
@@ -132,7 +132,7 @@ export function TransactionList({
         initial="collapsed"
         animate="open"
         exit="collapsed"
-        className="overflow-hidden"
+        className="overflow-clip"
       >
         {/* The whole row is the button: a big target, and
             what people expect from a finance app. The focus
@@ -240,7 +240,7 @@ export function TransactionList({
                 animate="open"
                 exit="collapsed"
                 aria-labelledby={headingId}
-                className="overflow-hidden pb-6"
+                className="overflow-clip pb-6"
               >
                 <div className={`mb-2 flex items-baseline justify-between gap-4 ${inCard ? "" : "px-1"}`}>
                   <h3 id={headingId} className="text-sm font-semibold text-muted">
@@ -255,7 +255,10 @@ export function TransactionList({
                   </p>
                 </div>
 
-                {/* overflow-hidden keeps the row highlight inside the corners. */}
+                {/* overflow-clip keeps the row highlight inside the corners. Clip,
+                    not hidden: hidden would make it a scroll box of its own,
+                    and the rows' scroll-in animation would follow that box
+                    instead of the page. */}
                 <ul className={listClass}>
                   <AnimatePresence initial={false}>
                     {day.transactions.map((transaction) => row(transaction, false))}

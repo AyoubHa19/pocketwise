@@ -150,7 +150,7 @@ export function CalendarView() {
             {mainCurrency && <li>Amounts in {mainCurrency}</li>}
           </ul>
 
-          <table className={`${cardClass} mt-3 w-full table-fixed border-separate border-spacing-0 overflow-hidden`}>
+          <table className={`${cardClass} mt-3 w-full table-fixed border-separate border-spacing-0 overflow-clip`}>
             <thead>
               <tr>
                 {names.map((name, i) => (

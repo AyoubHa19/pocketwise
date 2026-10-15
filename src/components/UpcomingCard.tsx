@@ -33,7 +33,7 @@ export function UpcomingCard({
   const categoryNames = new Map(categories.map((c) => [c.id, c.name]));
 
   return (
-    <section aria-labelledby="upcoming-heading" className={`${cardClass} overflow-hidden`}>
+    <section aria-labelledby="upcoming-heading" className={`${cardClass} overflow-clip`}>
       <div className="flex items-baseline justify-between gap-4 p-4 pb-2 sm:px-6 sm:pt-6">
         <h2 id="upcoming-heading" className="text-lg font-semibold">
           Bills

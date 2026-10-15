@@ -8,7 +8,7 @@
 export function PreviewBanner() {
   if (process.env.NEXT_PUBLIC_POCKETWISE_PREVIEW !== "1") return null;
   return (
-    <p className="bg-foreground px-4 py-2 text-center text-sm text-canvas">
+    <p className="bg-ink px-4 py-2 text-center text-sm text-ink-foreground">
       Preview: please don&apos;t enter real financial data.
     </p>
   );

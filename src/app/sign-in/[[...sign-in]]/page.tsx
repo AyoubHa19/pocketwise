@@ -1,5 +1,6 @@
 import { SignIn } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import { AuthLayout, authAppearance } from "@/components/AuthLayout";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -9,8 +10,11 @@ export const metadata: Metadata = {
 // (like entering the emailed code) live at addresses like /sign-in/factor-one.
 export default function SignInPage() {
   return (
-    <section className="mx-auto flex w-full max-w-7xl justify-center px-4 py-8 sm:px-6 sm:py-12">
-      <SignIn />
-    </section>
+    <AuthLayout
+      title="Your money, calmly in view."
+      intro="Accounts, budgets, bills and goals in one place, and what's safe to spend until payday."
+    >
+      <SignIn appearance={authAppearance} />
+    </AuthLayout>
   );
 }

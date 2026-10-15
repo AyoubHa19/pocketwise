@@ -54,7 +54,7 @@ function Message({ text, ref }: MessageProps) {
       animate="shown"
       exit="hidden"
       aria-hidden={isPresent ? undefined : true}
-      className="flex items-center gap-2 rounded-control bg-foreground px-4 py-3 text-sm font-medium text-canvas shadow-lg"
+      className="flex items-center gap-2 rounded-control bg-ink px-4 py-3 text-sm font-medium text-ink-foreground shadow-lg"
     >
       <Check aria-hidden="true" size={16} strokeWidth={2.5} />
       {text}

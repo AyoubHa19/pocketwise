@@ -212,7 +212,7 @@ export function PlanView() {
             {result.bills.length + result.expectedIncome.length + result.otherCurrencyBills.length === 0 ? (
               <p className="mt-2 text-sm text-muted">Nothing expected before payday.</p>
             ) : (
-              <ul className={`${cardClass} mt-2 divide-y divide-line overflow-hidden`}>
+              <ul className={`${cardClass} mt-2 divide-y divide-line overflow-clip`}>
                 {[...result.bills, ...result.otherCurrencyBills, ...result.expectedIncome]
                   .sort((a, b) => a.date.localeCompare(b.date))
                   .map((o) => (

@@ -124,7 +124,19 @@ Next, in order (PRD 29):
   for white everywhere, in both themes (white 6.0:1 at its lightest).
   Glass opacity (78% light / 50% dark) is the least that keeps every text
   colour on cards AA over that photo, measured with a script over the
-  photo itself. Cards have a sheen, a deeper shadow and a light spot
+  photo itself. Glass puts the normal text colours back (`--base-*`), so
+  a card that is itself an `li` (or glass inside loose text) isn't turned
+  white. `--canvas` is the photo's darkened average, so white text reads
+  before it loads and axe measures against something realistic.
+  Sign in / Sign up (`AuthLayout.tsx`): a headline and three points in
+  white on the photo, Clerk's form on glass (`authAppearance`). They can
+  only be seen signed out: check them with headless Chrome and a fresh
+  profile, never by signing out. At phone widths use the DevTools
+  protocol (device metrics), not `--window-size` (Chrome won't go under
+  ~500px and the screenshot looks too wide).
+  Scroll animations (`view()` timelines) follow the nearest scroll box:
+  use `overflow-clip`, never `overflow-hidden`, on anything around an
+  animated card or row, or it never animates. Cards have a sheen, a deeper shadow and a light spot
   that follows the mouse (data-lit, --spot-x/--spot-y);
   "Safe to spend" has a light version in light
   mode; a soft light follows the mouse (`CursorLight.tsx`); cards fade

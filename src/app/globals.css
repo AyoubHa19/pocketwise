@@ -35,26 +35,52 @@
  * lightest (dark mode) point, measured on a laptop and a phone with the
  * photo at its most zoomed in: muted text 4.6 / 4.9 on cards.
  */
+/* The text colours, kept apart so glass can put them back: loose text on
+   the photo swaps them for light ones (see "Loose text"), and anything
+   glass inside such text, or holding it, starts again from these. */
 :root {
-  --canvas: light-dark(#e3e6df, #0a0d0a); /* Behind the photo while it loads */
+  --base-foreground: light-dark(#171a17, #eceeea);
+  --base-muted: light-dark(#4d524b, #aab0a8);
+  --base-accent: light-dark(#36543f, #a3cbb0);
+  --base-positive: light-dark(#255a37, #95d6ab);
+  --base-danger: light-dark(#a11d14, #ff8a80);
+  --base-warning: light-dark(#7a3905, #fbbf24);
+}
+@layer base {
+  /* In the base layer, so a card's own colour classes still win. */
+  .glass,
+  .glass-strong,
+  .glow-card {
+    --foreground: var(--base-foreground);
+    --muted: var(--base-muted);
+    --accent: var(--base-accent);
+    --positive: var(--base-positive);
+    --danger: var(--base-danger);
+    --warning: var(--base-warning);
+    color: var(--foreground);
+  }
+}
+
+:root {
+  --canvas: #2d3126; /* Behind the photo: its average colour, darkened like it, so the white text reads while it loads */
   --surface: light-dark(#ffffff, #161917); /* Solid: fields, the add/edit sheet */
   --surface-muted: light-dark(rgb(23 40 30 / 0.06), rgb(255 255 255 / 0.06)); /* Hover, the row being edited, tracks */
-  --foreground: light-dark(#171a17, #eceeea); /* Main text */
-  --muted: light-dark(#4d524b, #aab0a8); /* Secondary text: labels, dates, notes */
+  --foreground: var(--base-foreground); /* Main text */
+  --muted: var(--base-muted); /* Secondary text: labels, dates, notes */
   --line: light-dark(rgb(23 40 30 / 0.1), rgb(255 255 255 / 0.09)); /* Dividers (decoration only) */
   --card-edge: light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.1)); /* Glass's bright rim */
   --line-strong: light-dark(#6b7067, #79807a); /* Field and button edges, which must be seen */
-  --accent: light-dark(#36543f, #a3cbb0); /* Sage green: main buttons, focus ring */
+  --accent: var(--base-accent); /* Sage green: main buttons, focus ring */
   --accent-foreground: light-dark(#ffffff, #10241a); /* Text on accent */
   --accent-soft: light-dark(rgb(54 84 63 / 0.12), rgb(163 203 176 / 0.14)); /* Chart areas, icon circles */
   --ink: light-dark(#171a17, #eceeea); /* What's selected: the current page's icon */
   --ink-foreground: light-dark(#ffffff, #171a17);
-  --positive: light-dark(#255a37, #95d6ab); /* Income amounts, "up" badges */
+  --positive: var(--base-positive); /* Income amounts, "up" badges */
   --positive-surface: light-dark(#e1eee5, #17271d);
-  --danger: light-dark(#a11d14, #ff8a80); /* Errors and Delete */
+  --danger: var(--base-danger); /* Errors and Delete */
   --danger-surface: light-dark(#fcebe9, #2a1215); /* Background of error boxes */
   --danger-line: light-dark(#f6c9c4, #5c1d22);
-  --warning: light-dark(#7a3905, #fbbf24); /* A budget close to its limit */
+  --warning: var(--base-warning); /* A budget close to its limit */
 
   /* Glass: the cards, and the bars and menus that float over everything. */
   --glass: light-dark(rgb(255 255 255 / 0.78), rgb(18 22 20 / 0.5));
@@ -283,7 +309,8 @@ html:has(dialog[open]) {
  * .app-backdrop). The text colours are swapped for light ones inside
  * them, so classes like text-muted or text-positive still work, just
  * lighter. In the components layer, so classes an element sets itself
- * still win. Measured at the photo's lightest point: white 6.0:1, the
+ * still win. A card that is itself one of these (an li card) is left
+ * alone, with all it holds. Measured at the photo's lightest point: white 6.0:1, the
  * lighter grey 4.7:1. `on-photo` does the same for anything else that
  * sits on the photo (the top bar, a lone button).
  */
@@ -292,6 +319,9 @@ html:has(dialog[open]) {
   :where(main)
     :where(h1, h2, h3, h4, p, label, legend, li, dt, dd, span):not(
       :where(.glass, .glass-strong, .glow-card, dialog, [popover], .sr-only) *,
+      .glass,
+      .glass-strong,
+      .glow-card,
       .sr-only
     ) {
     --foreground: #ffffff;

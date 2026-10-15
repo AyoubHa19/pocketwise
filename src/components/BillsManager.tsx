@@ -268,7 +268,7 @@ export function BillsManager() {
             {rules.length === 0 ? "No recurring items yet." : "Nothing to record right now."}
           </p>
         ) : (
-          <ul className={`${cardClass} mt-4 divide-y divide-line overflow-hidden`}>
+          <ul className={`${cardClass} mt-4 divide-y divide-line overflow-clip`}>
             {attention.map((o) => (
               <OccurrenceRow
                 key={`${o.rule.id}-${o.date}`}
