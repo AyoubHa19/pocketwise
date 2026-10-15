@@ -47,10 +47,15 @@
   --base-warning: light-dark(#7a3905, #fbbf24);
 }
 @layer base {
-  /* In the base layer, so a card's own colour classes still win. */
+  /* In the base layer, so a card's own colour classes still win. Fields
+     too: they have their own light background, so inside loose text (a
+     label on the photo) they'd otherwise get white on white. */
   .glass,
   .glass-strong,
-  .glow-card {
+  .glow-card,
+  input,
+  select,
+  textarea {
     --foreground: var(--base-foreground);
     --muted: var(--base-muted);
     --accent: var(--base-accent);
