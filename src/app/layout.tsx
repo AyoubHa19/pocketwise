@@ -48,6 +48,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <ThemeSync />
             <DataSync />
             <MotionProvider>
+              {/* Behind everything: the moving colours and dots. */}
+              <div aria-hidden="true" className="app-backdrop" />
               <PreviewBanner />
               {/* The side bar on the left of large screens; the bottom bar
                   on phones, with room kept under the page for it. */}

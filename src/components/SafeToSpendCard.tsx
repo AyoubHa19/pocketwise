@@ -40,12 +40,17 @@ export function SafeToSpendCard({
   return (
     <section
       aria-labelledby="safe-card-heading"
-      className={`@container relative flex min-h-40 flex-col overflow-hidden rounded-card bg-linear-to-br from-feature-from to-feature-to p-5 text-white shadow-card ${className}`}
+      className={`glow-card @container flex min-h-40 flex-col p-5 ${className}`}
     >
-      {/* A soft wave behind the text, like a line on a chart. Decorative. */}
-      <svg aria-hidden="true" viewBox="0 0 200 80" preserveAspectRatio="none" className="pointer-events-none absolute right-0 bottom-0 h-24 w-3/4 opacity-30">
-        <path d="M0 60 C30 60 40 20 70 30 C100 40 110 70 140 50 C165 34 175 10 200 14" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" />
-      </svg>
+      {/* The glow behind, the dark glass with a soft wave like a line on a
+          chart, and the shimmering rim: all decoration (globals.css). */}
+      <span aria-hidden="true" className="glow-card-halo" />
+      <span aria-hidden="true" className="glow-card-fill">
+        <svg viewBox="0 0 200 80" preserveAspectRatio="none" className="absolute right-0 bottom-0 h-24 w-3/4 opacity-25">
+          <path d="M0 60 C30 60 40 20 70 30 C100 40 110 70 140 50 C165 34 175 10 200 14" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      </span>
+      <span aria-hidden="true" className="glow-card-rim" />
       <div className="relative flex items-start justify-between gap-3">
         <h2 id="safe-card-heading" className="pt-1.5 text-sm font-medium text-white">
           Safe to spend

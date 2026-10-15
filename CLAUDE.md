@@ -107,6 +107,12 @@ Next, in order (PRD 29):
   `SiteHeader.tsx` only below lg or signed out), and the dashboard (a
   greeting, four tiles with the green "Safe to spend", a cash flow line
   chart, a "% of income spent" gauge, the transactions in one card).
+  Then, from two more pictures: glass cards (`glass` / `glass-strong`
+  utilities in `globals.css`), a moving backdrop rebuilt in CSS from the
+  user's picture of blue/teal under a dot grid (`.app-backdrop`; pastel
+  in light mode so text on it stays readable, deep navy in dark mode),
+  and "Safe to spend" as dark glass with a turning, glowing rim
+  (`.glow-card`). The backdrop and rim stay still with reduced motion.
   Next: ask the user what they think, then bring the other pages in line
   (page headers, the sign-in page), maybe a landing page for visitors.
 - Optional later: automatic exchange rates from a provider (PRD 11.4),

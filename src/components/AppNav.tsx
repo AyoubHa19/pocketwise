@@ -61,7 +61,10 @@ export function SideRail() {
   const pathname = usePathname();
   return (
     <aside className="sticky top-0 hidden h-dvh shrink-0 py-4 pl-4 lg:block">
-      <div className="flex h-full w-[4.5rem] flex-col items-center rounded-[2.25rem] border border-card-edge bg-surface py-4 shadow-card">
+      {/* The glass is a layer of its own: glass (backdrop blur) on this
+          box would make it the frame for the fixed name labels inside. */}
+      <div className="relative isolate flex h-full w-[4.5rem] flex-col items-center py-4">
+        <div aria-hidden="true" className="glass-strong absolute inset-0 -z-10 rounded-[2.25rem]" />
         <Link href="/" aria-label="Pocketwise, Dashboard" className="flex h-11 w-11 items-center justify-center">
           <Logo size={40} />
         </Link>
@@ -134,7 +137,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 mx-auto max-w-md rounded-[1.75rem] border border-card-edge bg-surface p-1.5 shadow-[0_8px_30px_rgb(23_26_23/0.12)] lg:hidden"
+      className="glass-strong fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 mx-auto max-w-md rounded-[1.75rem] p-1.5 lg:hidden"
     >
       <ul className="grid grid-cols-5">
         {DAILY.map((item) => (
@@ -240,7 +243,7 @@ function MoreButton({ items, pathname, placement }: { items: Item[]; pathname: s
         id={menuId}
         popover="auto"
         // m-0 and the explicit insets undo the popover's centring.
-        className="fixed inset-auto m-0 w-60 rounded-card border border-card-edge bg-surface p-2 text-foreground shadow-[0_8px_30px_rgb(23_26_23/0.16)]"
+        className="glass-strong fixed inset-auto m-0 w-60 rounded-card p-2 text-foreground"
       >
         <nav aria-label="More pages">
           <ul>

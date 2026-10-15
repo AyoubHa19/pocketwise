@@ -26,7 +26,7 @@ export function MonthPicker({
   return (
     <div className="flex flex-wrap-reverse items-center justify-end gap-x-4 gap-y-2">
       {/* One white pill: the arrows inside it, round. */}
-      <div className="flex items-center rounded-full border border-card-edge bg-surface p-1 shadow-card">
+      <div className="glass-strong flex items-center rounded-full p-1">
         <button
           type="button"
           onClick={() => onChange(addMonths(month, -1))}

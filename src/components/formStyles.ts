@@ -4,8 +4,7 @@
 // Everything you can tap is at least 44px tall (min-h-11), the size Apple
 // and Google recommend for fingers.
 
-export const cardClass =
-  "rounded-card border border-card-edge bg-surface shadow-card";
+export const cardClass = "glass rounded-card";
 
 /**
  * The home page layout, shared with its loading skeleton: three rows of

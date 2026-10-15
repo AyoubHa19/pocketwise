@@ -25,41 +25,57 @@
 }
 
 /*
- * The look: a warm light grey page with white cards (near-black and
- * deep greens in dark mode), black for what's selected, and a sage green
- * as the brand colour. Measured contrast, light / dark, on cards: main
- * text 17.6 / 15.2, muted 6.1 / 7.2, accent 7.1 / 9.1, field edges
- * 3.6 / 3.6.
+ * The look: frosted glass cards over a moving backdrop of blurred blues
+ * and teals under a grid of fine dots (.app-backdrop, below), black for
+ * what's selected, and a sage green as the brand colour.
+ *
+ * Text sits on glass or right on the backdrop, so both were measured at
+ * their darkest (light mode) or lightest (dark mode) point, with the glass
+ * over the backdrop's strongest colour. Light / dark: main text 11+ / 9+,
+ * muted 5.3 / 6.3 on glass and 4.6 / 4.6 on the bare backdrop, accent
+ * 5.5 / 7.8, field edges 3.3 / 3.4. That's why the light backdrop is a
+ * pastel version of the picture and the dark one a deep version.
  */
 :root {
-  --canvas: light-dark(#e9e8e2, #0d0f0e); /* The page behind everything */
-  --surface: light-dark(#ffffff, #161917); /* Cards, fields, the side bar */
-  --surface-muted: light-dark(#f2f1ec, #1f2320); /* Hover, the row being edited, tracks */
+  --canvas: light-dark(#e8eef3, #0b141d); /* The backdrop's base, and the page while it loads */
+  --surface: light-dark(#ffffff, #161917); /* Solid: fields, the add/edit sheet */
+  --surface-muted: light-dark(rgb(23 40 52 / 0.06), rgb(255 255 255 / 0.06)); /* Hover, the row being edited, tracks */
   --foreground: light-dark(#171a17, #eceeea); /* Main text */
-  --muted: light-dark(#5f645c, #a1a79f); /* Secondary text: labels, dates, notes */
-  --line: light-dark(#e6e4dd, #272b28); /* Dividers (decoration only) */
-  --card-edge: light-dark(transparent, #232725); /* White cards need no edge on grey; dark ones do */
-  --line-strong: light-dark(#7d8279, #6c736b); /* Field and button edges, which must be seen */
-  --accent: light-dark(#3f5f4b, #9bc3a8); /* Sage green: main buttons, focus ring */
+  --muted: light-dark(#4d524b, #aab0a8); /* Secondary text: labels, dates, notes */
+  --line: light-dark(rgb(23 40 52 / 0.1), rgb(255 255 255 / 0.09)); /* Dividers (decoration only) */
+  --card-edge: light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.09)); /* Glass's bright rim */
+  --line-strong: light-dark(#6b7067, #79807a); /* Field and button edges, which must be seen */
+  --accent: light-dark(#36543f, #a3cbb0); /* Sage green: main buttons, focus ring */
   --accent-foreground: light-dark(#ffffff, #10241a); /* Text on accent */
-  --accent-soft: light-dark(#dfe8e1, #223429); /* Light sage: chart areas, icon circles */
+  --accent-soft: light-dark(rgb(54 84 63 / 0.12), rgb(163 203 176 / 0.14)); /* Chart areas, icon circles */
   --ink: light-dark(#171a17, #eceeea); /* What's selected: the current page's icon */
   --ink-foreground: light-dark(#ffffff, #171a17);
-  --positive: light-dark(#2e6a44, #8fd0a6); /* Income amounts, "up" badges */
-  --positive-surface: light-dark(#e4efe7, #17271d);
-  --danger: light-dark(#b42318, #f97066); /* Errors and Delete */
-  --danger-surface: light-dark(#fdecea, #2a1215); /* Background of error boxes */
+  --positive: light-dark(#255a37, #95d6ab); /* Income amounts, "up" badges */
+  --positive-surface: light-dark(#e1eee5, #17271d);
+  --danger: light-dark(#a11d14, #ff8a80); /* Errors and Delete */
+  --danger-surface: light-dark(#fcebe9, #2a1215); /* Background of error boxes */
   --danger-line: light-dark(#f6c9c4, #5c1d22);
-  --warning: light-dark(#a14a07, #fbbf24); /* A budget close to its limit */
-  /* The one highlighted card (safe to spend): white text on both ends. */
-  --feature-from: light-dark(#3f5f4b, #24392c);
-  --feature-to: light-dark(#5d7d68, #3a5946);
+  --warning: light-dark(#874006, #fbbf24); /* A budget close to its limit */
+  /* The highlighted card (safe to spend): dark green glass, white text. */
+  --feature-from: rgb(17 31 24 / 0.9);
+  --feature-to: rgb(38 64 49 / 0.86);
 
-  /* Soft shadows lift the white cards off the grey page; on dark ones they
-     barely show, so the card edge does that work instead. */
+  /* Glass: mostly opaque, so text stays readable over any part of the
+     backdrop, with the colours still showing through the blur. */
+  --glass: light-dark(rgb(255 255 255 / 0.74), rgb(18 22 20 / 0.72));
+  --glass-strong: light-dark(rgb(255 255 255 / 0.86), rgb(18 22 20 / 0.84)); /* Bars and menus */
   --shadow-card:
-    0 1px 2px light-dark(rgb(23 26 23 / 0.04), transparent),
-    0 6px 20px light-dark(rgb(23 26 23 / 0.05), transparent);
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.06)),
+    0 8px 32px light-dark(rgb(31 52 75 / 0.1), rgb(0 0 0 / 0.3));
+
+  /* The backdrop's colours, from the picture: navy (top right), a white
+     streak, teal (bottom), aqua (left), mist; and the dots. */
+  --bd-navy: light-dark(#bccbdc, #1f3a55);
+  --bd-white: light-dark(#ffffff, #23415a);
+  --bd-teal: light-dark(#b2d6de, #17414d);
+  --bd-aqua: light-dark(#d6eff1, #15303d);
+  --bd-mist: light-dark(#c9d8e5, #1c3346);
+  --bd-dot: light-dark(rgb(41 66 100 / 0.16), rgb(170 205 230 / 0.1));
 }
 
 /* Turns the variables above into Tailwind classes: bg-surface, text-muted,
@@ -211,4 +227,155 @@ html:has(dialog[open]) {
 ::placeholder {
   color: var(--muted);
   opacity: 1; /* Firefox fades placeholders by default */
+}
+
+/*
+ * Glass: a card you can half see through, the backdrop blurred behind it,
+ * with a bright rim along the top edge. `glass` for cards, `glass-strong`
+ * (more opaque) for the bars and menus that float over the page.
+ * Browsers without backdrop blur just show the near-opaque colour.
+ */
+@utility glass {
+  background-color: var(--glass);
+  border: 1px solid var(--card-edge);
+  box-shadow: var(--shadow-card);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+@utility glass-strong {
+  background-color: var(--glass-strong);
+  border: 1px solid var(--card-edge);
+  box-shadow: var(--shadow-card);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+}
+
+/*
+ * The backdrop behind every page (Backdrop.tsx): soft patches of colour
+ * from the picture the design started from, drifting slowly, under a fine
+ * grid of dots that's strongest where the colour is. It's fixed, so the
+ * page scrolls over it. Only transform moves, which the graphics card does
+ * on its own. Still for people who reduce motion.
+ */
+.app-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--canvas);
+}
+.app-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(38% 32% at 82% 14%, var(--bd-navy), transparent 70%),
+    radial-gradient(30% 26% at 66% 52%, var(--bd-white), transparent 70%),
+    radial-gradient(44% 34% at 28% 86%, var(--bd-teal), transparent 70%),
+    radial-gradient(36% 40% at 14% 32%, var(--bd-aqua), transparent 70%),
+    radial-gradient(30% 26% at 88% 82%, var(--bd-mist), transparent 70%);
+}
+.app-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--bd-dot) 0 1.15px, transparent 1.7px);
+  background-size: 7px 7px;
+  -webkit-mask-image:
+    radial-gradient(60% 55% at 85% 12%, #000, transparent),
+    radial-gradient(65% 45% at 30% 100%, #000, transparent),
+    linear-gradient(rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.35));
+  mask-image:
+    radial-gradient(60% 55% at 85% 12%, #000, transparent),
+    radial-gradient(65% 45% at 30% 100%, #000, transparent),
+    linear-gradient(rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.35));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-backdrop::before {
+    animation: backdrop-drift 48s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+}
+@keyframes backdrop-drift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(-5%, 4%, 0) rotate(7deg) scale(1.06);
+  }
+  100% {
+    transform: translate3d(4%, -3%, 0) rotate(-5deg) scale(1.02);
+  }
+}
+
+/*
+ * The highlighted card (SafeToSpendCard): dark green glass with a thin
+ * shimmering rim of greens, teal and white, and a soft glow of the same
+ * colours around it. The colours turn slowly; still with reduced motion.
+ * Made of three layers inside the card: the glow (behind), the fill, and
+ * the rim (a border cut out of a full gradient with a mask).
+ */
+@property --glow-angle {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+.glow-card {
+  --glow: conic-gradient(
+    from var(--glow-angle),
+    #a3cbb0,
+    #eef7f1,
+    #7cc4d2,
+    #c9dccf,
+    #4f7d62,
+    #a3cbb0
+  );
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius-card);
+  color: #ffffff;
+}
+.glow-card-halo {
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border-radius: calc(var(--radius-card) + 4px);
+  background: var(--glow);
+  filter: blur(14px);
+  opacity: 0.55;
+}
+.glow-card-fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(145deg, var(--feature-from), var(--feature-to));
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+.glow-card-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: var(--glow);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .glow-card {
+    animation: glow-turn 10s linear infinite;
+  }
+}
+@keyframes glow-turn {
+  to {
+    --glow-angle: 360deg;
+  }
 }
