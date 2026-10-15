@@ -121,8 +121,9 @@ Next, in order (PRD 29):
   `globals.css`, in the components layer so a component's own classes
   win; `on-photo` for anything else, like the top bar): no boxes or glow
   (the user didn't want them). Light mode: a pale veil on the photo and
-  near-black text (6.2:1); dark mode: a dark veil and white text (6.0:1).
-  The user wanted light to look clearly light. Glass opacity (60% light /
+  near-black text (5.6:1); dark mode: a dark veil and white text (6.0:1).
+  The user wanted light to look clearly light, with the photo still a
+  little visible (veil 45% → 70%, top to bottom). Glass opacity (60% light /
   50% dark) is the least that keeps every text colour on cards AA over
   that photo, measured with a script over the photo itself. Glass puts the normal text colours back (`--base-*`), so
   a card that is itself an `li` (or glass inside loose text) isn't turned
@@ -159,9 +160,9 @@ Next, in order (PRD 29):
   3 steps, privacy, and a last call; only claims the app really makes
   (receipt scanning left out until the API key is set). The signed-out
   top bar has "Sign in" and "Get started".
-  Next: the user is making a new logo (an image-generation prompt was
-  given); when they send it, replace `Logo.tsx`, `src/app/icon.svg` and
-  the apple icon with it.
+  Logo: the user's chosen logo (a green wallet with a light leaf),
+  redrawn as SVG in `Logo.tsx` and `src/app/icon.svg` (keep them the
+  same); the iPhone icon draws it on off-white.
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
 - Later: a domain of our own, Clerk's production instance (then remove

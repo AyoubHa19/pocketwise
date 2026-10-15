@@ -14,14 +14,14 @@ export default async function AppleIcon() {
 
   return new ImageResponse(
     (
-      // iOS rounds the corners itself, so fill the whole square with the
-      // background green, or the drawing's own rounded corners show as black.
+      // iOS rounds the corners itself and shows transparent parts as black,
+      // so the whole square gets the app's off-white behind the drawing.
       <div
         style={{
           width: "100%",
           height: "100%",
           display: "flex",
-          background: "#3f5f4b",
+          background: "#f4f6f1",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse needs a plain <img>, not next/image. */}
