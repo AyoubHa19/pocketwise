@@ -117,14 +117,14 @@ Next, in order (PRD 29):
   (`public/backdrop.webp`, the user's picture with its search bar filled
   in), drifting slowly (32s each way). The user didn't want a panel hiding
   the photo, so there's none: the photo shows between the cards. Text
-  outside a card is plain white, straight on the photo (the "Loose text"
-  rule in `globals.css`, in the components layer so a component's own
-  classes win; `on-photo` for anything else, like the top bar). The user
-  didn't want boxes or a glow behind it, so the photo is darkened enough
-  for white everywhere, in both themes (white 6.0:1 at its lightest).
-  Glass opacity (78% light / 50% dark) is the least that keeps every text
-  colour on cards AA over that photo, measured with a script over the
-  photo itself. Glass puts the normal text colours back (`--base-*`), so
+  outside a card sits plain on the photo (the "Loose text" rule in
+  `globals.css`, in the components layer so a component's own classes
+  win; `on-photo` for anything else, like the top bar): no boxes or glow
+  (the user didn't want them). Light mode: a pale veil on the photo and
+  near-black text (6.2:1); dark mode: a dark veil and white text (6.0:1).
+  The user wanted light to look clearly light. Glass opacity (60% light /
+  50% dark) is the least that keeps every text colour on cards AA over
+  that photo, measured with a script over the photo itself. Glass puts the normal text colours back (`--base-*`), so
   a card that is itself an `li` (or glass inside loose text) isn't turned
   white. `--canvas` is the photo's darkened average, so white text reads
   before it loads and axe measures against something realistic.
