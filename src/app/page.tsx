@@ -1,9 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
+import { Landing } from "@/components/Landing";
 import { TransactionTracker } from "@/components/TransactionTracker";
 
 export default async function Home() {
-  // Signed out? Off to the sign-in page, which comes back here afterwards.
-  await auth.protect();
+  // Visitors who aren't signed in see what Pocketwise is, with the ways in.
+  const { userId } = await auth();
+  if (!userId) return <Landing />;
 
   return (
     // The page's heading is the greeting at its top (DashboardHeader).

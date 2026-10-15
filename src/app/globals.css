@@ -325,7 +325,7 @@ html:has(dialog[open]) {
 @layer components {
   .on-photo,
   :where(main)
-    :where(h1, h2, h3, h4, p, label, legend, li, dt, dd, span):not(
+    :where(h1, h2, h3, h4, p, label, legend, li, dt, dd, span, figcaption):not(
       :where(.glass, .glass-strong, .glow-card, dialog, [popover], .sr-only) *,
       .glass,
       .glass-strong,

@@ -153,8 +153,15 @@ Next, in order (PRD 29):
   transactions (6), Transactions page (25 at a time), spending by
   category (5), Settings categories (8), Reports categories (8), goal
   history and debt payments (5).
-  Next: ask the user what they think, then bring the other pages in line
-  (page headers, the sign-in page), maybe a landing page for visitors.
+  Landing page for visitors (`Landing.tsx`): `/` shows it when signed
+  out (`page.tsx` checks `auth()`), the dashboard when signed in. A
+  hero with a dashboard preview (made-up numbers, said so), 9 features,
+  3 steps, privacy, and a last call; only claims the app really makes
+  (receipt scanning left out until the API key is set). The signed-out
+  top bar has "Sign in" and "Get started".
+  Next: the user is making a new logo (an image-generation prompt was
+  given); when they send it, replace `Logo.tsx`, `src/app/icon.svg` and
+  the apple icon with it.
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
 - Later: a domain of our own, Clerk's production instance (then remove
