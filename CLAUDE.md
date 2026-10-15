@@ -136,7 +136,13 @@ Next, in order (PRD 29):
   ~500px and the screenshot looks too wide).
   Scroll animations (`view()` timelines) follow the nearest scroll box:
   use `overflow-clip`, never `overflow-hidden`, on anything around an
-  animated card or row, or it never animates. Cards have a sheen, a deeper shadow and a light spot
+  animated card or row, or it never animates.
+  Avatars: 8 drawn pictures (`public/avatars/a1–a8.webp`, cut from the
+  user's sheet `Desktop/Avatar.png.jfif`), chosen in Settings and saved
+  as the `avatar` preference (Convex settings row); or the user's own
+  photo, uploaded to their Clerk account (`setProfileImage`, JPEG/PNG/WebP
+  up to 5 MB, `src/lib/photo.ts`). A real upload hasn't been tested: it
+  would change the user's Clerk photo, so ask first. Cards have a sheen, a deeper shadow and a light spot
   that follows the mouse (data-lit, --spot-x/--spot-y);
   "Safe to spend" has a light version in light
   mode; a soft light follows the mouse (`CursorLight.tsx`); cards fade
