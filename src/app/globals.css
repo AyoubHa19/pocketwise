@@ -29,14 +29,16 @@
  * slowly behind everything, frosted glass cards on it, black for what's
  * selected, and sage green as the brand colour.
  *
- * The photo shows everywhere between the cards, darkened just enough for
- * white text to sit right on it (see "Loose text" below). The glass is as see-through as it can be while
- * every text colour passes AA over the photo's darkest (light mode) or
- * lightest (dark mode) point, measured on a laptop and a phone with the
- * photo at its most zoomed in: muted text 4.6 / 4.9 on cards.
+ * The photo shows everywhere between the cards, under a veil: light in
+ * light mode, so dark text sits right on it, and dark in dark mode, for
+ * white text (see "Loose text" below). The glass is as see-through as it
+ * can be while every text colour passes AA over the photo's darkest
+ * (light mode) or lightest (dark mode) point, measured on a laptop and a
+ * phone with the photo at its most zoomed in: muted text on cards 5.5 /
+ * 5.1, light / dark.
  */
 /* The text colours, kept apart so glass can put them back: loose text on
-   the photo swaps them for light ones (see "Loose text"), and anything
+   the photo swaps them for its own (see "Loose text"), and anything
    glass inside such text, or holding it, starts again from these. */
 :root {
   --base-foreground: light-dark(#171a17, #eceeea);
@@ -67,7 +69,7 @@
 }
 
 :root {
-  --canvas: #2d3126; /* Behind the photo: its average colour, darkened like it, so the white text reads while it loads */
+  --canvas: light-dark(#bcbfb4, #2d3126); /* Behind the photo: its average colour under the veil, so loose text reads while it loads */
   --surface: light-dark(#ffffff, #161917); /* Solid: fields, the add/edit sheet */
   --surface-muted: light-dark(rgb(23 40 30 / 0.06), rgb(255 255 255 / 0.06)); /* Hover, the row being edited, tracks */
   --foreground: var(--base-foreground); /* Main text */
@@ -88,7 +90,7 @@
   --warning: var(--base-warning); /* A budget close to its limit */
 
   /* Glass: the cards, and the bars and menus that float over everything. */
-  --glass: light-dark(rgb(255 255 255 / 0.78), rgb(18 22 20 / 0.5));
+  --glass: light-dark(rgb(255 255 255 / 0.6), rgb(18 22 20 / 0.5));
   --glass-strong: light-dark(rgb(255 255 255 / 0.8), rgb(18 22 20 / 0.66));
   /* A sheen across the glass from its top left corner. */
   --glass-sheen: linear-gradient(
@@ -310,14 +312,15 @@ html:has(dialog[open]) {
 
 /*
  * Loose text: titles, notes and headings that aren't on a card sit right
- * on the photo, plain, in white (the photo is darkened enough for it: see
- * .app-backdrop). The text colours are swapped for light ones inside
- * them, so classes like text-muted or text-positive still work, just
- * lighter. In the components layer, so classes an element sets itself
- * still win. A card that is itself one of these (an li card) is left
- * alone, with all it holds. Measured at the photo's lightest point: white 6.0:1, the
- * lighter grey 4.7:1. `on-photo` does the same for anything else that
- * sits on the photo (the top bar, a lone button).
+ * on the photo, plain: near black in light mode, white in dark mode (the
+ * veil on the photo makes room for each: see .app-backdrop). The text
+ * colours are swapped for these inside them, so classes like text-muted
+ * or text-positive still work, just stronger. In the components layer, so
+ * classes an element sets itself still win. A card that is itself one of
+ * these (an li card) is left alone, with all it holds. Measured at the
+ * photo's hardest point, light / dark: main text 6.2 / 6.0:1, the grey
+ * 4.8 / 4.7:1. `on-photo` does the same for anything else that sits on
+ * the photo (the top bar, a lone button).
  */
 @layer components {
   .on-photo,
@@ -329,21 +332,22 @@ html:has(dialog[open]) {
       .glow-card,
       .sr-only
     ) {
-    --foreground: #ffffff;
-    --muted: #dfe5dc;
-    --positive: #b4e6c4;
-    --danger: #ffc2bb;
-    --warning: #ffd79a;
-    --accent: #c4e3cd;
+    --foreground: light-dark(#171a17, #ffffff);
+    --muted: light-dark(#2b2f29, #dfe5dc);
+    --positive: light-dark(#0f2e1a, #b4e6c4);
+    --danger: light-dark(#5a0f0a, #ffc2bb);
+    --warning: light-dark(#4f2603, #ffd79a);
+    --accent: light-dark(#1c3524, #c4e3cd);
     color: var(--foreground);
   }
 }
 
 /*
  * The photo behind every page, drifting and zooming slowly (half a minute
- * each way), under a dark veil, strongest at the top where the photo's
- * sky is pale, so white text reads anywhere on it (the same in both
- * modes; the cards are what change).
+ * each way), under a veil. In light mode a pale one, strongest lower down
+ * where the hills are darkest, so dark text reads anywhere on it; in dark
+ * mode a dark one, strongest at the top where the sky is pale, for white
+ * text.
  * Only transform moves, which the graphics card does on its own. Still for
  * people who reduce motion.
  */
@@ -367,9 +371,9 @@ html:has(dialog[open]) {
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgb(6 9 6 / 0.6),
-    rgb(6 9 6 / 0.45) 40%,
-    rgb(6 9 6 / 0.3)
+    light-dark(rgb(244 246 241 / 0.5), rgb(6 9 6 / 0.6)),
+    light-dark(rgb(244 246 241 / 0.65), rgb(6 9 6 / 0.45)) 40%,
+    light-dark(rgb(244 246 241 / 0.75), rgb(6 9 6 / 0.3))
   );
 }
 @media (prefers-reduced-motion: no-preference) {

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 /**
  * Clerk's sign-in and sign-up forms in Pocketwise's look: the form on a
  * glass card, and beside it (above it on phones) what Pocketwise does, in
- * white on the photo like the rest of the app's loose text.
+ * text right on the photo like the rest of the app's loose text.
  */
 export function AuthLayout({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {
   return (
