@@ -16,7 +16,7 @@ const ICON = { system: Monitor, light: Sun, dark: Moon };
  * in Settings (the two always agree; ThemeSync applies it to the page).
  * The label says both where you are and where a press takes you.
  */
-export function ThemeToggle() {
+export function ThemeToggle({ round = false }: { round?: boolean }) {
   const theme = useAccountPreferences()?.theme;
   const setPreferences = useSetPreferences();
   // Until the account's preference arrives, keep the space but stay quiet.
@@ -31,7 +31,7 @@ export function ThemeToggle() {
       onClick={() => void setPreferences({ theme: next })}
       aria-label={label}
       title={label}
-      className={`flex h-11 w-11 items-center justify-center rounded-control text-muted hover:bg-surface-muted hover:text-foreground ${pressable}`}
+      className={`flex h-11 w-11 items-center justify-center ${round ? "rounded-full" : "rounded-control"} text-muted hover:bg-surface-muted hover:text-foreground ${pressable}`}
     >
       <Icon aria-hidden="true" size={20} strokeWidth={2} />
     </button>

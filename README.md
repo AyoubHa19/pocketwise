@@ -197,12 +197,12 @@ visible to the Vercel team; the production domain is public.
 ```
 src/
 ├── app/            Pages: each folder is a URL (settings/ is /settings)
-│   ├── layout.tsx  The frame around every page: header, fonts, title
+│   ├── layout.tsx  The frame around every page: side bar, fonts, title
 │   ├── page.tsx    The home page (/)
 │   ├── icon.svg    The app icon; apple-icon.tsx turns it into a PNG
 │   └── settings/
 ├── components/     The pieces of the screens (forms, lists, charts,
-│                   header) and the shared styles in formStyles.ts
+│                   navigation) and the shared styles in formStyles.ts
 └── lib/            Everything that isn't a screen: money, dates,
                     totals, saving, animation timing. Tests sit beside
                     the code they check, as *.test.ts.

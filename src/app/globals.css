@@ -24,27 +24,42 @@
   color-scheme: dark;
 }
 
+/*
+ * The look: a warm light grey page with white cards (near-black and
+ * deep greens in dark mode), black for what's selected, and a sage green
+ * as the brand colour. Measured contrast, light / dark, on cards: main
+ * text 17.6 / 15.2, muted 6.1 / 7.2, accent 7.1 / 9.1, field edges
+ * 3.6 / 3.6.
+ */
 :root {
-  --canvas: light-dark(#f6f7f9, #0b0d10); /* The page behind everything */
-  --surface: light-dark(#ffffff, #14171c); /* Cards, fields, the header */
-  --surface-muted: light-dark(#eef0f3, #1d2128); /* Hover, the current link, the row being edited */
-  --foreground: light-dark(#0f1419, #eceef1); /* Main text */
-  --muted: light-dark(#5b6472, #9aa3af); /* Secondary text: labels, dates, notes */
-  --line: light-dark(#e3e6ea, #262b33); /* Card edges and dividers (decoration only) */
-  --line-strong: light-dark(#868f9c, #6b7482); /* Field and button edges, which must be seen */
-  --accent: light-dark(#047857, #34d399); /* Brand green: main buttons, focus ring */
-  --accent-foreground: light-dark(#ffffff, #05291c); /* Text on accent */
-  --positive: light-dark(#047857, #34d399); /* Income amounts */
+  --canvas: light-dark(#e9e8e2, #0d0f0e); /* The page behind everything */
+  --surface: light-dark(#ffffff, #161917); /* Cards, fields, the side bar */
+  --surface-muted: light-dark(#f2f1ec, #1f2320); /* Hover, the row being edited, tracks */
+  --foreground: light-dark(#171a17, #eceeea); /* Main text */
+  --muted: light-dark(#5f645c, #a1a79f); /* Secondary text: labels, dates, notes */
+  --line: light-dark(#e6e4dd, #272b28); /* Dividers (decoration only) */
+  --card-edge: light-dark(transparent, #232725); /* White cards need no edge on grey; dark ones do */
+  --line-strong: light-dark(#7d8279, #6c736b); /* Field and button edges, which must be seen */
+  --accent: light-dark(#3f5f4b, #9bc3a8); /* Sage green: main buttons, focus ring */
+  --accent-foreground: light-dark(#ffffff, #10241a); /* Text on accent */
+  --accent-soft: light-dark(#dfe8e1, #223429); /* Light sage: chart areas, icon circles */
+  --ink: light-dark(#171a17, #eceeea); /* What's selected: the current page's icon */
+  --ink-foreground: light-dark(#ffffff, #171a17);
+  --positive: light-dark(#2e6a44, #8fd0a6); /* Income amounts, "up" badges */
+  --positive-surface: light-dark(#e4efe7, #17271d);
   --danger: light-dark(#b42318, #f97066); /* Errors and Delete */
-  --danger-surface: light-dark(#fef3f2, #2a1215); /* Background of error boxes */
-  --danger-line: light-dark(#fecdca, #5c1d22);
-  --warning: light-dark(#b45309, #fbbf24); /* A budget close to its limit */
+  --danger-surface: light-dark(#fdecea, #2a1215); /* Background of error boxes */
+  --danger-line: light-dark(#f6c9c4, #5c1d22);
+  --warning: light-dark(#a14a07, #fbbf24); /* A budget close to its limit */
+  /* The one highlighted card (safe to spend): white text on both ends. */
+  --feature-from: light-dark(#3f5f4b, #24392c);
+  --feature-to: light-dark(#5d7d68, #3a5946);
 
-  /* Shadows barely show on dark backgrounds, so there they're transparent
-     and the card edge does the work. */
+  /* Soft shadows lift the white cards off the grey page; on dark ones they
+     barely show, so the card edge does that work instead. */
   --shadow-card:
-    0 1px 2px light-dark(rgb(16 24 40 / 0.04), transparent),
-    0 1px 3px light-dark(rgb(16 24 40 / 0.06), transparent);
+    0 1px 2px light-dark(rgb(23 26 23 / 0.04), transparent),
+    0 6px 20px light-dark(rgb(23 26 23 / 0.05), transparent);
 }
 
 /* Turns the variables above into Tailwind classes: bg-surface, text-muted,
@@ -56,10 +71,17 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-card-edge: var(--card-edge);
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
   --color-positive: var(--positive);
+  --color-positive-surface: var(--positive-surface);
+  --color-feature-from: var(--feature-from);
+  --color-feature-to: var(--feature-to);
   --color-danger: var(--danger);
   --color-danger-surface: var(--danger-surface);
   --color-danger-line: var(--danger-line);
@@ -67,14 +89,14 @@
 
   --shadow-card: var(--shadow-card);
 
-  --radius-card: 1rem; /* 16px, for cards and panels */
+  --radius-card: 1.25rem; /* 20px, for cards and panels */
   --radius-control: 0.75rem; /* 12px, for fields and buttons */
 
   /* The app's one easing curve, as the ease-pocket class: quick start,
      gentle stop, no bounce. The same curve as `ease` in src/lib/motion.ts. */
   --ease-pocket: cubic-bezier(0.22, 1, 0.36, 1);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-dm-sans);
 }
 
 /* Always keep room for the scrollbar, so the page doesn't shift sideways

@@ -1,18 +1,22 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import { cookies } from "next/headers";
+import { BottomNav, SideRail } from "@/components/AppNav";
 import { DataSync } from "@/components/DataSync";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { MotionProvider } from "@/components/MotionProvider";
 import { PreviewBanner } from "@/components/PreviewBanner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ThemeSync } from "@/components/ThemeSync";
+import { WhenSignedIn } from "@/components/WhenSignedIn";
 import { isTheme, THEME_COOKIE } from "@/lib/preferences";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// A rounded, friendly sans with figures of equal width (tabular-nums), so
+// amounts line up in columns.
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
@@ -34,7 +38,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-theme={theme}
-      className={`${geistSans.variable} h-full antialiased`}
+      className={`${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
         {/* Clerk knows who's signed in; Convex, inside it, sends that
@@ -45,8 +49,20 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <DataSync />
             <MotionProvider>
               <PreviewBanner />
-              <SiteHeader />
-              <main className="flex-1">{children}</main>
+              {/* The side bar on the left of large screens; the bottom bar
+                  on phones, with room kept under the page for it. */}
+              <div className="flex flex-1">
+                <WhenSignedIn>
+                  <SideRail />
+                </WhenSignedIn>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <SiteHeader />
+                  <main className="flex-1 pb-28 lg:pb-0">{children}</main>
+                </div>
+              </div>
+              <WhenSignedIn>
+                <BottomNav />
+              </WhenSignedIn>
             </MotionProvider>
           </ConvexClientProvider>
         </ClerkProvider>

@@ -5,43 +5,36 @@
 // and Google recommend for fingers.
 
 export const cardClass =
-  "rounded-card border border-line bg-surface shadow-card";
+  "rounded-card border border-card-edge bg-surface shadow-card";
 
 /**
- * The home page layout, shared with its loading skeleton. On phones it's one
- * column in reading order: summary, transactions, charts. From lg (1024px)
- * it's two rows, in that same order: the summary across the full width,
- * then the transactions (the wider side) next to the charts.
+ * The home page layout, shared with its loading skeleton: three rows of
+ * cards, in reading order at every size.
+ * - The month in four tiles: spending, income, left over, safe to spend.
+ *   One a row on the smallest phones, two from 420px, four from lg.
+ * - The overview: the cash flow chart, the gauge and the total balance.
+ *   From md (768px) the chart is on top and the other two side by side;
+ *   from lg (1024px) all three in a row, 6 + 3 + 3 of twelve columns.
+ * - The activity: the transactions, and from lg beside them (7 + 5) the
+ *   bills, budgets and categories.
  *
- * The summary spans the width so no column becomes a tall tower of cards
- * next to a short one, which left big empty areas when a month had only a
- * few transactions.
+ * Columns are minmax(0, 1fr), not the default auto: an auto column grows
+ * to fit its widest unbreakable line (a long note, say), which pushed the
+ * page wider than the screen.
  */
-// On phones the single column is minmax(0, 1fr), not the default auto: an
-// auto column grows to fit its widest unbreakable line (a long note, say),
-// which pushed the page wider than the screen. This way it takes the screen's
-// width and long text is cut short with "…" as intended.
-export const dashboardGridClass =
-  "grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-10";
+export const dashboardRowsClass = "space-y-4 lg:space-y-5";
 
-export const dashboardSummaryArea = "lg:col-span-2";
-export const dashboardListArea = "lg:col-start-1 lg:row-start-2";
-export const dashboardChartsArea = "lg:col-start-2 lg:row-start-2";
+export const statsRowClass =
+  "grid grid-cols-[minmax(0,1fr)] gap-4 min-[420px]:grid-cols-2 lg:grid-cols-4 lg:gap-5";
 
-/**
- * Inside the summary, from lg: the account balance with the month picker
- * under it on the left, and the month's summary on the right, which is
- * about as tall as the two together. On phones it's a simple stack.
- *
- * The second row is 1fr so, if the month summary is the taller side, the
- * extra height goes under the month picker rather than between the cards.
- */
-export const summaryGridClass =
-  "space-y-4 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10 lg:gap-y-4 lg:space-y-0";
+export const overviewRowClass = "grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 lg:grid-cols-12 lg:gap-5";
+export const chartArea = "md:col-span-2 lg:col-span-6";
+export const gaugeArea = "lg:col-span-3";
+export const balanceArea = "lg:col-span-3";
 
-export const summaryBalanceArea = "lg:col-start-1 lg:row-start-1";
-export const summaryPickerArea = "lg:col-start-1 lg:row-start-2";
-export const summaryMonthArea = "lg:col-start-2 lg:row-span-2 lg:row-start-1";
+export const activityRowClass = "grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-12 lg:items-start lg:gap-5";
+export const listArea = "lg:col-span-7";
+export const sideArea = "lg:col-span-5";
 
 // Simple interaction feedback is CSS, not Motion: it needs no JavaScript.
 // Timing matches src/lib/motion.ts (fast = 150ms, ease-pocket).

@@ -97,13 +97,30 @@ Next, in order (PRD 29):
   site: dashboard ready in ~1.9 s on a first visit, ~0.4 s after; about
   280 KB of app JavaScript (compressed) plus 240 KB for Clerk's dev
   script; layout shift 0.007.
+- **Design (in progress, 2026-10-15)**: a new look inspired by a picture
+  the user sent (a "bento" finance dashboard): warm light grey page, white
+  cards (20px corners, soft shadows), black for what's selected, sage
+  green as the brand colour, DM Sans. Colours are tokens in
+  `globals.css` (contrast measured in its comment), so the user can ask
+  to change them later. Done so far: the frame (`AppNav.tsx`: a side bar
+  of round icons from lg, a bottom bar with "More" below lg; the top bar
+  `SiteHeader.tsx` only below lg or signed out), and the dashboard (a
+  greeting, four tiles with the green "Safe to spend", a cash flow line
+  chart, a "% of income spent" gauge, the transactions in one card).
+  Next: ask the user what they think, then bring the other pages in line
+  (page headers, the sign-in page), maybe a landing page for visitors.
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
 - Later: a domain of our own, Clerk's production instance (then remove
   the preview strip), and the mobile app (Expo).
 
-New sections go in the header's "More" menu (`SiteHeader.tsx`) unless
-they're used daily; the header only fits five items on a 320px phone.
+Navigation (`src/components/AppNav.tsx`): the side bar shows the daily
+pages and the often-used ones (DAILY, OFTEN), the rest are under "More"
+(SOMETIMES), so it fits a laptop's height; the phone's bottom bar has
+only the four DAILY pages and "More". Put a new page in SOMETIMES unless
+it's used often. Show signed-in-only parts with `WhenSignedIn`, not
+Clerk's server `<Show>`: the root layout isn't drawn again after signing
+in, so `<Show>` there stays "signed out" until a reload.
 
 ## Running it locally
 

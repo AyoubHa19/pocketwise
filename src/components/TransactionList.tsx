@@ -32,6 +32,11 @@ type Props = {
    * day (for sorting by amount).
    */
   order?: "newest" | "oldest" | "flat";
+  /**
+   * Inside a card already (the dashboard's): the rows run edge to edge of
+   * it between dividers, instead of sitting in cards of their own.
+   */
+  inCard?: boolean;
 };
 
 /**
@@ -53,7 +58,11 @@ export function TransactionList({
   accountNames,
   showAccounts = false,
   order = "newest",
+  inCard = false,
 }: Props) {
+  const listClass = inCard
+    ? "-mx-4 divide-y divide-line border-y border-line sm:-mx-6"
+    : `${cardClass} divide-y divide-line overflow-hidden`;
   const reduced = useReducedMotion() ?? false;
   const variants = collapse(reduced);
 
@@ -123,7 +132,7 @@ export function TransactionList({
           type="button"
           aria-label={label}
           onClick={() => onEdit(transaction)}
-          className={`flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-muted focus-visible:outline-offset-[-3px] ${colorTransition} ${
+          className={`flex min-h-16 w-full items-center gap-3 py-3 text-left ${inCard ? "px-4 sm:px-6" : "px-4"} hover:bg-surface-muted focus-visible:outline-offset-[-3px] ${colorTransition} ${
             transaction.id === editingId ? "bg-surface-muted" : ""
           }`}
         >
@@ -176,7 +185,7 @@ export function TransactionList({
 
   if (order === "flat") {
     return (
-      <ul className={`${cardClass} divide-y divide-line overflow-hidden`}>
+      <ul className={listClass}>
         <AnimatePresence initial={false}>
           {transactions.map((transaction) => row(transaction, true))}
         </AnimatePresence>
@@ -212,7 +221,7 @@ export function TransactionList({
               aria-labelledby={headingId}
               className="overflow-hidden pb-6"
             >
-              <div className="mb-2 flex items-baseline justify-between gap-4 px-1">
+              <div className={`mb-2 flex items-baseline justify-between gap-4 ${inCard ? "" : "px-1"}`}>
                 <h3 id={headingId} className="text-sm font-semibold text-muted">
                   {formatDay(day.date, today, dateOrder)}
                 </h3>
@@ -226,7 +235,7 @@ export function TransactionList({
               </div>
 
               {/* overflow-hidden keeps the row highlight inside the corners. */}
-              <ul className={`${cardClass} divide-y divide-line overflow-hidden`}>
+              <ul className={listClass}>
                 <AnimatePresence initial={false}>
                   {day.transactions.map((transaction) => row(transaction, false))}
                 </AnimatePresence>

@@ -13,21 +13,24 @@ import { TotalBalanceCard } from "@/components/TotalBalanceCard";
 import { CurrencySetup } from "@/components/CurrencySetup";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import {
+  activityRowClass,
+  balanceArea,
   cardClass,
-  dashboardChartsArea,
-  dashboardGridClass,
-  dashboardListArea,
-  dashboardSummaryArea,
+  chartArea,
+  dashboardRowsClass,
+  gaugeArea,
+  listArea,
+  overviewRowClass,
   pressable,
   primaryButtonClass,
-  summaryBalanceArea,
-  summaryGridClass,
-  summaryMonthArea,
-  summaryPickerArea,
+  sideArea,
+  statsRowClass,
 } from "@/components/formStyles";
-import { MonthlyTrend } from "@/components/MonthlyTrend";
+import { CashFlowChart } from "@/components/CashFlowChart";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import { MonthPicker } from "@/components/MonthPicker";
-import { MonthSummary } from "@/components/MonthSummary";
+import { MonthStats } from "@/components/MonthStats";
+import { SpentGauge } from "@/components/SpentGauge";
 import { Sheet } from "@/components/Sheet";
 import { SpendingByCategory } from "@/components/SpendingByCategory";
 import { TransactionForm } from "@/components/TransactionForm";
@@ -35,6 +38,7 @@ import { Toast } from "@/components/Toast";
 import { useTransactionEditor } from "@/components/useTransactionEditor";
 import { TransactionList } from "@/components/TransactionList";
 import { formatMonth, monthOf } from "@/lib/dates";
+import { formatMoney } from "@/lib/money";
 import { fadeRise, monthSlide } from "@/lib/motion";
 import { LocalDataImport, useLocalDataOffer } from "@/components/LocalDataImport";
 import {
@@ -167,6 +171,8 @@ export function TransactionTracker() {
 
   const monthTransactions = transactionsInMonth(transactions, month);
   const monthName = formatMonth(month);
+  const [mainTotals, ...otherTotals] = totalsByCurrency(monthTransactions, settings.currency);
+  const recentMonths = monthlyTotals(transactions, month, 6, settings.currency);
 
   // The props that make a part of the dashboard fade and rise into place,
   // `order` steps after the first. With playEntrance false, `initial` is
@@ -190,138 +196,14 @@ export function TransactionTracker() {
         />
       )}
 
-      {/* Room at the bottom on phones, so the floating Add button never
-          covers the last transaction. */}
-      <div className={`${dashboardGridClass} pb-24 sm:pb-0`}>
-        <section
-          aria-label={`Summary for ${monthName}`}
-          className={`${summaryGridClass} ${dashboardSummaryArea}`}
-        >
-          <m.div {...appear(0)} className={summaryBalanceArea}>
-            <TotalBalanceCard
-              accounts={accounts}
-              transactions={transactions}
-              today={today}
-              rates={rates ?? []}
-              dateOrder={preferences.dateOrder}
-              mainCurrency={settings.currency}
-            />
-          </m.div>
-          <m.div {...appear(1)} className={summaryPickerArea}>
-            <MonthPicker
-              month={month}
-              currentMonth={currentMonth}
-              direction={monthDirection}
-              onChange={changeMonth}
-            />
-          </m.div>
-          <m.div {...appear(2)} className={summaryMonthArea}>
-            <MonthSummary
-              totals={totalsByCurrency(monthTransactions, settings.currency)}
-            />
-          </m.div>
-        </section>
+      <DashboardHeader>
+        <MonthPicker month={month} currentMonth={currentMonth} direction={monthDirection} onChange={changeMonth} />
+      </DashboardHeader>
 
-        <m.section
-          {...appear(3)}
-          aria-labelledby="transactions-heading"
-          className={dashboardListArea}
-        >
-          <div className="flex min-h-11 items-center justify-between gap-4">
-            {/* tabIndex -1: focusable from code, but not a Tab stop. */}
-            <h2
-              id="transactions-heading"
-              ref={listHeadingRef}
-              tabIndex={-1}
-              className="text-lg font-semibold"
-            >
-              Transactions in {monthName}
-            </h2>
-            {/* From sm up, Add sits beside the list it adds to. The wrapper
-                does the hiding, because the button's own classes already
-                set its display. */}
-            <div className="hidden shrink-0 sm:block">
-              <button
-                type="button"
-                onClick={openAdd}
-                className={primaryButtonClass}
-              >
-                <span aria-hidden="true" className="mr-1.5 text-lg leading-none">
-                  +
-                </span>
-                Add transaction
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-3">
-            <ReceiptScanner
-              accounts={accounts}
-              categories={categories}
-              transactions={transactions}
-              mainCurrency={settings.currency}
-              today={today}
-              dateOrder={preferences.dateOrder}
-              onReview={openPrefilled}
-            />
-          </div>
-
-          {saveFailed && (
-            <p
-              role="alert"
-              className="mt-4 rounded-control border border-danger-line bg-danger-surface px-4 py-3 text-sm text-danger"
-            >
-              Pocketwise couldn&apos;t save your last change to your account,
-              so it was undone on screen. Check your connection and try
-              again.
-            </p>
-          )}
-
-          {/* A new key per month starts a fresh list, which slides in from
-              the side you moved to. Within a month the key stays the same,
-              so only rows that are added or removed move. */}
-          <m.div
-            key={month}
-            custom={monthDirection}
-            variants={monthSlide}
-            initial={monthDirection === 0 ? false : "enter"}
-            animate="center"
-            className="mt-4"
-          >
-            <TransactionList
-              transactions={monthTransactions}
-              emptyMessage={
-                transactions.length === 0
-                  ? "No transactions yet. Use the Add button to record your first one."
-                  : `No transactions in ${monthName}.`
-              }
-              today={today}
-              dateOrder={preferences.dateOrder}
-              editingId={sheetOpen && editing ? editing.id : null}
-              onEdit={openEdit}
-              accountNames={new Map(accounts.map((a) => [a.id, a.name]))}
-              showAccounts={accounts.filter((a) => !a.archived).length > 1}
-            />
-          </m.div>
-
-          <p className="mt-3 text-sm text-muted">
-            Saved in your account, so you see them wherever you sign in.{" "}
-            <Link href="/transactions" className="font-medium text-foreground underline underline-offset-2">
-              Search all transactions
-            </Link>
-          </p>
-        </m.section>
-
-        {/* After the list on phones; beside it on large screens. They can
-            start below the fold, so they appear as they're scrolled to,
-            once. */}
-        <m.div
-          variants={fadeRise}
-          initial={playEntrance ? "hidden" : false}
-          whileInView="shown"
-          viewport={{ once: true, amount: 0.15 }}
-          className={`space-y-4 ${dashboardChartsArea}`}
-        >
+      <div className={dashboardRowsClass}>
+        {/* The month at a glance. */}
+        <m.div {...appear(0)} className={statsRowClass}>
+          <MonthStats totals={mainTotals} months={recentMonths} />
           <SafeToSpendCard
             plan={plan}
             accounts={accounts}
@@ -331,32 +213,144 @@ export function TransactionTracker() {
             today={today}
             dateOrder={preferences.dateOrder}
           />
-          <UpcomingCard
-            rules={rules}
-            transactions={transactions}
-            categories={categories}
-            today={today}
-            dateOrder={preferences.dateOrder}
-            onRecord={openPrefilled}
-          />
-          <BudgetsCard
-            budgets={budgets}
-            categories={categories}
-            transactions={transactions}
-            month={month}
-            monthName={monthName}
-          />
-          <SpendingByCategory
-            categories={spendingByCategory(monthTransactions, settings.currency)}
-            currency={settings.currency}
-            monthName={monthName}
-          />
-          <MonthlyTrend
-            months={monthlyTotals(transactions, month, 6, settings.currency)}
-            selectedMonth={month}
-            currency={settings.currency}
-          />
         </m.div>
+        {otherTotals.length > 0 && (
+          <p className="text-sm text-muted">
+            Not included above, because they&apos;re in other currencies:{" "}
+            {otherTotals
+              .map(
+                (entry) =>
+                  `${entry.currency} ${formatMoney({ amountMinor: entry.incomeMinor, currency: entry.currency })} in, ${formatMoney({ amountMinor: entry.spendingMinor, currency: entry.currency })} out`,
+              )
+              .join(" · ")}
+          </p>
+        )}
+
+        <m.div {...appear(1)} className={overviewRowClass}>
+          <CashFlowChart months={recentMonths} selectedMonth={month} currency={settings.currency} className={chartArea} />
+          <SpentGauge totals={mainTotals} className={gaugeArea} />
+          <div className={balanceArea}>
+            <TotalBalanceCard
+              accounts={accounts}
+              transactions={transactions}
+              today={today}
+              rates={rates ?? []}
+              dateOrder={preferences.dateOrder}
+              mainCurrency={settings.currency}
+            />
+          </div>
+        </m.div>
+
+        <div className={activityRowClass}>
+          <m.section {...appear(2)} aria-labelledby="transactions-heading" className={`${cardClass} p-4 sm:p-6 ${listArea}`}>
+            <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
+              {/* tabIndex -1: focusable from code, but not a Tab stop. */}
+              <h2 id="transactions-heading" ref={listHeadingRef} tabIndex={-1} className="text-lg font-semibold">
+                Transactions in {monthName}
+              </h2>
+              {/* From sm up, Add sits beside the list it adds to. The wrapper
+                  does the hiding, because the button's own classes already
+                  set its display. */}
+              <div className="hidden shrink-0 sm:block">
+                <button type="button" onClick={openAdd} className={primaryButtonClass}>
+                  <span aria-hidden="true" className="mr-1.5 text-lg leading-none">
+                    +
+                  </span>
+                  Add transaction
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <ReceiptScanner
+                accounts={accounts}
+                categories={categories}
+                transactions={transactions}
+                mainCurrency={settings.currency}
+                today={today}
+                dateOrder={preferences.dateOrder}
+                onReview={openPrefilled}
+              />
+            </div>
+
+            {saveFailed && (
+              <p
+                role="alert"
+                className="mt-4 rounded-control border border-danger-line bg-danger-surface px-4 py-3 text-sm text-danger"
+              >
+                Pocketwise couldn&apos;t save your last change to your account, so it was undone on screen. Check your
+                connection and try again.
+              </p>
+            )}
+
+            {/* A new key per month starts a fresh list, which slides in from
+                the side you moved to. Within a month the key stays the same,
+                so only rows that are added or removed move. */}
+            <m.div
+              key={month}
+              custom={monthDirection}
+              variants={monthSlide}
+              initial={monthDirection === 0 ? false : "enter"}
+              animate="center"
+              className="mt-4"
+            >
+              <TransactionList
+                transactions={monthTransactions}
+                emptyMessage={
+                  transactions.length === 0
+                    ? "No transactions yet. Use the Add button to record your first one."
+                    : `No transactions in ${monthName}.`
+                }
+                today={today}
+                dateOrder={preferences.dateOrder}
+                editingId={sheetOpen && editing ? editing.id : null}
+                onEdit={openEdit}
+                accountNames={new Map(accounts.map((a) => [a.id, a.name]))}
+                showAccounts={accounts.filter((a) => !a.archived).length > 1}
+                inCard
+              />
+            </m.div>
+
+            <p className="mt-3 text-sm text-muted">
+              Saved in your account, so you see them wherever you sign in.{" "}
+              <Link href="/transactions" className="font-medium text-foreground underline underline-offset-2">
+                Search all transactions
+              </Link>
+            </p>
+          </m.section>
+
+          {/* After the list on phones; beside it on large screens. They can
+              start below the fold, so they appear as they're scrolled to,
+              once. */}
+          <m.div
+            variants={fadeRise}
+            initial={playEntrance ? "hidden" : false}
+            whileInView="shown"
+            viewport={{ once: true, amount: 0.15 }}
+            className={`space-y-4 lg:space-y-5 ${sideArea}`}
+          >
+            <UpcomingCard
+              rules={rules}
+              transactions={transactions}
+              categories={categories}
+              today={today}
+              dateOrder={preferences.dateOrder}
+              onRecord={openPrefilled}
+            />
+            <BudgetsCard
+              budgets={budgets}
+              categories={categories}
+              transactions={transactions}
+              month={month}
+              monthName={monthName}
+            />
+            <SpendingByCategory
+              categories={spendingByCategory(monthTransactions, settings.currency)}
+              currency={settings.currency}
+              monthName={monthName}
+            />
+          </m.div>
+        </div>
       </div>
 
       {/* On phones, Add floats in the bottom corner, within thumb's reach. */}
@@ -364,7 +358,7 @@ export function TransactionTracker() {
         type="button"
         onClick={openAdd}
         aria-label="Add transaction"
-        className={`fixed right-4 bottom-6 z-10 inline-flex h-14 items-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-accent-foreground shadow-lg hover:opacity-90 sm:hidden ${pressable}`}
+        className={`fixed right-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-10 inline-flex h-14 items-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-accent-foreground shadow-lg hover:opacity-90 sm:hidden ${pressable}`}
       >
         <span aria-hidden="true" className="text-2xl leading-none">
           +

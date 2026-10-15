@@ -15,7 +15,7 @@ type Props = {
   onChange: (month: string) => void;
 };
 
-const arrowClass = `flex h-11 w-11 items-center justify-center rounded-control border border-line-strong bg-surface text-lg hover:bg-surface-muted ${pressable}`;
+const arrowClass = `flex h-11 w-11 items-center justify-center rounded-full text-lg hover:bg-surface-muted ${pressable}`;
 
 export function MonthPicker({
   month,
@@ -24,8 +24,9 @@ export function MonthPicker({
   onChange,
 }: Props) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-wrap-reverse items-center justify-end gap-x-4 gap-y-2">
+      {/* One white pill: the arrows inside it, round. */}
+      <div className="flex items-center rounded-full border border-card-edge bg-surface p-1 shadow-card">
         <button
           type="button"
           onClick={() => onChange(addMonths(month, -1))}
@@ -39,7 +40,7 @@ export function MonthPicker({
             buttons stay put while you click through the months. */}
         <h2
           aria-live="polite"
-          className="min-w-44 text-center text-xl font-semibold"
+          className="min-w-40 text-center text-base font-semibold"
         >
           {/* A new key per month: the name slides in from the side you
               moved to. The first one simply appears. */}

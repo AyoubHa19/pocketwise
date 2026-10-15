@@ -21,6 +21,16 @@ export function percentOfIncomeSpent(totals: CurrencyTotals): number | null {
   return Math.round((totals.spendingMinor / totals.incomeMinor) * 100);
 }
 
+/**
+ * How much `now` changed from `before`, as a whole percentage: 12 for 12%
+ * more, -8 for 8% less. null when there's nothing before to compare with
+ * (a change from zero has no percentage).
+ */
+export function changePercent(now: number, before: number): number | null {
+  if (before <= 0) return null;
+  return Math.round(((now - before) / before) * 100);
+}
+
 /** The transactions dated in `month`, written "YYYY-MM". */
 export function transactionsInMonth(
   transactions: Transaction[],

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   accountBalance,
   accountBalances,
+  changePercent,
   currenciesLeftOut,
   groupByDay,
   isOpeningBalance,
@@ -113,6 +114,21 @@ describe("percentOfIncomeSpent", () => {
   it("has nothing to compare with when there was no income", () => {
     expect(percentOfIncomeSpent(totals(0, 5000))).toBeNull();
     expect(percentOfIncomeSpent(totals(0, 0))).toBeNull();
+  });
+});
+
+describe("changePercent", () => {
+  it("is the change from before, in whole percent, up or down", () => {
+    expect(changePercent(112000, 100000)).toBe(12);
+    expect(changePercent(92000, 100000)).toBe(-8);
+    expect(changePercent(300499, 800)).toBe(37462);
+    expect(changePercent(0, 5000)).toBe(-100);
+    expect(changePercent(5000, 5000)).toBe(0);
+  });
+
+  it("has nothing to compare with when before was zero", () => {
+    expect(changePercent(5000, 0)).toBeNull();
+    expect(changePercent(0, 0)).toBeNull();
   });
 });
 

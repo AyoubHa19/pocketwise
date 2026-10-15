@@ -21,7 +21,7 @@ export default async function AppleIcon() {
           width: "100%",
           height: "100%",
           display: "flex",
-          background: "#059669",
+          background: "#3f5f4b",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse needs a plain <img>, not next/image. */}
