@@ -160,9 +160,11 @@ Next, in order (PRD 29):
   3 steps, privacy, and a last call; only claims the app really makes
   (receipt scanning left out until the API key is set). The signed-out
   top bar has "Sign in" and "Get started".
-  Logo: the user's chosen logo (a green wallet with a light leaf),
-  redrawn as SVG in `Logo.tsx` and `src/app/icon.svg` (keep them the
-  same); the iPhone icon draws it on off-white.
+  Logo: the user's own logo (a green wallet with a light leaf), cut out
+  of their picture as is (`public/logo-mark.png`, 255 × 276; the metal
+  background removed by colour). Don't redraw it: the user wants it
+  exactly as made. It makes the tab icon (`src/app/icon.png`, 64px) and
+  the iPhone icon (`apple-icon.tsx`, on off-white).
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
 - Later: a domain of our own, Clerk's production instance (then remove
