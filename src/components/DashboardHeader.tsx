@@ -29,7 +29,7 @@ export function DashboardHeader({ children }: { children?: ReactNode }) {
           )
         )}
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{name ? `Hello, ${name}!` : "Hello!"}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{name ? `Hello, ${name}!` : "Hello!"}</h1>
           <p className="mt-1 text-muted">Here&apos;s where your money stands.</p>
         </div>
       </div>

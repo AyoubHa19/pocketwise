@@ -100,76 +100,83 @@ export function PlanView() {
             </p>
           </section>
         ) : (
-          <section aria-labelledby="safe-heading" className={`${cardClass} p-4 sm:p-6`}>
-            <h2 id="safe-heading" ref={headingRef} tabIndex={-1} className="text-sm font-medium text-muted">
-              Safe to spend until payday, {day(result.period.end)}
-            </h2>
-            <p
-              className={`mt-1 text-3xl font-semibold tracking-tight tabular-nums ${result.resultMinor < 0 ? "text-danger" : ""}`}
-            >
-              {result.resultMinor < 0 ? `Short by ${money(-result.resultMinor)}` : money(result.resultMinor)}
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              {result.resultMinor > 0
-                ? `About ${money(result.perDayMinor)} a day for ${result.period.daysLeft} ${result.period.daysLeft === 1 ? "day" : "days"}.`
-                : "Your bills, savings and reserve come to more than your balance before payday."}{" "}
-              An estimate to help you plan, not a guarantee.
-            </p>
+          <section aria-labelledby="safe-heading" className="glow-card reveal p-4 sm:p-6">
+            {/* The same highlighted card as the dashboard's "Safe to spend":
+                green glass with a glowing rim (.glow-card in globals.css). */}
+            <span aria-hidden="true" className="glow-card-halo" />
+            <span aria-hidden="true" className="glow-card-fill" />
+            <span aria-hidden="true" className="glow-card-rim" />
+            <div className="relative">
+              <h2 id="safe-heading" ref={headingRef} tabIndex={-1} className="text-sm font-medium text-muted">
+                Safe to spend until payday, {day(result.period.end)}
+              </h2>
+              <p
+                className={`mt-1 text-3xl font-semibold tracking-tight tabular-nums ${result.resultMinor < 0 ? "text-danger" : ""}`}
+              >
+                {result.resultMinor < 0 ? `Short by ${money(-result.resultMinor)}` : money(result.resultMinor)}
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                {result.resultMinor > 0
+                  ? `About ${money(result.perDayMinor)} a day for ${result.period.daysLeft} ${result.period.daysLeft === 1 ? "day" : "days"}.`
+                  : "Your bills, savings and reserve come to more than your balance before payday."}{" "}
+                An estimate to help you plan, not a guarantee.
+              </p>
 
-            <dl className="mt-5 space-y-2 border-t border-line pt-4 text-sm tabular-nums">
-              <div className="flex justify-between gap-3">
-                <dt>
-                  In {result.accounts.length === 1 ? result.accounts[0].account.name : `${result.accounts.length} accounts`}
-                </dt>
-                <dd className="font-medium">{money(result.balanceMinor)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt>
-                  − Bills before payday, not recorded yet ({result.bills.length})
-                </dt>
-                <dd>{money(result.billsMinor)}</dd>
-              </div>
-              {result.later.length > 0 && (
+              <dl className="mt-5 space-y-2 border-t border-line pt-4 text-sm tabular-nums">
                 <div className="flex justify-between gap-3">
-                  <dt>− Recorded with a later date ({result.later.length})</dt>
-                  <dd>{money(result.laterMinor)}</dd>
+                  <dt>
+                    In {result.accounts.length === 1 ? result.accounts[0].account.name : `${result.accounts.length} accounts`}
+                  </dt>
+                  <dd className="font-medium">{money(result.balanceMinor)}</dd>
                 </div>
-              )}
-              <div className="flex justify-between gap-3">
-                <dt>− Planned savings</dt>
-                <dd>{money(result.savingsMinor)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt>− Reserve kept aside</dt>
-                <dd>{money(result.reserveMinor)}</dd>
-              </div>
-              <div className="flex justify-between gap-3 border-t border-line pt-2 font-semibold">
-                <dt>= Safe to spend</dt>
-                <dd className={result.resultMinor < 0 ? "text-danger" : ""}>{money(result.resultMinor)}</dd>
-              </div>
-            </dl>
+                <div className="flex justify-between gap-3">
+                  <dt>
+                    − Bills before payday, not recorded yet ({result.bills.length})
+                  </dt>
+                  <dd>{money(result.billsMinor)}</dd>
+                </div>
+                {result.later.length > 0 && (
+                  <div className="flex justify-between gap-3">
+                    <dt>− Recorded with a later date ({result.later.length})</dt>
+                    <dd>{money(result.laterMinor)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between gap-3">
+                  <dt>− Planned savings</dt>
+                  <dd>{money(result.savingsMinor)}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt>− Reserve kept aside</dt>
+                  <dd>{money(result.reserveMinor)}</dd>
+                </div>
+                <div className="flex justify-between gap-3 border-t border-line pt-2 font-semibold">
+                  <dt>= Safe to spend</dt>
+                  <dd className={result.resultMinor < 0 ? "text-danger" : ""}>{money(result.resultMinor)}</dd>
+                </div>
+              </dl>
 
-            <ul className="mt-4 space-y-1 text-xs text-muted">
-              <li>
-                Expected income isn&apos;t counted until it arrives
-                {result.expectedIncome.length > 0 &&
-                  `: ${result.expectedIncome.map((o) => `${o.rule.name} ${formatMoney(o.rule.amount)} (${day(o.date)})`).join(", ")}`}
-                .
-              </li>
-              <li>Bills you&apos;ve already recorded are already out of your balance, so they&apos;re not subtracted again.</li>
-              {result.leftOut.map(({ account, reason }) => (
-                <li key={account.id} className="text-warning">
-                  {account.name} isn&apos;t counted:{" "}
-                  {reason === "no-balance" ? "it has no starting balance yet." : `it's in ${account.currency}, not ${main}.`}
+              <ul className="mt-4 space-y-1 text-xs text-muted">
+                <li>
+                  Expected income isn&apos;t counted until it arrives
+                  {result.expectedIncome.length > 0 &&
+                    `: ${result.expectedIncome.map((o) => `${o.rule.name} ${formatMoney(o.rule.amount)} (${day(o.date)})`).join(", ")}`}
+                  .
                 </li>
-              ))}
-              {result.otherCurrencyBills.length > 0 && (
-                <li className="text-warning">
-                  Not subtracted, being in another currency:{" "}
-                  {result.otherCurrencyBills.map((o) => `${o.rule.name} ${formatMoney(o.rule.amount)}`).join(", ")}.
-                </li>
-              )}
-            </ul>
+                <li>Bills you&apos;ve already recorded are already out of your balance, so they&apos;re not subtracted again.</li>
+                {result.leftOut.map(({ account, reason }) => (
+                  <li key={account.id} className="text-warning">
+                    {account.name} isn&apos;t counted:{" "}
+                    {reason === "no-balance" ? "it has no starting balance yet." : `it's in ${account.currency}, not ${main}.`}
+                  </li>
+                ))}
+                {result.otherCurrencyBills.length > 0 && (
+                  <li className="text-warning">
+                    Not subtracted, being in another currency:{" "}
+                    {result.otherCurrencyBills.map((o) => `${o.rule.name} ${formatMoney(o.rule.amount)}`).join(", ")}.
+                  </li>
+                )}
+              </ul>
+            </div>
           </section>
         )}
 

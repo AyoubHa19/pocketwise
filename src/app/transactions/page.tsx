@@ -14,7 +14,7 @@ export default async function TransactionsPage() {
   // The same spacing as the other pages, so nothing jumps between them.
   // Suspense: the filters are read from the address (useSearchParams).
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+    <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
       <Suspense fallback={<p className="text-sm text-muted">Loading your transactions…</p>}>
         <TransactionsBrowser />
       </Suspense>

@@ -222,7 +222,7 @@ export function BillsManager() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="max-w-prose text-sm text-muted">
+        <p className="max-w-2xl text-muted">
           Rent, subscriptions, a salary: anything that comes back regularly.
           Pocketwise lists each one when it&apos;s due and never counts it
           as paid until you record it, so your totals stay true.

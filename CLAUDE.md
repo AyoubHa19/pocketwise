@@ -165,6 +165,19 @@ Next, in order (PRD 29):
   background removed by colour). Don't redraw it: the user wants it
   exactly as made. It makes the tab icon (`src/app/icon.png`, 64px) and
   the iPhone icon (`apple-icon.tsx`, on off-white).
+  Design audit round (2026-10-15): the form sheet (`Sheet.tsx`) floats
+  as strong glass with gaps around it (`--glass-sheet`, more opaque, for
+  the form's text) over a blurred, dimmed page; Transactions is one card
+  with Income / Spending / Net tiles per currency; rarely used actions
+  (Edit, Archive, Delete) sit in a "⋯" menu (`ActionsMenu.tsx`, popover)
+  on Goals and Debts; `MonthPicker` takes `align="start"` under labels
+  (Reports, Budgets, Calendar); every page section is
+  `px-4 py-6 sm:px-6 lg:py-8` with its intro as `max-w-2xl text-muted`;
+  the Plan's safe-to-spend card is a `glow-card` like the dashboard's.
+  axe on Settings can flag a card still fading in (opacity < 1): scroll
+  it into view first.
+  Next for the app (the user's choice): end-to-end browser tests, error
+  reporting in production; the API key stays for later.
 - Optional later: automatic exchange rates from a provider (PRD 11.4),
   once one is chosen and its limits documented.
 - Later: a domain of our own, Clerk's production instance (then remove

@@ -127,7 +127,7 @@ export function CalendarView() {
             {formatMonth(month)}
           </h2>
           <div className="max-w-md">
-            <MonthPicker month={month} currentMonth={currentMonth} direction={direction} onChange={changeMonth} />
+            <MonthPicker align="start" month={month} currentMonth={currentMonth} direction={direction} onChange={changeMonth} />
           </div>
 
           <ul aria-label="What the marks mean" className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">

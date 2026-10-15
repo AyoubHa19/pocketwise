@@ -70,3 +70,6 @@ export const secondaryButtonClass = `inline-flex min-h-11 w-full items-center ju
 /** For actions that destroy something, like Delete. Pushed to the far end
     on larger screens, away from Save. */
 export const dangerButtonClass = `inline-flex min-h-11 w-full items-center justify-center rounded-control px-5 font-medium text-danger hover:bg-danger-surface sm:ml-auto sm:w-auto ${pressable}`;
+
+/** A light button with no box, for an action next to a main one (History). */
+export const quietButtonClass = `inline-flex min-h-11 items-center justify-center rounded-control px-3 text-sm font-medium text-foreground hover:bg-surface-muted ${pressable}`;

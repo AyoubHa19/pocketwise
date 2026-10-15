@@ -148,7 +148,7 @@ export function AccountsManager() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="max-w-prose text-sm text-muted">
+        <p className="max-w-2xl text-muted">
           Each account keeps its own balance: its starting balance plus what
           happens in it. To move money between two of your accounts, add a
           Transfer from the dashboard: it&apos;s never counted as income or

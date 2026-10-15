@@ -321,57 +321,57 @@ export function TransactionsBrowser() {
         </p>
       )}
 
-      <section aria-labelledby="results-heading" className="mt-8 pb-24 sm:pb-0">
-        <div className="mb-4">
+      {/* The results, in one card: how many and their totals, then the list. */}
+      <section aria-labelledby="results-heading" className={`${cardClass} mt-6 p-4 sm:p-6`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           {/* tabIndex -1: where focus goes after a delete removes the row. */}
           <h2 id="results-heading" ref={listHeadingRef} tabIndex={-1} className="text-lg font-semibold">
             {narrowed ? "Results" : "All transactions"}
           </h2>
-          {/* Announced as the results change. */}
-          <div role="status" className="mt-1 text-sm text-muted">
-            <p>{results.length === 1 ? "1 transaction" : `${results.length} transactions`}</p>
-            {totals.map((t) => (
-              <p key={t.currency} className="tabular-nums">
-                Income{" "}
-                <span className="font-medium text-positive">
-                  {formatMoney({ amountMinor: t.incomeMinor, currency: t.currency })}
-                </span>
-                {" · "}Spending{" "}
-                <span className="font-medium text-foreground">
-                  {formatMoney({ amountMinor: t.spendingMinor, currency: t.currency })}
-                </span>
-                {" · "}Net{" "}
-                <span className="font-medium text-foreground">
-                  {formatMoney({ amountMinor: t.balanceMinor, currency: t.currency })}
-                </span>
-              </p>
-            ))}
-            {results.some((t) => t.type === "transfer") && (
-              <p>Transfers move money between your accounts, so they aren&apos;t counted as income or spending.</p>
-            )}
-          </div>
+          <p className="text-sm text-muted">{results.length === 1 ? "1 transaction" : `${results.length} transactions`}</p>
+        </div>
+        {/* Announced as the results change: the totals, a row of three per
+            currency. */}
+        <div role="status" className="mt-4 space-y-3">
+          {totals.map((t) => (
+            <dl key={t.currency} className="grid grid-cols-3 gap-2 sm:gap-3">
+              <Total label="Income" tone="text-positive" amount={formatMoney({ amountMinor: t.incomeMinor, currency: t.currency })} />
+              <Total label="Spending" amount={formatMoney({ amountMinor: t.spendingMinor, currency: t.currency })} />
+              <Total
+                label="Net"
+                tone={t.balanceMinor < 0 ? "text-danger" : undefined}
+                amount={formatMoney({ amountMinor: t.balanceMinor, currency: t.currency })}
+              />
+            </dl>
+          ))}
+          {results.some((t) => t.type === "transfer") && (
+            <p className="text-xs text-muted">
+              Transfers move money between your accounts, so they aren&apos;t counted as income or spending.
+            </p>
+          )}
         </div>
 
         {/* A new key when the order changes, so the list is drawn afresh
             rather than animating every row into its new place. */}
-        <TransactionList
-          key={filters.sort}
-          transactions={shown}
-          emptyMessage={
-            transactions.length === 0
-              ? "No transactions yet. Use the Add button to record your first one."
-              : "No transactions match. Try other words, or clear the filters."
-          }
-          today={today}
-          dateOrder={preferences.dateOrder}
-          editingId={editor.sheetOpen && editor.editing ? editor.editing.id : null}
-          onEdit={editor.openEdit}
-          accountNames={accountNames}
-          showAccounts={accounts.filter((a) => !a.archived).length > 1}
-          order={order}
-          limit={25}
-          step={25}
-        />
+        <div className="mt-5">
+          <TransactionList
+            key={filters.sort}
+            transactions={shown}
+            emptyMessage={
+              transactions.length === 0
+                ? "No transactions yet. Use the Add button to record your first one."
+                : "No transactions match. Try other words, or clear the filters."
+            }
+            today={today}
+            dateOrder={preferences.dateOrder}
+            editingId={editor.sheetOpen && editor.editing ? editor.editing.id : null}
+            onEdit={editor.openEdit}
+            accountNames={accountNames}
+            showAccounts={accounts.filter((a) => !a.archived).length > 1}
+            order={order}
+            inCard
+          />
+        </div>
 
         {shown.length < results.length && (
           <div className="mt-6 flex flex-col items-center gap-2">
@@ -394,7 +394,7 @@ export function TransactionsBrowser() {
         type="button"
         onClick={editor.openAdd}
         aria-label="Add transaction"
-        className={`fixed right-4 bottom-6 z-10 inline-flex h-14 items-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-accent-foreground shadow-lg hover:opacity-90 sm:hidden ${pressable}`}
+        className={`fixed right-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-10 inline-flex h-14 items-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-accent-foreground shadow-lg hover:opacity-90 sm:hidden ${pressable}`}
       >
         <span aria-hidden="true" className="text-2xl leading-none">
           +
@@ -424,5 +424,15 @@ export function TransactionsBrowser() {
         )}
       </Sheet>
     </>
+  );
+}
+
+/** One of the results' totals: a small label over the amount. */
+function Total({ label, amount, tone }: { label: string; amount: string; tone?: string }) {
+  return (
+    <div className="min-w-0 rounded-control bg-surface-muted px-3 py-2">
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className={`text-sm font-semibold tabular-nums [overflow-wrap:anywhere] sm:text-base ${tone ?? ""}`}>{amount}</dd>
+    </div>
   );
 }

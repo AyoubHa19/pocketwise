@@ -186,9 +186,10 @@ export function ReportsView() {
             ))}
           </select>
         </label>
-        <div className="w-full max-w-md">
+        <div>
           <p className="mb-1 text-sm font-medium">Ending in</p>
           <MonthPicker
+            align="start"
             month={lastMonth}
             currentMonth={currentMonth}
             direction={direction}

@@ -92,6 +92,7 @@
   /* Glass: the cards, and the bars and menus that float over everything. */
   --glass: light-dark(rgb(255 255 255 / 0.6), rgb(18 22 20 / 0.5));
   --glass-strong: light-dark(rgb(255 255 255 / 0.8), rgb(18 22 20 / 0.66));
+  --glass-sheet: light-dark(rgb(255 255 255 / 0.84), rgb(18 22 20 / 0.8)); /* The add/edit sheet: a form */
   /* A sheen across the glass from its top left corner. */
   --glass-sheen: linear-gradient(
     135deg,
@@ -199,7 +200,7 @@ html:has(dialog[open]) {
  * works. With reduced motion it doesn't slide, it fades quickly.
  */
 .sheet {
-  translate: 0 100%; /* phones: below the screen */
+  translate: 0 calc(100% + 1rem); /* phones: below the screen (and its gap) */
   transition:
     translate 320ms var(--ease-pocket),
     opacity 150ms var(--ease-pocket),
@@ -211,36 +212,44 @@ html:has(dialog[open]) {
 }
 @starting-style {
   .sheet[open] {
-    translate: 0 100%;
+    translate: 0 calc(100% + 1rem);
   }
 }
 @media (width >= 40rem) {
   .sheet {
-    translate: 100% 0; /* larger screens: off to the right */
+    translate: calc(100% + 1rem) 0; /* larger screens: off to the right */
   }
   .sheet[open] {
     translate: 0 0;
   }
   @starting-style {
     .sheet[open] {
-      translate: 100% 0;
+      translate: calc(100% + 1rem) 0;
     }
   }
 }
 
+/* Behind it, the page dims and blurs a little, so the sheet stands out. */
 .sheet::backdrop {
   background-color: rgb(0 0 0 / 0);
+  -webkit-backdrop-filter: blur(0);
+  backdrop-filter: blur(0);
   transition:
     background-color 320ms var(--ease-pocket),
+    backdrop-filter 320ms var(--ease-pocket),
     display 320ms allow-discrete,
     overlay 320ms allow-discrete;
 }
 .sheet[open]::backdrop {
-  background-color: rgb(0 0 0 / 0.5);
+  background-color: rgb(0 0 0 / 0.4);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 @starting-style {
   .sheet[open]::backdrop {
     background-color: rgb(0 0 0 / 0);
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
   }
 }
 

@@ -164,7 +164,7 @@ export function BudgetsManager() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="max-w-prose text-sm text-muted">
+        <p className="max-w-2xl text-muted">
           A budget is a limit on your spending each month, for everything or
           for one category. Each month starts fresh. Only expenses count:
           income, refunds included, doesn&apos;t lower what a budget has used,
@@ -200,6 +200,7 @@ export function BudgetsManager() {
 
       <div className="mt-6 max-w-md">
         <MonthPicker
+          align="start"
           month={month}
           currentMonth={currentMonth}
           direction={direction}

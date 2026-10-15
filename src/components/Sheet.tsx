@@ -77,7 +77,10 @@ export function Sheet({
       }}
       // "sheet" gives it the slide in and out, and the backdrop's fade:
       // see globals.css.
-      className="sheet fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-card border-0 bg-surface p-0 text-foreground shadow-xl sm:inset-y-0 sm:right-0 sm:left-auto sm:h-dvh sm:max-h-none sm:max-w-md sm:rounded-none sm:rounded-l-card"
+      // A floating glass panel, a little away from the screen's edges:
+      // along the bottom on phones, down the right from sm. Its glass is
+      // more opaque than the cards' (--glass-sheet), as it holds a form.
+      className="sheet glass-strong fixed inset-x-2 top-auto bottom-2 m-0 max-h-[88dvh] w-auto max-w-none overflow-y-auto rounded-card p-0 text-foreground [--glass-strong:var(--glass-sheet)] sm:inset-y-3 sm:right-3 sm:left-auto sm:h-auto sm:max-h-none sm:w-full sm:max-w-md"
     >
       {/* Always rendered, so the content is still there while the sheet
           slides away. A closed <dialog> is hidden from everyone anyway. */}

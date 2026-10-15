@@ -156,7 +156,7 @@ export function WhatIfView() {
 
   return (
     <div className="space-y-6">
-      <p className="max-w-prose text-sm text-muted">
+      <p className="max-w-2xl text-muted">
         Try changes before making them. Results are worked out from your own numbers and are never saved: nothing
         here changes your accounts, transactions or plans. They&apos;re projections, not promises.
       </p>

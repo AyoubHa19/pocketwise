@@ -3,13 +3,14 @@
 import { Target, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { ActionsMenu } from "@/components/ActionsMenu";
 import { GoalForm } from "@/components/GoalForm";
 import {
   cardClass,
-  dangerButtonClass,
   fieldClass,
   pressable,
   primaryButtonClass,
+  quietButtonClass,
   secondaryButtonClass,
 } from "@/components/formStyles";
 import { ShortList } from "@/components/ShowMore";
@@ -300,7 +301,8 @@ export function GoalsManager() {
           </div>
         )}
 
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        {/* The everyday actions in view; Edit, Archive and Delete under ⋯. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           {!goal.archived && ownEntries && open?.kind !== "entry" && (
             <>
               <button
@@ -329,35 +331,28 @@ export function GoalsManager() {
               aria-expanded={showHistory}
               aria-label={`History of ${goal.name}`}
               onClick={() => toggleHistory(goal.id)}
-              className={secondaryButtonClass}
+              className={quietButtonClass}
             >
               History ({entries.length})
             </button>
           )}
-          <button
-            type="button"
-            aria-label={`Edit ${goal.name}`}
-            onClick={() => setOpen({ kind: "edit", id: goal.id })}
-            className={secondaryButtonClass}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            aria-label={`${goal.archived ? "Bring back" : "Archive"} ${goal.name}`}
-            onClick={() => void act(setArchived(goal.id, !goal.archived), goal.archived ? `${goal.name} brought back` : `${goal.name} archived`)}
-            className={secondaryButtonClass}
-          >
-            {goal.archived ? "Bring back" : "Archive"}
-          </button>
-          <button
-            type="button"
-            aria-label={`Delete ${goal.name}`}
-            onClick={() => confirmDelete(goal)}
-            className={dangerButtonClass}
-          >
-            Delete
-          </button>
+          <div className="ml-auto">
+            <ActionsMenu
+              label={`More actions for ${goal.name}`}
+              actions={[
+                { label: "Edit", onSelect: () => setOpen({ kind: "edit", id: goal.id }) },
+                {
+                  label: goal.archived ? "Bring back" : "Archive",
+                  onSelect: () =>
+                    void act(
+                      setArchived(goal.id, !goal.archived),
+                      goal.archived ? `${goal.name} brought back` : `${goal.name} archived`,
+                    ),
+                },
+                { label: "Delete", onSelect: () => confirmDelete(goal), danger: true },
+              ]}
+            />
+          </div>
         </div>
       </li>
     );
@@ -369,7 +364,7 @@ export function GoalsManager() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="max-w-prose text-sm text-muted">
+        <p className="max-w-2xl text-muted">
           Save toward something: an emergency fund, a trip, a new laptop.
           A goal counts what&apos;s saved either from your own entries
           (note each time you put money aside) or from an account&apos;s

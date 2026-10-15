@@ -3,12 +3,13 @@
 import { Landmark } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ActionsMenu } from "@/components/ActionsMenu";
 import { CurrencySelect } from "@/components/CurrencySelect";
 import {
   cardClass,
-  dangerButtonClass,
   fieldClass,
   primaryButtonClass,
+  quietButtonClass,
   secondaryButtonClass,
 } from "@/components/formStyles";
 import { ShortList } from "@/components/ShowMore";
@@ -247,7 +248,7 @@ export function DebtsManager() {
           </div>
         )}
 
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           {!debt.archived && !status.paidOff && (
             <button type="button" aria-label={`Record a payment on ${debt.name}`} onClick={() => recordPayment(debt)} className={primaryButtonClass}>
               Record payment
@@ -265,33 +266,35 @@ export function DebtsManager() {
                 return next;
               })
             }
-            className={secondaryButtonClass}
+            className={quietButtonClass}
           >
             Payments ({status.payments.length})
           </button>
-          <button type="button" aria-label={`Update ${debt.name}`} onClick={() => setOpen(debt.id)} className={secondaryButtonClass}>
-            Update
-          </button>
-          <button
-            type="button"
-            aria-label={`${debt.archived ? "Bring back" : "Archive"} ${debt.name}`}
-            onClick={() => void act(setArchived(debt.id, !debt.archived), debt.archived ? `${debt.name} brought back` : `${debt.name} archived`)}
-            className={secondaryButtonClass}
-          >
-            {debt.archived ? "Bring back" : "Archive"}
-          </button>
-          <button
-            type="button"
-            aria-label={`Delete ${debt.name}`}
-            onClick={() => {
-              if (window.confirm(`Delete ${debt.name}? Its payments stay in your transactions.`)) {
-                void act(removeDebt(debt.id), `${debt.name} deleted`);
-              }
-            }}
-            className={dangerButtonClass}
-          >
-            Delete
-          </button>
+          <div className="ml-auto">
+            <ActionsMenu
+              label={`More actions for ${debt.name}`}
+              actions={[
+                { label: "Update", onSelect: () => setOpen(debt.id) },
+                {
+                  label: debt.archived ? "Bring back" : "Archive",
+                  onSelect: () =>
+                    void act(
+                      setArchived(debt.id, !debt.archived),
+                      debt.archived ? `${debt.name} brought back` : `${debt.name} archived`,
+                    ),
+                },
+                {
+                  label: "Delete",
+                  danger: true,
+                  onSelect: () => {
+                    if (window.confirm(`Delete ${debt.name}? Its payments stay in your transactions.`)) {
+                      void act(removeDebt(debt.id), `${debt.name} deleted`);
+                    }
+                  },
+                },
+              ]}
+            />
+          </div>
         </div>
       </li>
     );
@@ -303,7 +306,7 @@ export function DebtsManager() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="max-w-prose text-sm text-muted">
+        <p className="max-w-2xl text-muted">
           Loans, credit cards, installments. A payment is recorded as an expense in Debt Payments: it counts once as
           spending, and brings the debt down. What&apos;s left is worked out from the balance you enter and the
           payments since; interest is only counted with a rate you give.

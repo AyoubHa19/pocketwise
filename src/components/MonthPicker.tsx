@@ -13,6 +13,9 @@ type Props = {
   /** Which way the last change went (1 later, -1 earlier, 0 none yet). */
   direction: number;
   onChange: (month: string) => void;
+  /** Where it sits in its row: at the end (the dashboard's header, the
+      default) or at the start (under a label, as in Reports). */
+  align?: "start" | "end";
 };
 
 const arrowClass = `flex h-11 w-11 items-center justify-center rounded-full text-lg hover:bg-surface-muted ${pressable}`;
@@ -22,9 +25,10 @@ export function MonthPicker({
   currentMonth,
   direction,
   onChange,
+  align = "end",
 }: Props) {
   return (
-    <div className="flex flex-wrap-reverse items-center justify-end gap-x-4 gap-y-2">
+    <div className={`flex flex-wrap-reverse items-center gap-x-4 gap-y-2 ${align === "end" ? "justify-end" : "justify-start"}`}>
       {/* One white pill: the arrows inside it, round. */}
       <div className="glass-strong flex items-center rounded-full p-1">
         <button
