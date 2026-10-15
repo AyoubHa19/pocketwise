@@ -14,12 +14,20 @@ import { useAccountPreferences } from "@/lib/accountData";
 export function DashboardHeader({ children }: { children?: ReactNode }) {
   const { user } = useUser();
   const name = user?.firstName?.trim();
-  // The picture chosen in Settings, if any; decorative beside the hello.
+  // The picture chosen in Settings, or the user's own uploaded photo, if
+  // any; decorative beside the hello.
   const avatar = useAccountPreferences()?.avatar ?? null;
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
       <div className="flex min-w-0 items-center gap-4">
-        {avatar && <AvatarPicture avatar={avatar} size={56} />}
+        {avatar ? (
+          <AvatarPicture avatar={avatar} size={56} />
+        ) : (
+          user?.hasImage && (
+            // eslint-disable-next-line @next/next/no-img-element -- Clerk's own image address.
+            <img src={user.imageUrl} width={56} height={56} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" />
+          )
+        )}
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{name ? `Hello, ${name}!` : "Hello!"}</h1>
           <p className="mt-1 text-muted">Here&apos;s where your money stands.</p>

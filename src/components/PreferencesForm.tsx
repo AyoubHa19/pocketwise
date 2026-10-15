@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { cardClass, colorTransition } from "@/components/formStyles";
+import { useUser } from "@clerk/nextjs";
+import { useRef, useState } from "react";
+import { cardClass, colorTransition, secondaryButtonClass } from "@/components/formStyles";
 import { useAccountPreferences, useSetPreferences } from "@/lib/accountData";
 import { addDays } from "@/lib/dates";
 import { AvatarPicture } from "@/components/AvatarPicture";
@@ -16,6 +17,7 @@ import {
   type WeekStart,
   WEEK_STARTS,
 } from "@/lib/preferences";
+import { photoProblem, PHOTO_TYPES } from "@/lib/photo";
 import { useToday } from "@/lib/useToday";
 
 const THEME_LABELS: Record<Theme, string> = {
@@ -49,6 +51,7 @@ const optionClass = `flex min-h-11 cursor-pointer items-center gap-3 rounded-con
  * so it follows the user to other devices.
  */
 export function PreferencesForm() {
+  const { user } = useUser();
   const preferences = useAccountPreferences();
   const setPreferences = useSetPreferences();
   const today = useToday();
@@ -82,7 +85,9 @@ export function PreferencesForm() {
         {/* Round pictures to pick from, each a radio: arrow keys move
             between them, and the chosen one has a green ring. */}
         <div className="mt-3 flex flex-wrap gap-3">
-          <label className={pictureClass} title="No picture">
+          {/* The account's own photo (uploaded below), or Clerk's
+              initials when there's none. */}
+          <label className={pictureClass} title="Your photo">
             <input
               type="radio"
               name="avatar"
@@ -91,9 +96,14 @@ export function PreferencesForm() {
               onChange={() => change({ avatar: null })}
               className="sr-only"
             />
-            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-line-strong text-xs text-muted">
-              None
-            </span>
+            {user ? (
+              // eslint-disable-next-line @next/next/no-img-element -- Clerk's own image address.
+              <img src={user.imageUrl} width={56} height={56} alt="Your photo" className="h-14 w-14 rounded-full object-cover" />
+            ) : (
+              <span className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-line-strong text-xs text-muted">
+                Your photo
+              </span>
+            )}
           </label>
           {AVATARS.map((avatar) => (
             <label key={avatar} className={pictureClass} title={AVATAR_LABELS[avatar]}>
@@ -109,6 +119,7 @@ export function PreferencesForm() {
             </label>
           ))}
         </div>
+        <OwnPhoto onSaved={() => change({ avatar: null })} />
       </fieldset>
 
       <fieldset className="mt-6">
@@ -183,5 +194,72 @@ export function PreferencesForm() {
             : ""}
       </p>
     </section>
+  );
+}
+
+/**
+ * Upload your own photo, or take it away. It's saved as the photo of
+ * your Clerk account (so the account button and Clerk's own pages show
+ * it too), checked first for type and size; Clerk checks it again. Once
+ * saved, "Your photo" is chosen, so it's the one shown.
+ */
+function OwnPhoto({ onSaved }: { onSaved: () => void }) {
+  const { user } = useUser();
+  const input = useRef<HTMLInputElement>(null);
+  const [state, setState] = useState<{ busy: boolean; message: string | null; failed: boolean }>({
+    busy: false,
+    message: null,
+    failed: false,
+  });
+  if (!user) return null;
+
+  async function save(file: File | null) {
+    if (!user) return;
+    if (file) {
+      const problem = photoProblem(file);
+      if (problem) return setState({ busy: false, message: problem, failed: true });
+    }
+    setState({ busy: true, message: null, failed: false });
+    try {
+      await user.setProfileImage({ file });
+      onSaved();
+      setState({ busy: false, message: file ? "Photo saved." : "Photo removed.", failed: false });
+    } catch {
+      setState({ busy: false, message: "The photo couldn't be saved. Try again, or try another photo.", failed: true });
+    }
+  }
+
+  return (
+    <div className="mt-4">
+      <div className="flex flex-wrap gap-2">
+        <input
+          ref={input}
+          type="file"
+          accept={PHOTO_TYPES.join(",")}
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) void save(file);
+          }}
+        />
+        <button type="button" disabled={state.busy} onClick={() => input.current?.click()} className={secondaryButtonClass}>
+          {state.busy ? "Saving…" : user.hasImage ? "Change your photo" : "Upload a photo"}
+        </button>
+        {user.hasImage && (
+          <button type="button" disabled={state.busy} onClick={() => void save(null)} className={secondaryButtonClass}>
+            Remove photo
+          </button>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-muted">JPEG, PNG or WebP, up to 5 MB.</p>
+      {state.message && (
+        <p role={state.failed ? "alert" : "status"} className={`mt-2 text-sm ${state.failed ? "text-danger" : "text-positive"}`}>
+          {state.message}
+        </p>
+      )}
+    </div>
   );
 }
