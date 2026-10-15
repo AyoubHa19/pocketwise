@@ -346,9 +346,28 @@ describe("deleting your data", () => {
 });
 
 describe("preferences", () => {
-  it("start as the device's theme, day-first dates and weeks from Monday", async () => {
+  it("start as the device's theme, day-first dates, weeks from Monday and no picture", async () => {
     const { sarah } = setup();
-    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "system", dateOrder: "day-first", weekStart: "monday" });
+    expect(await sarah.query(api.preferences.get, {})).toEqual({
+      theme: "system",
+      dateOrder: "day-first",
+      weekStart: "monday",
+      avatar: null,
+    });
+  });
+
+  it("save a picture, take it away, and refuse one that doesn't exist", async () => {
+    const { sarah, lee } = setup();
+    await sarah.mutation(api.preferences.set, { avatar: "a3" });
+    expect((await sarah.query(api.preferences.get, {})).avatar).toBe("a3");
+    // Only Sarah's: Lee's stays as it was.
+    expect((await lee.query(api.preferences.get, {})).avatar).toBeNull();
+    await sarah.mutation(api.preferences.set, { avatar: null });
+    expect((await sarah.query(api.preferences.get, {})).avatar).toBeNull();
+    await expect(
+      // @ts-expect-error: not one of the pictures, on purpose
+      sarah.mutation(api.preferences.set, { avatar: "a9" }),
+    ).rejects.toThrow();
   });
 
   it("save the day weeks start on", async () => {
@@ -372,7 +391,12 @@ describe("preferences", () => {
     await sarah.mutation(api.settings.setCurrency, { currency: "MAD" });
     await sarah.mutation(api.preferences.set, { theme: "dark" });
     await sarah.mutation(api.preferences.set, { dateOrder: "month-first" });
-    expect(await sarah.query(api.preferences.get, {})).toEqual({ theme: "dark", dateOrder: "month-first", weekStart: "monday" });
+    expect(await sarah.query(api.preferences.get, {})).toEqual({
+      theme: "dark",
+      dateOrder: "month-first",
+      weekStart: "monday",
+      avatar: null,
+    });
     expect((await sarah.query(api.settings.get, {})).currency).toBe("MAD");
   });
 

@@ -4,7 +4,10 @@ import { useState } from "react";
 import { cardClass, colorTransition } from "@/components/formStyles";
 import { useAccountPreferences, useSetPreferences } from "@/lib/accountData";
 import { addDays } from "@/lib/dates";
+import { AvatarPicture } from "@/components/AvatarPicture";
 import {
+  AVATAR_LABELS,
+  AVATARS,
   DATE_ORDERS,
   formatDay,
   type DateOrder,
@@ -32,6 +35,10 @@ const DATE_LABELS: Record<DateOrder, string> = {
   "month-first": "Month first",
   numeric: "Numbers",
 };
+
+// A picture to pick: a ring shows the chosen one, and a second, offset
+// ring the one the keyboard is on.
+const pictureClass = `cursor-pointer rounded-full p-0.5 ring-2 ring-transparent ${colorTransition} hover:ring-line-strong has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent`;
 
 // Each option is a whole row you can tap (min 44px), with the radio inside.
 const optionClass = `flex min-h-11 cursor-pointer items-center gap-3 rounded-control px-3 hover:bg-surface-muted ${colorTransition}`;
@@ -70,6 +77,41 @@ export function PreferencesForm() {
       </h2>
 
       <fieldset className="mt-4">
+        <legend className="text-sm font-medium">Your picture</legend>
+        <p className="mt-0.5 text-sm text-muted">Shown on your account button and on the dashboard.</p>
+        {/* Round pictures to pick from, each a radio: arrow keys move
+            between them, and the chosen one has a green ring. */}
+        <div className="mt-3 flex flex-wrap gap-3">
+          <label className={pictureClass} title="No picture">
+            <input
+              type="radio"
+              name="avatar"
+              value=""
+              checked={preferences.avatar === null}
+              onChange={() => change({ avatar: null })}
+              className="sr-only"
+            />
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-line-strong text-xs text-muted">
+              None
+            </span>
+          </label>
+          {AVATARS.map((avatar) => (
+            <label key={avatar} className={pictureClass} title={AVATAR_LABELS[avatar]}>
+              <input
+                type="radio"
+                name="avatar"
+                value={avatar}
+                checked={preferences.avatar === avatar}
+                onChange={() => change({ avatar })}
+                className="sr-only"
+              />
+              <AvatarPicture avatar={avatar} size={56} label />
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="mt-6">
         <legend className="text-sm font-medium">Theme</legend>
         <div className="mt-1 space-y-1">
           {(["system", "light", "dark"] as const).map((theme) => (

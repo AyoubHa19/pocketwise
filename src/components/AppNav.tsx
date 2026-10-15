@@ -1,6 +1,5 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import {
   CalendarDays,
   ChartColumn,
@@ -20,6 +19,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef } from "react";
+import { AccountButton } from "@/components/AvatarPicture";
 import { colorTransition } from "@/components/formStyles";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -88,7 +88,7 @@ export function SideRail() {
         <div className="mt-2 flex flex-col items-center gap-1.5">
           <ThemeToggle round />
           <div className="flex h-11 w-11 items-center justify-center">
-            <UserButton />
+            <AccountButton />
           </div>
         </div>
       </div>

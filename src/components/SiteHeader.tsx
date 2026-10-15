@@ -1,5 +1,5 @@
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { AccountButton } from "@/components/AvatarPicture";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WhenSignedIn } from "@/components/WhenSignedIn";
@@ -27,7 +27,7 @@ export function SiteHeader() {
             <div className="flex items-center gap-1">
               <ThemeToggle round />
               <div className="flex h-11 w-11 items-center justify-center">
-                <UserButton />
+                <AccountButton />
               </div>
             </div>
           </div>

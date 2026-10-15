@@ -17,13 +17,36 @@ export type DateOrder = (typeof DATE_ORDERS)[number];
 export const WEEK_STARTS = ["monday", "sunday", "saturday"] as const;
 export type WeekStart = (typeof WEEK_STARTS)[number];
 
-export type Preferences = { theme: Theme; dateOrder: DateOrder; weekStart: WeekStart };
+/**
+ * The picture the user chose for their account, from the eight drawn ones
+ * in public/avatars (a1.webp to a8.webp), or none. Each has a description
+ * for screen readers and the picker.
+ */
+export const AVATARS = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"] as const;
+export type Avatar = (typeof AVATARS)[number];
+export const AVATAR_LABELS: Record<Avatar, string> = {
+  a1: "Woman with short brown hair",
+  a2: "Man with short brown hair",
+  a3: "Woman with long red hair",
+  a4: "Man with short black hair",
+  a5: "Woman with long black hair",
+  a6: "Man with a beard",
+  a7: "Woman with curly black hair",
+  a8: "Man with red curly hair and glasses",
+};
 
-/** What a user who never chose gets: the device's theme, 13 Oct, and Monday. */
+export function isAvatar(value: unknown): value is Avatar {
+  return typeof value === "string" && (AVATARS as readonly string[]).includes(value);
+}
+
+export type Preferences = { theme: Theme; dateOrder: DateOrder; weekStart: WeekStart; avatar: Avatar | null };
+
+/** What a user who never chose gets: the device's theme, 13 Oct, Monday, no picture. */
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
   dateOrder: "day-first",
   weekStart: "monday",
+  avatar: null,
 };
 
 /**

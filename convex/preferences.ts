@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { DEFAULT_PREFERENCES, type Preferences } from "../src/lib/preferences";
 import { mutation, query } from "./_generated/server";
+import { avatarValidator } from "./schema";
 import { requireOwner } from "./ownership";
 
 // Display preferences live in the user's settings row, beside the currency
@@ -20,6 +21,7 @@ export const get = query({
       theme: row?.theme ?? DEFAULT_PREFERENCES.theme,
       dateOrder: row?.dateOrder ?? DEFAULT_PREFERENCES.dateOrder,
       weekStart: row?.weekStart ?? DEFAULT_PREFERENCES.weekStart,
+      avatar: row?.avatar ?? DEFAULT_PREFERENCES.avatar,
     };
   },
 });
@@ -32,6 +34,8 @@ export const set = mutation({
       v.union(v.literal("day-first"), v.literal("month-first"), v.literal("numeric")),
     ),
     weekStart: v.optional(v.union(v.literal("monday"), v.literal("sunday"), v.literal("saturday"))),
+    // null takes the picture away.
+    avatar: v.optional(v.union(avatarValidator, v.null())),
   },
   handler: async (ctx, args) => {
     const ownerId = await requireOwner(ctx);
@@ -39,6 +43,7 @@ export const set = mutation({
     if (args.theme !== undefined) change.theme = args.theme;
     if (args.dateOrder !== undefined) change.dateOrder = args.dateOrder;
     if (args.weekStart !== undefined) change.weekStart = args.weekStart;
+    if (args.avatar !== undefined) change.avatar = args.avatar;
     const row = await ctx.db
       .query("settings")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))

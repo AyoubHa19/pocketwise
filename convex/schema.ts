@@ -1,6 +1,18 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+/** The pictures a user can choose (AVATARS in src/lib/preferences.ts). */
+export const avatarValidator = v.union(
+  v.literal("a1"),
+  v.literal("a2"),
+  v.literal("a3"),
+  v.literal("a4"),
+  v.literal("a5"),
+  v.literal("a6"),
+  v.literal("a7"),
+  v.literal("a8"),
+);
+
 // The data Pocketwise keeps on its server. It's the same shape the app
 // already uses in the browser (src/lib/transactions.ts, settingsStore.ts),
 // plus who owns each record and when it last changed.
@@ -28,6 +40,8 @@ export default defineSchema({
       v.union(v.literal("day-first"), v.literal("month-first"), v.literal("numeric")),
     ),
     weekStart: v.optional(v.union(v.literal("monday"), v.literal("sunday"), v.literal("saturday"))),
+    // The chosen picture (AVATARS); null when it was taken away.
+    avatar: v.optional(v.union(avatarValidator, v.null())),
     // Set once openingBalance has been copied into an account (accounts.ts
     // ensureAccounts), so it's never copied twice.
     openingMoved: v.optional(v.boolean()),
