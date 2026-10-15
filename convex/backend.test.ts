@@ -1231,6 +1231,8 @@ describe("receipt scanning", () => {
     expect(await count("test|sarah", "2026-10-15")).toBe(1);
   });
 
+  // The first test to load the scan action, and with it the Anthropic SDK:
+  // ~0.7s on an idle machine, more under load, so more than the 5s default.
   it("answers that it isn't set up without an API key (a reply, not an error), and deletes the image anyway", async () => {
     const { t, sarah } = setup();
     const previous = process.env.ANTHROPIC_API_KEY;
@@ -1245,7 +1247,7 @@ describe("receipt scanning", () => {
     } finally {
       if (previous !== undefined) process.env.ANTHROPIC_API_KEY = previous;
     }
-  });
+  }, 20_000);
 
   it("refuses a file that isn't an image, before any model call or count", async () => {
     const { t, sarah } = setup();
