@@ -12,6 +12,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/formStyles";
+import { ShortList } from "@/components/ShowMore";
 import { Toast, type Notice } from "@/components/Toast";
 import {
   useAccountPreferences,
@@ -270,27 +271,31 @@ export function GoalsManager() {
             {entries.length === 0 ? (
               <p className="mt-1 text-sm text-muted">No entries yet.</p>
             ) : (
-              <ul className="mt-1 divide-y divide-line">
-                {entries.map((entry: Contribution) => (
-                  <li key={entry.id} className="flex min-h-11 items-center gap-3 py-1 text-sm">
-                    <span className="w-24 shrink-0 text-muted">{day(entry.date)}</span>
-                    <span className="min-w-0 flex-1 truncate text-muted">{entry.note}</span>
-                    <span className={`shrink-0 font-medium tabular-nums ${entry.amountMinor > 0 ? "text-positive" : ""}`}>
-                      {entry.amountMinor > 0 ? "+" : "−"}
-                      {money(Math.abs(entry.amountMinor))}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`Delete the entry: ${entry.amountMinor > 0 ? "+" : "−"}${money(Math.abs(entry.amountMinor))}, ${day(entry.date)}`}
-                      title="Delete"
-                      onClick={() => void act(removeContribution(entry.id), "Entry deleted")}
-                      className={iconButtonClass}
-                    >
-                      <Trash2 size={16} aria-hidden="true" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <ShortList items={entries} initial={5} noun="entries">
+                {(visible) => (
+                  <ul className="mt-1 divide-y divide-line">
+                    {visible.map((entry: Contribution) => (
+                      <li key={entry.id} className="flex min-h-11 items-center gap-3 py-1 text-sm">
+                        <span className="w-24 shrink-0 text-muted">{day(entry.date)}</span>
+                        <span className="min-w-0 flex-1 truncate text-muted">{entry.note}</span>
+                        <span className={`shrink-0 font-medium tabular-nums ${entry.amountMinor > 0 ? "text-positive" : ""}`}>
+                          {entry.amountMinor > 0 ? "+" : "−"}
+                          {money(Math.abs(entry.amountMinor))}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Delete the entry: ${entry.amountMinor > 0 ? "+" : "−"}${money(Math.abs(entry.amountMinor))}, ${day(entry.date)}`}
+                          title="Delete"
+                          onClick={() => void act(removeContribution(entry.id), "Entry deleted")}
+                          className={iconButtonClass}
+                        >
+                          <Trash2 size={16} aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </ShortList>
             )}
           </div>
         )}

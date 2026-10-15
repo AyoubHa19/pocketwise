@@ -308,6 +308,7 @@ export function TransactionTracker() {
                 accountNames={new Map(accounts.map((a) => [a.id, a.name]))}
                 showAccounts={accounts.filter((a) => !a.archived).length > 1}
                 inCard
+                limit={6}
               />
             </m.div>
 

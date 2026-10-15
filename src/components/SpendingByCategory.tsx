@@ -4,6 +4,7 @@ import { AnimatePresence, useInView, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import { useRef } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { useShowMore } from "@/components/ShowMore";
 import { cardClass } from "@/components/formStyles";
 import { formatMoney } from "@/lib/money";
 import { barTransition, collapse } from "@/lib/motion";
@@ -32,6 +33,8 @@ export function SpendingByCategory({ categories, currency, monthName }: Props) {
   const inView = useInView(ref, { once: true, amount: 0.3 });
   const reduced = useReducedMotion() ?? false;
   const rowVariants = collapse(reduced);
+  // The biggest five; the rest behind a button.
+  const { count, button: showMore } = useShowMore(categories.length, { initial: 5, noun: "categories" });
 
   return (
     <section
@@ -51,7 +54,7 @@ export function SpendingByCategory({ categories, currency, monthName }: Props) {
         // shut after it.
         <ul>
           <AnimatePresence initial={false}>
-            {categories.map(({ category, amountMinor, percent }) => (
+            {categories.slice(0, count).map(({ category, amountMinor, percent }) => (
               <m.li
                 key={category}
                 variants={rowVariants}
@@ -98,6 +101,7 @@ export function SpendingByCategory({ categories, currency, monthName }: Props) {
           </AnimatePresence>
         </ul>
       )}
+      {showMore}
     </section>
   );
 }

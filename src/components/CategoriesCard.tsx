@@ -11,6 +11,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/formStyles";
+import { ShortList } from "@/components/ShowMore";
 import { Toast, type Notice } from "@/components/Toast";
 import {
   useAccountTransactions,
@@ -183,7 +184,9 @@ export function CategoriesCard() {
               <h3 id={`categories-${kind}`} className="font-semibold">
                 {CATEGORY_KIND_LABELS[kind]}
               </h3>
-              <ul className="mt-2 divide-y divide-line">{open.map(row)}</ul>
+              <ShortList items={open} initial={8} noun="categories">
+                {(visible) => <ul className="mt-2 divide-y divide-line">{visible.map(row)}</ul>}
+              </ShortList>
               <div className="mt-3">
                 <NameForm
                   label={`New ${CATEGORY_KIND_LABELS[kind].toLowerCase()} category`}

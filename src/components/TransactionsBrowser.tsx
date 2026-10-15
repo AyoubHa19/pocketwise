@@ -369,6 +369,8 @@ export function TransactionsBrowser() {
           accountNames={accountNames}
           showAccounts={accounts.filter((a) => !a.archived).length > 1}
           order={order}
+          limit={25}
+          step={25}
         />
 
         {shown.length < results.length && (

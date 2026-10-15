@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import { cookies } from "next/headers";
 import { BottomNav, SideRail } from "@/components/AppNav";
+import { CursorLight } from "@/components/CursorLight";
 import { DataSync } from "@/components/DataSync";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { MotionProvider } from "@/components/MotionProvider";
@@ -48,8 +49,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <ThemeSync />
             <DataSync />
             <MotionProvider>
-              {/* Behind everything: the moving colours and dots. */}
+              {/* Behind everything: the slowly moving photo, and a light
+                  that follows the mouse. */}
               <div aria-hidden="true" className="app-backdrop" />
+              <CursorLight />
               <PreviewBanner />
               {/* The side bar on the left of large screens; the bottom bar
                   on phones, with room kept under the page for it. */}
@@ -59,7 +62,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 </WhenSignedIn>
                 <div className="flex min-w-0 flex-1 flex-col">
                   <SiteHeader />
-                  <main className="flex-1 pb-28 lg:pb-0">{children}</main>
+                  <main className="relative isolate flex-1 pb-28 lg:pb-0">
+                    {/* The glass panel the page sits on (globals.css). */}
+                    <div aria-hidden="true" className="page-frame" />
+                    {children}
+                  </main>
                 </div>
               </div>
               <WhenSignedIn>

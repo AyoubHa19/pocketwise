@@ -113,6 +113,20 @@ Next, in order (PRD 29):
   in light mode so text on it stays readable, deep navy in dark mode),
   and "Safe to spend" as dark glass with a turning, glowing rim
   (`.glow-card`). The backdrop and rim stay still with reduced motion.
+  Then (third round): the backdrop is now a photo of misty green hills
+  (`public/backdrop.webp`, the user's picture with its search bar filled
+  in), drifting slowly; each page sits on a big glass panel
+  (`.page-frame`, a layer of its own in `layout.tsx`) because text on the
+  bare photo can't pass AA; cards are much more see-through on it, with a
+  sheen and a deeper shadow; "Safe to spend" has a light version in light
+  mode; a soft light follows the mouse (`CursorLight.tsx`); cards fade
+  and rise in as they're scrolled to and page titles come into focus
+  (CSS scroll-driven animations, `.reveal`), as in a video the user sent.
+  Long lists start short with "Show all N" / "Show N more"
+  (`ShowMore.tsx`: `useShowMore` and `ShortList`): dashboard
+  transactions (6), Transactions page (25 at a time), spending by
+  category (5), Settings categories (8), Reports categories (8), goal
+  history and debt payments (5).
   Next: ask the user what they think, then bring the other pages in line
   (page headers, the sign-in page), maybe a landing page for visitors.
 - Optional later: automatic exchange rates from a provider (PRD 11.4),

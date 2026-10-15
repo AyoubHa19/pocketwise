@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BudgetMeter } from "@/components/BudgetMeter";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { cardClass, fieldClass } from "@/components/formStyles";
+import { ShortList } from "@/components/ShowMore";
 import { MonthPicker } from "@/components/MonthPicker";
 import {
   useAccountPreferences,
@@ -338,35 +339,39 @@ export function ReportsView() {
         {categoryRows.length === 0 ? (
           <p className="mt-2 text-sm text-muted">No spending in {currency} in this period or the one before.</p>
         ) : (
-          <div tabIndex={0} role="region" aria-label="Spending by category table" className={`${cardClass} mt-3 overflow-x-auto`}>
-            <table className="w-full min-w-[26rem] text-sm tabular-nums">
-              <thead>
-                <tr className="text-left text-muted">
-                  <th scope="col" className="px-4 py-2 font-medium">Category</th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">This period</th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">Share</th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">Before</th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">Change</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line border-t border-line">
-                {categoryRows.map((row) => (
-                  <tr key={row.category}>
-                    <th scope="row" className="px-4 py-2 text-left font-medium">
-                      <span className="flex items-center gap-2">
-                        <CategoryIcon category={row.category} small />
-                        {row.category}
-                      </span>
-                    </th>
-                    <td className="px-4 py-2 text-right">{money(row.currentMinor)}</td>
-                    <td className="px-4 py-2 text-right text-muted">{row.percent}%</td>
-                    <td className="px-4 py-2 text-right text-muted">{money(row.previousMinor)}</td>
-                    <td className="px-4 py-2 text-right text-muted">{changeText(row.currentMinor, row.previousMinor)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ShortList items={categoryRows} initial={8} noun="categories">
+            {(visible) => (
+              <div tabIndex={0} role="region" aria-label="Spending by category table" className={`${cardClass} mt-3 overflow-x-auto`}>
+                <table className="w-full min-w-[26rem] text-sm tabular-nums">
+                  <thead>
+                    <tr className="text-left text-muted">
+                      <th scope="col" className="px-4 py-2 font-medium">Category</th>
+                      <th scope="col" className="px-4 py-2 text-right font-medium">This period</th>
+                      <th scope="col" className="px-4 py-2 text-right font-medium">Share</th>
+                      <th scope="col" className="px-4 py-2 text-right font-medium">Before</th>
+                      <th scope="col" className="px-4 py-2 text-right font-medium">Change</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line border-t border-line">
+                    {visible.map((row) => (
+                      <tr key={row.category}>
+                        <th scope="row" className="px-4 py-2 text-left font-medium">
+                          <span className="flex items-center gap-2">
+                            <CategoryIcon category={row.category} small />
+                            {row.category}
+                          </span>
+                        </th>
+                        <td className="px-4 py-2 text-right">{money(row.currentMinor)}</td>
+                        <td className="px-4 py-2 text-right text-muted">{row.percent}%</td>
+                        <td className="px-4 py-2 text-right text-muted">{money(row.previousMinor)}</td>
+                        <td className="px-4 py-2 text-right text-muted">{changeText(row.currentMinor, row.previousMinor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </ShortList>
         )}
       </section>
 

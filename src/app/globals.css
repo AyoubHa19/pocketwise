@@ -25,25 +25,25 @@
 }
 
 /*
- * The look: frosted glass cards over a moving backdrop of blurred blues
- * and teals under a grid of fine dots (.app-backdrop, below), black for
- * what's selected, and a sage green as the brand colour.
+ * The look: a photo of misty green hills (public/backdrop.webp) drifting
+ * slowly behind everything, a big frosted glass panel holding each page,
+ * glass cards on it, black for what's selected, and sage green as the
+ * brand colour.
  *
- * Text sits on glass or right on the backdrop, so both were measured at
- * their darkest (light mode) or lightest (dark mode) point, with the glass
- * over the backdrop's strongest colour. Light / dark: main text 11+ / 9+,
- * muted 5.3 / 6.3 on glass and 4.6 / 4.6 on the bare backdrop, accent
- * 5.5 / 7.8, field edges 3.3 / 3.4. That's why the light backdrop is a
- * pastel version of the picture and the dark one a deep version.
+ * Text never sits on the bare photo, which is far too varied for that: the
+ * panel is opaque enough that muted text passes AA over the photo's darkest
+ * (light mode) or lightest (dark mode) part, measured on a laptop and a
+ * phone; the cards on it can then be very see-through. Light / dark, at the
+ * worst point: muted text 4.6 / 4.8 on the panel and 5.3 / 6.2 on cards.
  */
 :root {
-  --canvas: light-dark(#e8eef3, #0b141d); /* The backdrop's base, and the page while it loads */
+  --canvas: light-dark(#e3e6df, #0a0d0a); /* Behind the photo while it loads */
   --surface: light-dark(#ffffff, #161917); /* Solid: fields, the add/edit sheet */
-  --surface-muted: light-dark(rgb(23 40 52 / 0.06), rgb(255 255 255 / 0.06)); /* Hover, the row being edited, tracks */
+  --surface-muted: light-dark(rgb(23 40 30 / 0.06), rgb(255 255 255 / 0.06)); /* Hover, the row being edited, tracks */
   --foreground: light-dark(#171a17, #eceeea); /* Main text */
   --muted: light-dark(#4d524b, #aab0a8); /* Secondary text: labels, dates, notes */
-  --line: light-dark(rgb(23 40 52 / 0.1), rgb(255 255 255 / 0.09)); /* Dividers (decoration only) */
-  --card-edge: light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.09)); /* Glass's bright rim */
+  --line: light-dark(rgb(23 40 30 / 0.1), rgb(255 255 255 / 0.09)); /* Dividers (decoration only) */
+  --card-edge: light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.1)); /* Glass's bright rim */
   --line-strong: light-dark(#6b7067, #79807a); /* Field and button edges, which must be seen */
   --accent: light-dark(#36543f, #a3cbb0); /* Sage green: main buttons, focus ring */
   --accent-foreground: light-dark(#ffffff, #10241a); /* Text on accent */
@@ -56,26 +56,36 @@
   --danger-surface: light-dark(#fcebe9, #2a1215); /* Background of error boxes */
   --danger-line: light-dark(#f6c9c4, #5c1d22);
   --warning: light-dark(#874006, #fbbf24); /* A budget close to its limit */
-  /* The highlighted card (safe to spend): dark green glass, white text. */
-  --feature-from: rgb(17 31 24 / 0.9);
-  --feature-to: rgb(38 64 49 / 0.86);
 
-  /* Glass: mostly opaque, so text stays readable over any part of the
-     backdrop, with the colours still showing through the blur. */
-  --glass: light-dark(rgb(255 255 255 / 0.74), rgb(18 22 20 / 0.72));
-  --glass-strong: light-dark(rgb(255 255 255 / 0.86), rgb(18 22 20 / 0.84)); /* Bars and menus */
+  /* Glass. The panel behind each page, the cards on it (see-through: the
+     panel already makes text readable), and the bars and menus that float
+     over the bare photo (the side bar, the phone's bottom bar, menus). */
+  --frame: light-dark(rgb(255 255 255 / 0.7), rgb(14 18 15 / 0.48));
+  --glass: light-dark(rgb(255 255 255 / 0.32), rgb(18 22 20 / 0.32));
+  --glass-strong: light-dark(rgb(255 255 255 / 0.78), rgb(18 22 20 / 0.66));
+  /* A sheen across the glass from its top left corner. */
+  --glass-sheen: linear-gradient(
+    135deg,
+    light-dark(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.07)),
+    transparent 45%
+  );
+  /* The bright rim along the top, and a soft shadow below and behind. */
   --shadow-card:
-    inset 0 1px 0 light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.06)),
-    0 8px 32px light-dark(rgb(31 52 75 / 0.1), rgb(0 0 0 / 0.3));
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.08)),
+    0 2px 6px light-dark(rgb(20 40 25 / 0.06), rgb(0 0 0 / 0.25)),
+    0 18px 40px -14px light-dark(rgb(20 40 25 / 0.3), rgb(0 0 0 / 0.65));
 
-  /* The backdrop's colours, from the picture: navy (top right), a white
-     streak, teal (bottom), aqua (left), mist; and the dots. */
-  --bd-navy: light-dark(#bccbdc, #1f3a55);
-  --bd-white: light-dark(#ffffff, #23415a);
-  --bd-teal: light-dark(#b2d6de, #17414d);
-  --bd-aqua: light-dark(#d6eff1, #15303d);
-  --bd-mist: light-dark(#c9d8e5, #1c3346);
-  --bd-dot: light-dark(rgb(41 66 100 / 0.16), rgb(170 205 230 / 0.1));
+  /* The highlighted card (safe to spend): light green glass in light mode,
+     dark green glass in dark mode, with a shimmering rim and a glow. */
+  --feature-from: light-dark(rgb(255 255 255 / 0.6), rgb(17 31 24 / 0.9));
+  --feature-to: light-dark(rgb(214 233 220 / 0.55), rgb(38 64 49 / 0.86));
+  --feature-ink: light-dark(#14251b, #ffffff); /* Its text */
+  --feature-on-ink: light-dark(#ffffff, #14251b); /* Text on its button */
+  --glow-1: light-dark(#36543f, #a3cbb0);
+  --glow-2: light-dark(#8fd0a6, #eef7f1);
+  --glow-3: light-dark(#3f9fb2, #7cc4d2);
+  --glow-4: light-dark(#c9e6d2, #c9dccf);
+  --glow-5: light-dark(#5d7d68, #4f7d62);
 }
 
 /* Turns the variables above into Tailwind classes: bg-surface, text-muted,
@@ -229,33 +239,36 @@ html:has(dialog[open]) {
   opacity: 1; /* Firefox fades placeholders by default */
 }
 
+
 /*
- * Glass: a card you can half see through, the backdrop blurred behind it,
- * with a bright rim along the top edge. `glass` for cards, `glass-strong`
- * (more opaque) for the bars and menus that float over the page.
- * Browsers without backdrop blur just show the near-opaque colour.
+ * Glass: see-through, the photo blurred behind it, a sheen from the top
+ * left, a bright rim and a soft shadow. `glass` for cards (on the page
+ * panel), `glass-strong` for what floats over the bare photo. Browsers
+ * without backdrop blur show the colour alone.
  */
 @utility glass {
   background-color: var(--glass);
+  background-image: var(--glass-sheen);
   border: 1px solid var(--card-edge);
   box-shadow: var(--shadow-card);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
 }
 @utility glass-strong {
   background-color: var(--glass-strong);
+  background-image: var(--glass-sheen);
   border: 1px solid var(--card-edge);
   box-shadow: var(--shadow-card);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
 }
 
 /*
- * The backdrop behind every page (Backdrop.tsx): soft patches of colour
- * from the picture the design started from, drifting slowly, under a fine
- * grid of dots that's strongest where the colour is. It's fixed, so the
- * page scrolls over it. Only transform moves, which the graphics card does
- * on its own. Still for people who reduce motion.
+ * The photo behind every page, drifting and zooming very slowly (a minute
+ * each way), under a veil that keeps it calm: lighter in light mode, and
+ * in dark mode darkest at the top, where the photo's sky is pale. Only
+ * transform moves, which the graphics card does on its own. Still for
+ * people who reduce motion.
  */
 .app-backdrop {
   position: fixed;
@@ -268,53 +281,131 @@ html:has(dialog[open]) {
 .app-backdrop::before {
   content: "";
   position: absolute;
-  inset: -25%;
-  background:
-    radial-gradient(38% 32% at 82% 14%, var(--bd-navy), transparent 70%),
-    radial-gradient(30% 26% at 66% 52%, var(--bd-white), transparent 70%),
-    radial-gradient(44% 34% at 28% 86%, var(--bd-teal), transparent 70%),
-    radial-gradient(36% 40% at 14% 32%, var(--bd-aqua), transparent 70%),
-    radial-gradient(30% 26% at 88% 82%, var(--bd-mist), transparent 70%);
+  inset: -8%;
+  background: url("/backdrop.webp") center 35% / cover no-repeat;
 }
 .app-backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, var(--bd-dot) 0 1.15px, transparent 1.7px);
-  background-size: 7px 7px;
-  -webkit-mask-image:
-    radial-gradient(60% 55% at 85% 12%, #000, transparent),
-    radial-gradient(65% 45% at 30% 100%, #000, transparent),
-    linear-gradient(rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.35));
-  mask-image:
-    radial-gradient(60% 55% at 85% 12%, #000, transparent),
-    radial-gradient(65% 45% at 30% 100%, #000, transparent),
-    linear-gradient(rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.35));
+  background: linear-gradient(
+    to bottom,
+    light-dark(rgb(240 243 238 / 0.05), rgb(6 9 6 / 0.7)),
+    light-dark(rgb(240 243 238 / 0.2), rgb(6 9 6 / 0.4)) 40%,
+    light-dark(rgb(240 243 238 / 0.35), rgb(6 9 6 / 0.2))
+  );
 }
 @media (prefers-reduced-motion: no-preference) {
   .app-backdrop::before {
-    animation: backdrop-drift 48s ease-in-out infinite alternate;
+    animation: backdrop-drift 60s ease-in-out infinite alternate;
     will-change: transform;
   }
 }
 @keyframes backdrop-drift {
   0% {
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(-5%, 4%, 0) rotate(7deg) scale(1.06);
+    transform: translate3d(-3%, 2%, 0) scale(1.08);
   }
   100% {
-    transform: translate3d(4%, -3%, 0) rotate(-5deg) scale(1.02);
+    transform: translate3d(3%, -2%, 0) scale(1.04);
   }
 }
 
 /*
- * The highlighted card (SafeToSpendCard): dark green glass with a thin
- * shimmering rim of greens, teal and white, and a soft glow of the same
- * colours around it. The colours turn slowly; still with reduced motion.
- * Made of three layers inside the card: the glow (behind), the fill, and
- * the rim (a border cut out of a full gradient with a mask).
+ * The big glass panel each page sits on (in the root layout, behind the
+ * page). It's a layer of its own, not a box around the page: glass on an
+ * ancestor would stop the cards inside from seeing the photo through it.
+ */
+.page-frame {
+  position: absolute;
+  inset: 0.25rem 0.5rem 0.5rem;
+  z-index: -1;
+  border-radius: 2rem;
+  border: 1px solid var(--card-edge);
+  background-color: var(--frame);
+  background-image: var(--glass-sheen);
+  box-shadow: var(--shadow-card);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
+}
+@media (width >= 64rem) {
+  .page-frame {
+    inset: 1rem 1rem 1rem 0.75rem;
+  }
+}
+
+/*
+ * A soft light that follows the mouse (CursorLight.tsx), between the
+ * photo and the glass, so the panel and the cards glow where it passes.
+ */
+.cursor-light {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -5;
+  width: 36rem;
+  height: 36rem;
+  margin: -18rem 0 0 -18rem;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    light-dark(rgb(255 255 255 / 0.75), rgb(163 203 176 / 0.22)),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 400ms var(--ease-pocket);
+}
+.cursor-light[data-on] {
+  opacity: 1;
+}
+
+/*
+ * Things come in as they're scrolled to: each card fades and rises into
+ * place while it enters the screen, tied to the scrolling itself (no
+ * JavaScript). What's on screen when a page opens is simply there; the
+ * page's title comes into focus instead. Browsers without scroll-driven
+ * animations, and people who reduce motion, see everything at once.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+  main h1,
+  main h1 + p {
+    animation: title-in 700ms var(--ease-pocket) both;
+  }
+  main h1 + p {
+    animation-delay: 120ms;
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(2rem) scale(0.97);
+  }
+}
+@keyframes title-in {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(0.5rem);
+  }
+}
+
+/*
+ * The highlighted card (SafeToSpendCard): green glass with a thin rim of
+ * greens, teal and white that turns slowly, and a soft glow of the same
+ * colours around it. Light glass with dark text in light mode, dark glass
+ * with white text in dark mode. Three layers inside the card: the glow
+ * (behind), the fill, and the rim (a border cut out of a full gradient with
+ * a mask). Still with reduced motion.
  */
 @property --glow-angle {
   syntax: "<angle>";
@@ -324,17 +415,17 @@ html:has(dialog[open]) {
 .glow-card {
   --glow: conic-gradient(
     from var(--glow-angle),
-    #a3cbb0,
-    #eef7f1,
-    #7cc4d2,
-    #c9dccf,
-    #4f7d62,
-    #a3cbb0
+    var(--glow-1),
+    var(--glow-2),
+    var(--glow-3),
+    var(--glow-4),
+    var(--glow-5),
+    var(--glow-1)
   );
   position: relative;
   isolation: isolate;
   border-radius: var(--radius-card);
-  color: #ffffff;
+  color: var(--feature-ink);
 }
 .glow-card-halo {
   position: absolute;
@@ -342,7 +433,7 @@ html:has(dialog[open]) {
   z-index: -1;
   border-radius: calc(var(--radius-card) + 4px);
   background: var(--glow);
-  filter: blur(14px);
+  filter: blur(16px);
   opacity: 0.55;
 }
 .glow-card-fill {
@@ -351,8 +442,9 @@ html:has(dialog[open]) {
   overflow: hidden;
   border-radius: inherit;
   background: linear-gradient(145deg, var(--feature-from), var(--feature-to));
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-card);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
 }
 .glow-card-rim {
   position: absolute;

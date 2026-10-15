@@ -9,10 +9,11 @@ import type { RecurringRule } from "@/lib/recurring";
 import type { Transaction } from "@/lib/transactions";
 
 /**
- * The dashboard's one highlighted card, in sage green: what's safe to
- * spend until payday and per day, with a link to the Plan page, where the
- * whole sum is shown. Without a payday, a pointer to set one. White text
- * on both ends of the green measures 4.6:1 or more.
+ * The dashboard's one highlighted card, green glass with a glowing rim
+ * (.glow-card in globals.css): what's safe to spend until payday and per
+ * day, with a link to the Plan page, where the whole sum is shown. Without
+ * a payday, a pointer to set one. Its text colour follows the theme
+ * (--feature-ink): dark on the light glass, white on the dark.
  */
 export function SafeToSpendCard({
   plan,
@@ -47,15 +48,15 @@ export function SafeToSpendCard({
       <span aria-hidden="true" className="glow-card-halo" />
       <span aria-hidden="true" className="glow-card-fill">
         <svg viewBox="0 0 200 80" preserveAspectRatio="none" className="absolute right-0 bottom-0 h-24 w-3/4 opacity-25">
-          <path d="M0 60 C30 60 40 20 70 30 C100 40 110 70 140 50 C165 34 175 10 200 14" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" />
+          <path d="M0 60 C30 60 40 20 70 30 C100 40 110 70 140 50 C165 34 175 10 200 14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
         </svg>
       </span>
       <span aria-hidden="true" className="glow-card-rim" />
       <div className="relative flex items-start justify-between gap-3">
-        <h2 id="safe-card-heading" className="pt-1.5 text-sm font-medium text-white">
+        <h2 id="safe-card-heading" className="pt-1.5 text-sm font-medium">
           Safe to spend
         </h2>
-        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15">
+        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-current/12">
           <ShieldCheck size={18} />
         </span>
       </div>
@@ -64,7 +65,7 @@ export function SafeToSpendCard({
           <p className="relative mt-1 leading-9 font-semibold tracking-tight tabular-nums [overflow-wrap:anywhere]" style={fitOneLine(amount, "1.125rem", "1.75rem")}>
             {amount}
           </p>
-          <p className="relative mt-1 text-xs text-white">
+          <p className="relative mt-1 text-xs">
             Until payday, {formatDay(result.period.end, today, dateOrder)}
             {result.resultMinor > 0 && ` · about ${money(result.perDayMinor)} a day`}
           </p>
@@ -74,13 +75,13 @@ export function SafeToSpendCard({
         </>
       ) : (
         <>
-          <p className="relative mt-2 text-sm text-white">
+          <p className="relative mt-2 text-sm">
             Tell Pocketwise when you&apos;re paid next, and it works out what&apos;s left to spend after your bills, savings and
             reserve.
           </p>
           <Link
             href="/plan"
-            className="relative mt-auto inline-flex min-h-11 w-fit items-center rounded-full bg-white px-4 text-sm font-semibold text-[#2c4436]"
+            className="relative mt-auto inline-flex min-h-11 w-fit items-center rounded-full bg-(--feature-ink) px-4 text-sm font-semibold text-(--feature-on-ink)"
           >
             Set your payday
           </Link>

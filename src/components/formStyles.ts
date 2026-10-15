@@ -4,7 +4,8 @@
 // Everything you can tap is at least 44px tall (min-h-11), the size Apple
 // and Google recommend for fingers.
 
-export const cardClass = "glass rounded-card";
+// `reveal`: it fades and rises into place as it's scrolled to (globals.css).
+export const cardClass = "glass reveal rounded-card";
 
 /**
  * The home page layout, shared with its loading skeleton: three rows of

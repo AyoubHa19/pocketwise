@@ -3,6 +3,7 @@
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { useShowMore } from "@/components/ShowMore";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { cardClass, colorTransition } from "@/components/formStyles";
 import { DEFAULT_PREFERENCES, formatDay, type DateOrder } from "@/lib/preferences";
@@ -37,6 +38,12 @@ type Props = {
    * it between dividers, instead of sitting in cards of their own.
    */
   inCard?: boolean;
+  /**
+   * Keep a long list short: show this many transactions at first, with a
+   * button for the rest (`step` more at a time, or all at once).
+   */
+  limit?: number;
+  step?: number;
 };
 
 /**
@@ -59,7 +66,10 @@ export function TransactionList({
   showAccounts = false,
   order = "newest",
   inCard = false,
+  limit = Infinity,
+  step,
 }: Props) {
+  const { count, button: showMore } = useShowMore(transactions.length, { initial: limit, step, noun: "transactions" });
   const listClass = inCard
     ? "-mx-4 divide-y divide-line border-y border-line sm:-mx-6"
     : `${cardClass} divide-y divide-line overflow-hidden`;
@@ -185,65 +195,78 @@ export function TransactionList({
 
   if (order === "flat") {
     return (
-      <ul className={listClass}>
-        <AnimatePresence initial={false}>
-          {transactions.map((transaction) => row(transaction, true))}
-        </AnimatePresence>
-      </ul>
+      <>
+        <ul className={listClass}>
+          <AnimatePresence initial={false}>
+            {transactions.slice(0, count).map((transaction) => row(transaction, true))}
+          </AnimatePresence>
+        </ul>
+        {showMore}
+      </>
     );
   }
 
   // Oldest first: the days, and each day's transactions, turned round.
-  const days =
+  const allDays =
     order === "oldest" ? groupByDay([...transactions].reverse()).reverse() : groupByDay(transactions);
+  // Only the first `count` rows, day by day. A day cut short still shows
+  // its whole day's total, which stays true.
+  const days = allDays.flatMap((day, index) => {
+    const before = allDays.slice(0, index).reduce((sum, d) => sum + d.transactions.length, 0);
+    const rows = day.transactions.slice(0, Math.max(0, count - before));
+    return rows.length > 0 ? [{ ...day, transactions: rows }] : [];
+  });
 
   return (
-    // Each day keeps its own space below (pb-6) instead of the list putting
-    // gaps between days, so a day can shrink to nothing without a gap
-    // snapping shut afterwards. -mb-6 takes back the last day's space.
-    <div className="-mb-6">
-      <AnimatePresence initial={false}>
-        {days.map((day) => {
-          const headingId = `day-${day.date}`;
-          const dayNet = day.netByCurrency
-            .map(({ currency, netMinor }) =>
-              formatMoney({ amountMinor: netMinor, currency }),
-            )
-            .join(" · ");
+    <>
+      {/* Each day keeps its own space below (pb-6) instead of the list putting
+          gaps between days, so a day can shrink to nothing without a gap
+          snapping shut afterwards. -mb-6 takes back the last day's space. */}
+      <div className="-mb-6">
+        <AnimatePresence initial={false}>
+          {days.map((day) => {
+            const headingId = `day-${day.date}`;
+            const dayNet = day.netByCurrency
+              .map(({ currency, netMinor }) =>
+                formatMoney({ amountMinor: netMinor, currency }),
+              )
+              .join(" · ");
 
-          return (
-            <m.section
-              key={day.date}
-              variants={variants}
-              initial="collapsed"
-              animate="open"
-              exit="collapsed"
-              aria-labelledby={headingId}
-              className="overflow-hidden pb-6"
-            >
-              <div className={`mb-2 flex items-baseline justify-between gap-4 ${inCard ? "" : "px-1"}`}>
-                <h3 id={headingId} className="text-sm font-semibold text-muted">
-                  {formatDay(day.date, today, dateOrder)}
-                </h3>
-                <p className="text-sm tabular-nums text-muted">
-                  <span className="sr-only">Total for the day: </span>
-                  <AnimatedNumber
-                    text={dayNet}
-                    value={day.netByCurrency[0]?.netMinor ?? 0}
-                  />
-                </p>
-              </div>
+            return (
+              <m.section
+                key={day.date}
+                variants={variants}
+                initial="collapsed"
+                animate="open"
+                exit="collapsed"
+                aria-labelledby={headingId}
+                className="overflow-hidden pb-6"
+              >
+                <div className={`mb-2 flex items-baseline justify-between gap-4 ${inCard ? "" : "px-1"}`}>
+                  <h3 id={headingId} className="text-sm font-semibold text-muted">
+                    {formatDay(day.date, today, dateOrder)}
+                  </h3>
+                  <p className="text-sm tabular-nums text-muted">
+                    <span className="sr-only">Total for the day: </span>
+                    <AnimatedNumber
+                      text={dayNet}
+                      value={day.netByCurrency[0]?.netMinor ?? 0}
+                    />
+                  </p>
+                </div>
 
-              {/* overflow-hidden keeps the row highlight inside the corners. */}
-              <ul className={listClass}>
-                <AnimatePresence initial={false}>
-                  {day.transactions.map((transaction) => row(transaction, false))}
-                </AnimatePresence>
-              </ul>
-            </m.section>
-          );
-        })}
-      </AnimatePresence>
-    </div>
+                {/* overflow-hidden keeps the row highlight inside the corners. */}
+                <ul className={listClass}>
+                  <AnimatePresence initial={false}>
+                    {day.transactions.map((transaction) => row(transaction, false))}
+                  </AnimatePresence>
+                </ul>
+              </m.section>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+      {showMore}
+    </>
   );
 }

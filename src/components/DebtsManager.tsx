@@ -11,6 +11,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/formStyles";
+import { ShortList } from "@/components/ShowMore";
 import { Sheet } from "@/components/Sheet";
 import { Toast, type Notice } from "@/components/Toast";
 import { TransactionForm } from "@/components/TransactionForm";
@@ -230,14 +231,18 @@ export function DebtsManager() {
             {status.payments.length === 0 ? (
               <p className="mt-1 text-sm text-muted">None recorded yet.</p>
             ) : (
-              <ul className="mt-1 divide-y divide-line text-sm">
-                {[...status.payments].reverse().map((t) => (
-                  <li key={t.id} className="flex min-h-11 items-center justify-between gap-3">
-                    <span className="text-muted">{day(t.date)}</span>
-                    <span className="tabular-nums">{money(t.amount.amountMinor)}</span>
-                  </li>
-                ))}
-              </ul>
+              <ShortList items={[...status.payments].reverse()} initial={5} noun="payments">
+                {(visible) => (
+                  <ul className="mt-1 divide-y divide-line text-sm">
+                    {visible.map((t) => (
+                      <li key={t.id} className="flex min-h-11 items-center justify-between gap-3">
+                        <span className="text-muted">{day(t.date)}</span>
+                        <span className="tabular-nums">{money(t.amount.amountMinor)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </ShortList>
             )}
           </div>
         )}
