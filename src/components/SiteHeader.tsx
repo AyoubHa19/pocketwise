@@ -21,7 +21,7 @@ export function SiteHeader() {
   return (
     <>
       <WhenSignedIn>
-        <header className="lg:hidden">
+        <header className="on-photo lg:hidden">
           <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 sm:px-6">
             {brand}
             <div className="flex items-center gap-1">
@@ -34,7 +34,7 @@ export function SiteHeader() {
         </header>
       </WhenSignedIn>
       <WhenSignedIn out>
-        <header>
+        <header className="on-photo">
           <div className="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6">{brand}</div>
         </header>
       </WhenSignedIn>

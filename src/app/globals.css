@@ -29,9 +29,8 @@
  * slowly behind everything, frosted glass cards on it, black for what's
  * selected, and sage green as the brand colour.
  *
- * The photo shows everywhere between the cards, so nothing is written on
- * it bare: text is either on a card or on a small glass label of its own
- * (see "Loose text" below). The glass is as see-through as it can be while
+ * The photo shows everywhere between the cards, darkened just enough for
+ * white text to sit right on it (see "Loose text" below). The glass is as see-through as it can be while
  * every text colour passes AA over the photo's darkest (light mode) or
  * lightest (dark mode) point, measured on a laptop and a phone with the
  * photo at its most zoomed in: muted text 4.6 / 4.9 on cards.
@@ -57,10 +56,8 @@
   --danger-line: light-dark(#f6c9c4, #5c1d22);
   --warning: light-dark(#7a3905, #fbbf24); /* A budget close to its limit */
 
-  /* Glass: the cards, the labels for text outside them, and the bars and
-     menus that float over everything. */
-  --glass: light-dark(rgb(255 255 255 / 0.72), rgb(18 22 20 / 0.56));
-  --glass-label: light-dark(rgb(255 255 255 / 0.76), rgb(18 22 20 / 0.6));
+  /* Glass: the cards, and the bars and menus that float over everything. */
+  --glass: light-dark(rgb(255 255 255 / 0.78), rgb(18 22 20 / 0.5));
   --glass-strong: light-dark(rgb(255 255 255 / 0.8), rgb(18 22 20 / 0.66));
   /* A sheen across the glass from its top left corner. */
   --glass-sheen: linear-gradient(
@@ -272,7 +269,7 @@ html:has(dialog[open]) {
 :root {
   --glass-spot: radial-gradient(
     22rem circle at var(--spot-x, 50%) var(--spot-y, 50%),
-    light-dark(rgb(255 255 255 / calc(var(--spot) * 0.8)), rgb(190 225 200 / calc(var(--spot) * 0.16))),
+    light-dark(rgb(255 255 255 / calc(var(--spot) * 0.5)), rgb(190 225 200 / calc(var(--spot) * 0.1))),
     transparent
   );
 }
@@ -281,33 +278,37 @@ html:has(dialog[open]) {
 }
 
 /*
- * Loose text: titles, notes and headings that aren't on a card get a small
- * glass label of their own, so they stay readable over the photo. In the
- * components layer, so any classes an element sets itself (padding, a
- * background) still win.
+ * Loose text: titles, notes and headings that aren't on a card sit right
+ * on the photo, plain, in white (the photo is darkened enough for it: see
+ * .app-backdrop). The text colours are swapped for light ones inside
+ * them, so classes like text-muted or text-positive still work, just
+ * lighter. In the components layer, so classes an element sets itself
+ * still win. Measured at the photo's lightest point: white 6.0:1, the
+ * lighter grey 4.7:1. `on-photo` does the same for anything else that
+ * sits on the photo (the top bar, a lone button).
  */
 @layer components {
+  .on-photo,
   :where(main)
-    :where(h1, h2, h3, p, label, legend):not(
-      :where(.glass, .glass-strong, .glow-card, dialog, [popover], .sr-only, .sr-only *) *,
+    :where(h1, h2, h3, h4, p, label, legend, li, dt, dd, span):not(
+      :where(.glass, .glass-strong, .glow-card, dialog, [popover], .sr-only) *,
       .sr-only
     ) {
-    width: fit-content;
-    max-width: 100%;
-    padding: 0.2em 0.65em;
-    border-radius: 0.75em;
-    background-color: var(--glass-label);
-    background-image: var(--glass-sheen);
-    box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.08));
-    -webkit-backdrop-filter: blur(16px) saturate(170%);
-    backdrop-filter: blur(16px) saturate(170%);
+    --foreground: #ffffff;
+    --muted: #dfe5dc;
+    --positive: #b4e6c4;
+    --danger: #ffc2bb;
+    --warning: #ffd79a;
+    --accent: #c4e3cd;
+    color: var(--foreground);
   }
 }
 
 /*
  * The photo behind every page, drifting and zooming slowly (half a minute
- * each way), under a light veil: in light mode a touch lighter lower
- * down, in dark mode darkest at the top, where the photo's sky is pale.
+ * each way), under a dark veil, strongest at the top where the photo's
+ * sky is pale, so white text reads anywhere on it (the same in both
+ * modes; the cards are what change).
  * Only transform moves, which the graphics card does on its own. Still for
  * people who reduce motion.
  */
@@ -331,9 +332,9 @@ html:has(dialog[open]) {
   inset: 0;
   background: linear-gradient(
     to bottom,
-    light-dark(rgb(240 243 238 / 0.05), rgb(6 9 6 / 0.7)),
-    light-dark(rgb(240 243 238 / 0.15), rgb(6 9 6 / 0.35)) 40%,
-    light-dark(rgb(240 243 238 / 0.3), rgb(6 9 6 / 0.15))
+    rgb(6 9 6 / 0.6),
+    rgb(6 9 6 / 0.45) 40%,
+    rgb(6 9 6 / 0.3)
   );
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -363,15 +364,15 @@ html:has(dialog[open]) {
   top: 0;
   left: 0;
   z-index: -5;
-  width: 44rem;
-  height: 44rem;
-  margin: -22rem 0 0 -22rem;
+  width: 36rem;
+  height: 36rem;
+  margin: -18rem 0 0 -18rem;
   border-radius: 50%;
   pointer-events: none;
   background: radial-gradient(
     closest-side,
-    light-dark(rgb(255 255 255 / 0.9), rgb(170 220 185 / 0.32)),
-    light-dark(rgb(255 255 255 / 0.3), rgb(170 220 185 / 0.1)) 50%,
+    light-dark(rgb(255 255 255 / 0.6), rgb(170 220 185 / 0.2)),
+    light-dark(rgb(255 255 255 / 0.18), rgb(170 220 185 / 0.06)) 50%,
     transparent
   );
   opacity: 0;

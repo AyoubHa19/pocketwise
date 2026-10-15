@@ -130,7 +130,7 @@ export function CalendarView() {
             <MonthPicker month={month} currentMonth={currentMonth} direction={direction} onChange={changeMonth} />
           </div>
 
-          <ul aria-label="What the marks mean" className="glass-strong mt-4 flex w-fit max-w-full flex-wrap gap-x-4 gap-y-1 rounded-2xl px-3 py-2 text-xs text-muted">
+          <ul aria-label="What the marks mean" className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
             <li className="flex items-center gap-1.5">
               <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
               Spent

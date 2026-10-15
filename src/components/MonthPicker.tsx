@@ -68,7 +68,7 @@ export function MonthPicker({
         <button
           type="button"
           onClick={() => onChange(currentMonth)}
-          className={`inline-flex min-h-11 items-center text-sm font-medium text-muted underline underline-offset-4 hover:text-foreground ${colorTransition}`}
+          className={`on-photo inline-flex min-h-11 items-center text-sm font-medium text-muted underline underline-offset-4 hover:text-foreground ${colorTransition}`}
         >
           Back to this month
         </button>

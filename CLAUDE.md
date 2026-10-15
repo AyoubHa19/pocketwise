@@ -116,12 +116,15 @@ Next, in order (PRD 29):
   Then (third round): the backdrop is now a photo of misty green hills
   (`public/backdrop.webp`, the user's picture with its search bar filled
   in), drifting slowly (32s each way). The user didn't want a panel hiding
-  the photo, so there's none: the photo shows between the cards, and any
-  text outside a card gets a small glass label of its own (the "Loose
-  text" rule in `globals.css`, in the components layer so a component's
-  own classes win). Glass opacity (72% light / 56% dark) is the least that
-  keeps every text colour AA over the photo, measured with a script over
-  the photo itself. Cards have a sheen, a deeper shadow and a light spot
+  the photo, so there's none: the photo shows between the cards. Text
+  outside a card is plain white, straight on the photo (the "Loose text"
+  rule in `globals.css`, in the components layer so a component's own
+  classes win; `on-photo` for anything else, like the top bar). The user
+  didn't want boxes or a glow behind it, so the photo is darkened enough
+  for white everywhere, in both themes (white 6.0:1 at its lightest).
+  Glass opacity (78% light / 50% dark) is the least that keeps every text
+  colour on cards AA over that photo, measured with a script over the
+  photo itself. Cards have a sheen, a deeper shadow and a light spot
   that follows the mouse (data-lit, --spot-x/--spot-y);
   "Safe to spend" has a light version in light
   mode; a soft light follows the mouse (`CursorLight.tsx`); cards fade
