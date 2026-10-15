@@ -115,10 +115,15 @@ Next, in order (PRD 29):
   (`.glow-card`). The backdrop and rim stay still with reduced motion.
   Then (third round): the backdrop is now a photo of misty green hills
   (`public/backdrop.webp`, the user's picture with its search bar filled
-  in), drifting slowly; each page sits on a big glass panel
-  (`.page-frame`, a layer of its own in `layout.tsx`) because text on the
-  bare photo can't pass AA; cards are much more see-through on it, with a
-  sheen and a deeper shadow; "Safe to spend" has a light version in light
+  in), drifting slowly (32s each way). The user didn't want a panel hiding
+  the photo, so there's none: the photo shows between the cards, and any
+  text outside a card gets a small glass label of its own (the "Loose
+  text" rule in `globals.css`, in the components layer so a component's
+  own classes win). Glass opacity (72% light / 56% dark) is the least that
+  keeps every text colour AA over the photo, measured with a script over
+  the photo itself. Cards have a sheen, a deeper shadow and a light spot
+  that follows the mouse (data-lit, --spot-x/--spot-y);
+  "Safe to spend" has a light version in light
   mode; a soft light follows the mouse (`CursorLight.tsx`); cards fade
   and rise in as they're scrolled to and page titles come into focus
   (CSS scroll-driven animations, `.reveal`), as in a video the user sent.

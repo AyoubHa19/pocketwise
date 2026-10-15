@@ -432,7 +432,7 @@ export function ReportsView() {
                 No goals yet. <Link href="/goals" className="font-medium text-foreground underline">Add one</Link>.
               </p>
             ) : (
-              <ul className="mt-2 space-y-1 text-sm">
+              <ul className={`${cardClass} mt-2 space-y-1 p-4 text-sm`}>
                 {goals
                   .filter((g) => !g.archived)
                   .map((g) => {

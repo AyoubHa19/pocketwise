@@ -4,10 +4,11 @@ import { useEffect, useRef } from "react";
 
 /**
  * A soft light that follows the mouse behind the glass (.cursor-light in
- * globals.css), so the panel and cards glow where it passes. It glides
- * after the pointer rather than sticking to it. Only for a mouse or
- * trackpad (a finger has nothing to follow between taps), and not for
- * people who reduce motion. Decorative, so hidden from screen readers.
+ * globals.css), so everything glows where it passes, and a brighter spot
+ * on the glass card under the pointer (--spot-x/--spot-y and data-lit,
+ * used by the glass utilities). It glides after the pointer rather than
+ * sticking to it. Only for a mouse or trackpad (a finger has nothing to
+ * follow between taps), and not for people who reduce motion. Decorative, so hidden from screen readers.
  */
 export function CursorLight() {
   const ref = useRef<HTMLDivElement>(null);
@@ -19,6 +20,7 @@ export function CursorLight() {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (!fine.matches || reduce.matches) return;
 
+    let lit: HTMLElement | null = null;
     let target = { x: 0, y: 0 };
     let shown = { x: 0, y: 0 };
     let frame = 0;
@@ -32,6 +34,18 @@ export function CursorLight() {
     function move(event: PointerEvent) {
       if (event.pointerType !== "mouse") return;
       target = { x: event.clientX, y: event.clientY };
+      // The spot on the glass under the pointer, where the pointer is in it.
+      const glass = (event.target as Element | null)?.closest<HTMLElement>(".glass, .glass-strong") ?? null;
+      if (glass !== lit) {
+        lit?.removeAttribute("data-lit");
+        glass?.setAttribute("data-lit", "");
+        lit = glass;
+      }
+      if (glass) {
+        const box = glass.getBoundingClientRect();
+        glass.style.setProperty("--spot-x", `${event.clientX - box.left}px`);
+        glass.style.setProperty("--spot-y", `${event.clientY - box.top}px`);
+      }
       if (!light!.hasAttribute("data-on")) {
         shown = target; // The first time, appear right there.
         light!.setAttribute("data-on", "");
@@ -40,6 +54,8 @@ export function CursorLight() {
     }
     function leave() {
       light!.removeAttribute("data-on");
+      lit?.removeAttribute("data-lit");
+      lit = null;
     }
 
     window.addEventListener("pointermove", move, { passive: true });

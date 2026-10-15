@@ -62,11 +62,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 </WhenSignedIn>
                 <div className="flex min-w-0 flex-1 flex-col">
                   <SiteHeader />
-                  <main className="relative isolate flex-1 pb-28 lg:pb-0">
-                    {/* The glass panel the page sits on (globals.css). */}
-                    <div aria-hidden="true" className="page-frame" />
-                    {children}
-                  </main>
+                  <main className="flex-1 pb-28 lg:pb-0">{children}</main>
                 </div>
               </div>
               <WhenSignedIn>

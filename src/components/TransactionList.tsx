@@ -142,7 +142,7 @@ export function TransactionList({
           type="button"
           aria-label={label}
           onClick={() => onEdit(transaction)}
-          className={`flex min-h-16 w-full items-center gap-3 py-3 text-left ${inCard ? "px-4 sm:px-6" : "px-4"} hover:bg-surface-muted focus-visible:outline-offset-[-3px] ${colorTransition} ${
+          className={`reveal-row flex min-h-16 w-full items-center gap-3 py-3 text-left ${inCard ? "px-4 sm:px-6" : "px-4"} hover:bg-surface-muted focus-visible:outline-offset-[-3px] ${colorTransition} ${
             transaction.id === editingId ? "bg-surface-muted" : ""
           }`}
         >

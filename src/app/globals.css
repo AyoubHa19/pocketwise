@@ -26,15 +26,15 @@
 
 /*
  * The look: a photo of misty green hills (public/backdrop.webp) drifting
- * slowly behind everything, a big frosted glass panel holding each page,
- * glass cards on it, black for what's selected, and sage green as the
- * brand colour.
+ * slowly behind everything, frosted glass cards on it, black for what's
+ * selected, and sage green as the brand colour.
  *
- * Text never sits on the bare photo, which is far too varied for that: the
- * panel is opaque enough that muted text passes AA over the photo's darkest
- * (light mode) or lightest (dark mode) part, measured on a laptop and a
- * phone; the cards on it can then be very see-through. Light / dark, at the
- * worst point: muted text 4.6 / 4.8 on the panel and 5.3 / 6.2 on cards.
+ * The photo shows everywhere between the cards, so nothing is written on
+ * it bare: text is either on a card or on a small glass label of its own
+ * (see "Loose text" below). The glass is as see-through as it can be while
+ * every text colour passes AA over the photo's darkest (light mode) or
+ * lightest (dark mode) point, measured on a laptop and a phone with the
+ * photo at its most zoomed in: muted text 4.6 / 4.9 on cards.
  */
 :root {
   --canvas: light-dark(#e3e6df, #0a0d0a); /* Behind the photo while it loads */
@@ -55,19 +55,18 @@
   --danger: light-dark(#a11d14, #ff8a80); /* Errors and Delete */
   --danger-surface: light-dark(#fcebe9, #2a1215); /* Background of error boxes */
   --danger-line: light-dark(#f6c9c4, #5c1d22);
-  --warning: light-dark(#874006, #fbbf24); /* A budget close to its limit */
+  --warning: light-dark(#7a3905, #fbbf24); /* A budget close to its limit */
 
-  /* Glass. The panel behind each page, the cards on it (see-through: the
-     panel already makes text readable), and the bars and menus that float
-     over the bare photo (the side bar, the phone's bottom bar, menus). */
-  --frame: light-dark(rgb(255 255 255 / 0.7), rgb(14 18 15 / 0.48));
-  --glass: light-dark(rgb(255 255 255 / 0.32), rgb(18 22 20 / 0.32));
-  --glass-strong: light-dark(rgb(255 255 255 / 0.78), rgb(18 22 20 / 0.66));
+  /* Glass: the cards, the labels for text outside them, and the bars and
+     menus that float over everything. */
+  --glass: light-dark(rgb(255 255 255 / 0.72), rgb(18 22 20 / 0.56));
+  --glass-label: light-dark(rgb(255 255 255 / 0.76), rgb(18 22 20 / 0.6));
+  --glass-strong: light-dark(rgb(255 255 255 / 0.8), rgb(18 22 20 / 0.66));
   /* A sheen across the glass from its top left corner. */
   --glass-sheen: linear-gradient(
     135deg,
-    light-dark(rgb(255 255 255 / 0.45), rgb(255 255 255 / 0.07)),
-    transparent 45%
+    light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.1)),
+    transparent 50%
   );
   /* The bright rim along the top, and a soft shadow below and behind. */
   --shadow-card:
@@ -241,33 +240,75 @@ html:has(dialog[open]) {
 
 
 /*
- * Glass: see-through, the photo blurred behind it, a sheen from the top
- * left, a bright rim and a soft shadow. `glass` for cards (on the page
- * panel), `glass-strong` for what floats over the bare photo. Browsers
- * without backdrop blur show the colour alone.
+ * Glass: frosted, the photo blurred behind it, a sheen from the top left,
+ * a bright rim and a soft shadow, and a light where the mouse is
+ * (--spot-x/--spot-y, set by CursorLight.tsx on the glass under the
+ * pointer). `glass` for cards, `glass-strong` for what floats over
+ * everything. Browsers without backdrop blur show the colour alone.
  */
+@property --spot {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
 @utility glass {
   background-color: var(--glass);
-  background-image: var(--glass-sheen);
+  background-image: var(--glass-spot), var(--glass-sheen);
   border: 1px solid var(--card-edge);
   box-shadow: var(--shadow-card);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  transition: --spot 300ms var(--ease-pocket);
 }
 @utility glass-strong {
   background-color: var(--glass-strong);
-  background-image: var(--glass-sheen);
+  background-image: var(--glass-spot), var(--glass-sheen);
   border: 1px solid var(--card-edge);
   box-shadow: var(--shadow-card);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(24px) saturate(170%);
+  transition: --spot 300ms var(--ease-pocket);
+}
+:root {
+  --glass-spot: radial-gradient(
+    22rem circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    light-dark(rgb(255 255 255 / calc(var(--spot) * 0.8)), rgb(190 225 200 / calc(var(--spot) * 0.16))),
+    transparent
+  );
+}
+[data-lit] {
+  --spot: 1;
 }
 
 /*
- * The photo behind every page, drifting and zooming very slowly (a minute
- * each way), under a veil that keeps it calm: lighter in light mode, and
- * in dark mode darkest at the top, where the photo's sky is pale. Only
- * transform moves, which the graphics card does on its own. Still for
+ * Loose text: titles, notes and headings that aren't on a card get a small
+ * glass label of their own, so they stay readable over the photo. In the
+ * components layer, so any classes an element sets itself (padding, a
+ * background) still win.
+ */
+@layer components {
+  :where(main)
+    :where(h1, h2, h3, p, label, legend):not(
+      :where(.glass, .glass-strong, .glow-card, dialog, [popover], .sr-only, .sr-only *) *,
+      .sr-only
+    ) {
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.2em 0.65em;
+    border-radius: 0.75em;
+    background-color: var(--glass-label);
+    background-image: var(--glass-sheen);
+    box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.08));
+    -webkit-backdrop-filter: blur(16px) saturate(170%);
+    backdrop-filter: blur(16px) saturate(170%);
+  }
+}
+
+/*
+ * The photo behind every page, drifting and zooming slowly (half a minute
+ * each way), under a light veil: in light mode a touch lighter lower
+ * down, in dark mode darkest at the top, where the photo's sky is pale.
+ * Only transform moves, which the graphics card does on its own. Still for
  * people who reduce motion.
  */
 .app-backdrop {
@@ -291,13 +332,13 @@ html:has(dialog[open]) {
   background: linear-gradient(
     to bottom,
     light-dark(rgb(240 243 238 / 0.05), rgb(6 9 6 / 0.7)),
-    light-dark(rgb(240 243 238 / 0.2), rgb(6 9 6 / 0.4)) 40%,
-    light-dark(rgb(240 243 238 / 0.35), rgb(6 9 6 / 0.2))
+    light-dark(rgb(240 243 238 / 0.15), rgb(6 9 6 / 0.35)) 40%,
+    light-dark(rgb(240 243 238 / 0.3), rgb(6 9 6 / 0.15))
   );
 }
 @media (prefers-reduced-motion: no-preference) {
   .app-backdrop::before {
-    animation: backdrop-drift 60s ease-in-out infinite alternate;
+    animation: backdrop-drift 32s ease-in-out infinite alternate;
     will-change: transform;
   }
 }
@@ -306,53 +347,31 @@ html:has(dialog[open]) {
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(-3%, 2%, 0) scale(1.08);
+    transform: translate3d(-5%, 3%, 0) scale(1.12);
   }
   100% {
-    transform: translate3d(3%, -2%, 0) scale(1.04);
+    transform: translate3d(4%, -3%, 0) scale(1.06);
   }
 }
 
 /*
- * The big glass panel each page sits on (in the root layout, behind the
- * page). It's a layer of its own, not a box around the page: glass on an
- * ancestor would stop the cards inside from seeing the photo through it.
- */
-.page-frame {
-  position: absolute;
-  inset: 0.25rem 0.5rem 0.5rem;
-  z-index: -1;
-  border-radius: 2rem;
-  border: 1px solid var(--card-edge);
-  background-color: var(--frame);
-  background-image: var(--glass-sheen);
-  box-shadow: var(--shadow-card);
-  -webkit-backdrop-filter: blur(32px) saturate(150%);
-  backdrop-filter: blur(32px) saturate(150%);
-}
-@media (width >= 64rem) {
-  .page-frame {
-    inset: 1rem 1rem 1rem 0.75rem;
-  }
-}
-
-/*
- * A soft light that follows the mouse (CursorLight.tsx), between the
- * photo and the glass, so the panel and the cards glow where it passes.
+ * A soft light that follows the mouse (CursorLight.tsx), between the photo
+ * and the glass, so everything glows where it passes.
  */
 .cursor-light {
   position: fixed;
   top: 0;
   left: 0;
   z-index: -5;
-  width: 36rem;
-  height: 36rem;
-  margin: -18rem 0 0 -18rem;
+  width: 44rem;
+  height: 44rem;
+  margin: -22rem 0 0 -22rem;
   border-radius: 50%;
   pointer-events: none;
   background: radial-gradient(
     closest-side,
-    light-dark(rgb(255 255 255 / 0.75), rgb(163 203 176 / 0.22)),
+    light-dark(rgb(255 255 255 / 0.9), rgb(170 220 185 / 0.32)),
+    light-dark(rgb(255 255 255 / 0.3), rgb(170 220 185 / 0.1)) 50%,
     transparent
   );
   opacity: 0;
@@ -363,39 +382,71 @@ html:has(dialog[open]) {
 }
 
 /*
- * Things come in as they're scrolled to: each card fades and rises into
- * place while it enters the screen, tied to the scrolling itself (no
- * JavaScript). What's on screen when a page opens is simply there; the
- * page's title comes into focus instead. Browsers without scroll-driven
- * animations, and people who reduce motion, see everything at once.
+ * Things come in as they're scrolled to, tied to the scrolling itself (no
+ * JavaScript): cards rise out of a blur, a card's second and third
+ * neighbours a little after it; list rows slide up one by one; headings
+ * come into focus. Page titles do the same as the page opens. What's on
+ * screen when a page opens is simply there. Browsers without
+ * scroll-driven animations, and people who reduce motion, see everything
+ * at once.
  */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     .reveal {
       animation: reveal linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 60%;
+      animation-range: entry 0% entry 70%;
+    }
+    .reveal:nth-child(3n + 2) {
+      animation-range: entry 10% entry 80%;
+    }
+    .reveal:nth-child(3n + 3) {
+      animation-range: entry 20% entry 90%;
+    }
+    .reveal-row {
+      animation: reveal-row linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+    main h2,
+    main h3 {
+      animation: focus-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
     }
   }
   main h1,
   main h1 + p {
-    animation: title-in 700ms var(--ease-pocket) both;
+    animation: title-in 900ms var(--ease-pocket) both;
   }
   main h1 + p {
-    animation-delay: 120ms;
+    animation-delay: 150ms;
   }
 }
 @keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(2rem) scale(0.97);
+    filter: blur(8px);
+    transform: translateY(3rem) scale(0.94);
+  }
+}
+@keyframes reveal-row {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+@keyframes focus-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
   }
 }
 @keyframes title-in {
   from {
     opacity: 0;
-    filter: blur(10px);
-    transform: translateY(0.5rem);
+    filter: blur(16px);
+    transform: translateY(1rem);
   }
 }
 
